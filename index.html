@@ -79,7 +79,7 @@
 
   var RELAY_URL = 'https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws';
   var PROJECT = 'member-360', TOOL = 'Member 360';
-  var PREVIEW = true;           /* see the header: false once Member 360 is switched on */
+  var PREVIEW = false;          /* see the header: false once Member 360 is switched on */
   var POLL_MS = 60000, IDLE_POLL_MS = 180000, IDLE_AFTER = 10 * 60000, COOL_POLL_MS = 1800000;
   /* collections whose documents each get a file of their own (the big synced ones) */
   var OWN = ['activity', 'regs', 'sync', 'meetings', 'speakers', 'leaders', 'bootcamp', 'engage'];
@@ -626,6 +626,43 @@
     toast(e && (e.status === 401 || e.code === 'SIGNED_OUT') ? 'Sign in again to finish saving \u2014 nothing is lost.' : 'Not saved yet \u2014 trying again. Keep this tab open.', 'bad');
   }
   function saved() { if (troubled && !anyPending()) { troubled = false; toast('All changes saved.'); } }
+
+  /* ---------- payments from MISMO Money ----------
+     MISMO Money writes data/mismo-money-paid.json into member-360-data whenever it loads new
+     Aptify payments (normally each morning). MISMO Money owns that file: this page only
+     reads it, never saves it. It is read after sign-in and again every 30 minutes, also in
+     the preview (the page lays it over the activity files on read; nothing is written).
+     A file split the orgsdata way ({chunked:{ver,n}} with parts <name>--<ver>-<n>, each
+     {s:"..."}) is put back together first. */
+  var MM_FILE = 'mismo-money-paid', MM_POLL_MS = 1800000;
+  var MM = { data: null, sha: undefined, at: 0, err: '', cbs: [], busy: false };
+  function loadMoney() {
+    if (MM.busy || !ready || !(RS() && RS().token())) return Promise.resolve();
+    MM.busy = true;
+    return net('GET', MM_FILE).then(function (b) {
+      var sha = (b && b.sha) || null, d = (b && b.data) || null;
+      MM.at = now(); MM.err = '';
+      if (sha === MM.sha) return;
+      var c = d && d.chunked;
+      var whole = c && c.n ? Promise.all(Array.from({ length: c.n }, function (_, i) { return net('GET', MM_FILE + '--' + c.ver + '-' + i); }))
+        .then(function (ps) { return JSON.parse(ps.map(function (p) { return (p && p.data && p.data.s) || ''; }).join('')); }) : Promise.resolve(d);
+      return whole.then(function (full) {
+        MM.sha = sha; MM.data = full;
+        MM.cbs.forEach(function (cb) { try { cb(full); } catch (e) { console.error(e); } });
+      });
+    }, function (e) {
+      MM.at = now();
+      if (e && e.status === 404 && (e.code === 'NOT_FOUND' || e.code === 'HTTP_404')) { MM.err = ''; return; }
+      MM.err = (e && (e.code || e.message)) || 'error';
+    }).then(function () { MM.busy = false; }, function (e) { MM.busy = false; MM.err = (e && e.message) || 'error'; });
+  }
+  setInterval(function () { if (MM.at && now() - MM.at >= MM_POLL_MS && document.visibilityState !== 'hidden') loadMoney(); }, 60000);
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && MM.at && now() - MM.at >= MM_POLL_MS) loadMoney(); });
+  whenReady().then(loadMoney);
+  window.__m360Money = {
+    onData: function (cb) { MM.cbs.push(cb); if (MM.sha !== undefined) { try { cb(MM.data); } catch (e) { console.error(e); } } },
+    refresh: loadMoney, status: function () { return { at: MM.at, sha: MM.sha, error: MM.err, has: !!MM.data }; }
+  };
 
   /* ---------- the door ---------- */
   window.claude = {
@@ -3678,7 +3715,7 @@ function renderSettings(){
   di.appendChild(h("div",{class:"hint"},"Aptify is the record for members, levels and payments. This page is MISMO's working layer on top: stages, owners, holds, conversations and follow-ups saved here stay put when the member data is refreshed. To refresh, export the membership list from Aptify and give it to Claude in the MISMO CRM project. Rows sharing or missing a Company ID can be reviewed under Members and Prospects."));
 }
 /* records added in Member 360: members found from payments (sync/neworgs) and prospects staff add (prospects collection) */
-const EXTRA={auto:[],manual:[]};
+const EXTRA={auto:[],manual:[],mm:[]};
 function prospectOrg(d){return {k:"p"+d.id,cid:d.cid||"",row:0,name:d.name||"New Prospect",sector:"",sector5:d.sector5||"",sectorSrc:d.sector5?"staff":"",market:"",cu:false,addr:"",
   joined:"",thru:"",created:(d.at||"").slice(0,10),life:"Prospect",stage:"",type:d.type||"Non-Lender",level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,
   people:(d.people||[]).map(p=>Object.assign({email:"",name:"",title:"",phone:"",roles:["Primary"]},p)),advisors:[],hand:[],
@@ -3688,10 +3725,12 @@ function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);rebuildOrgs();}
 function rebuildOrgs(){
   const keep=ORGS.filter(o=>!o.auto&&!o.manual);const seen=new Set(keep.map(o=>o.k));
   EXTRA.auto.forEach(o=>{if(!seen.has(o.k)){o.auto=true;keep.push(o);seen.add(o.k);}});
+  (EXTRA.mm||[]).forEach(o=>{if(!seen.has(o.k)){keep.push(o);seen.add(o.k);}});
   EXTRA.manual.forEach(o=>{if(!seen.has(o.k)){keep.push(o);seen.add(o.k);}});
   keep.forEach(applyContacts);
   keep.sort((a,b)=>a.name.localeCompare(b.name));
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));for(const k in BY)delete BY[k];ORGS.forEach(o=>BY[o.k]=o);
+  if(MMF)remergeAct();
   const dl=$("orgnames");if(dl)dl.textContent="";
   renderMemChips();renderList("renewals");renderList("members");
   const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="iif")renderList("iif");
@@ -3891,18 +3930,28 @@ function orgLabel(o){return o.name+(o.cid?" \u00b7 ID "+o.cid:" \u00b7 "+o.life)
 function fillOrgList(){const dl=$("orgnames");if(dl.childElementCount)return;ORGS.forEach(o=>dl.appendChild(h("option",{value:orgLabel(o)})));}
 function renderSync(){
   const box=$("syncinfo");if(box.contains(document.activeElement))return;box.textContent="";
-  if(!SYNC){box.appendChild(h("div",{class:"hint"},"The first sync hasn't run yet."));return;}
-  box.appendChild(h("div",{class:"facts"},
+  if(MMINFO){const up=MMINFO.updated?new Date(MMINFO.updated):null;
+    box.appendChild(h("div",{class:"facts"},
+      h("div",{class:"fact"},h("label",null,"MISMO Money Payments"),h("div",null,up&&!isNaN(up)?up.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"Received")),
+      h("div",{class:"fact"},h("label",null,"Payments Through"),h("div",null,fmt(MMINFO.through))),
+      h("div",{class:"fact"},h("label",null,"Orders Since "+fmt(MMINFO.from)),h("div",{class:"num"},n(MMINFO.orders))),
+      h("div",{class:"fact"},h("label",null,"Orders Matched"),h("div",{class:"num"},n(MMINFO.matched))),
+      h("div",{class:"fact"},h("label",null,RY+" Dues Paid"),h("div",{class:"num"},n(MMINFO.paid))),
+      h("div",{class:"fact"},h("label",null,"New Members Added"),h("div",{class:"num"},n(MMINFO.added))),
+      h("div",{class:"fact"},h("label",null,"New Names to Match"),h("div",{class:"num"},n(MMINFO.review)))));
+    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"MISMO Money sends the latest Aptify payments each morning, and this page reads them every 30 minutes. From "+fmt(MMINFO.from)+" on, its payments replace what the old daily sync copied; anything earlier is unchanged. A payment for a "+RY+" membership marks the member Renewed. IIF payments show in each lender's history. Payments Aptify records as an MBA ACH Payment or by credit memo aren't in MISMO Money's file, so those orders won't show here even when paid."));}
+  if(!SYNC&&!MMINFO){box.appendChild(h("div",{class:"hint"},"The first sync hasn't run yet."));return;}
+  if(!MMINFO){box.appendChild(h("div",{class:"facts"},
     h("div",{class:"fact"},h("label",null,"Last Sync"),h("div",null,new Date(SYNC.lastRun).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))),
     h("div",{class:"fact"},h("label",null,"Organizations With Payments"),h("div",{class:"num"},n(SYNC.matchedOrgs))),
     h("div",{class:"fact"},h("label",null,RY+" Dues Paid"),h("div",{class:"num"},n(SYNC.paid))),
     h("div",{class:"fact"},h("label",null,"New Members Added"),h("div",{class:"num"},n(SYNC.newOrgs||0))),
     h("div",{class:"fact"},h("label",null,"Payer Names to Match"),h("div",{class:"num"},n(SYNC.reviewNames)))));
-  box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Every morning Claude copies new payments from the Financial System, and adds any company that pays for a membership but is not in Member 360 yet. A payment for a "+RY+" membership marks the member Renewed and stops their reminder emails. IIF payments show in each lender's history; lender renewals get their own IIF process."));
+  box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Every morning Claude copies new payments from the Financial System, and adds any company that pays for a membership but is not in Member 360 yet. A payment for a "+RY+" membership marks the member Renewed and stops their reminder emails. IIF payments show in each lender's history; lender renewals get their own IIF process."));}
   fillOrgList();const byLabel={};ORGS.forEach(o=>{if(!o.auto)byLabel[orgLabel(o)]=o.k;});
   const autos=ORGS.filter(o=>o.auto&&!(ALIAS.map||{})[o.name]&&!(ALIAS.ignore||[]).includes(o.name));
   box.appendChild(h("h3",{style:"font-size:13.5px;margin:4px 0 4px"},"Members Added Automatically"));
-  box.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"These companies paid for a membership in the Financial System and weren't in Member 360, so they were added as new members. If one is really an existing member under another name, merge it and the two records combine at the next morning's sync."));
+  box.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"These companies paid for a membership in the Financial System and weren't in Member 360, so they were added as new members. If one is really an existing member under another name, merge it and the two records combine "+(MMINFO?"right away.":"at the next morning's sync.")));
   if(!autos.length)box.appendChild(h("div",{class:"empty",style:"margin-bottom:16px"},"No members added automatically."));
   else{const al=h("div",{class:"rows",style:"margin-bottom:18px"});
     autos.forEach(o=>{const inp=h("input",{type:"text",list:"orgnames",placeholder:"Only if this is an existing member","aria-label":"Existing member for "+o.name});
@@ -3916,7 +3965,7 @@ function renderSync(){
     box.appendChild(al);}
   const items=((REVIEW&&REVIEW.items)||[]).filter(r=>!(ALIAS.map||{})[r.name]&&!(ALIAS.ignore||[]).includes(r.name));
   box.appendChild(h("h3",{style:"font-size:13.5px;margin:4px 0 4px"},"Payer Names to Match"));
-  box.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"These companies paid for a membership, IIF or a sponsorship under a name that doesn't match a member record. Pick the member they belong to, or mark them as not a member. Matches apply at the next morning's sync."));
+  box.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"These companies paid for a membership, IIF or a sponsorship under a name that doesn't match a member record. Pick the member they belong to, or mark them as not a member. "+(MMINFO?"Names from MISMO Money are listed first, and a match moves their payments onto the member right away.":"Matches apply at the next morning's sync.")));
   if(!items.length){box.appendChild(h("div",{class:"empty"},"Nothing to match."));return;}
   const list=h("div",{class:"rows"});
   items.slice(0,box._all?9999:25).forEach(r=>{
@@ -3935,7 +3984,7 @@ function renderSync(){
   box.appendChild(list);
   if(items.length>25&&!box._all)box.appendChild(h("button",{type:"button",class:"linkbtn",style:"margin-top:8px",onclick:()=>{box._all=true;renderSync();}},"Show All "+n(items.length)));
 }
-async function saveAlias(patch){if(blocked())return;ALIAS=Object.assign({map:{},ignore:[]},ALIAS,patch);renderSync();
+async function saveAlias(patch){if(blocked())return;ALIAS=Object.assign({map:{},ignore:[]},ALIAS,patch);if(MMF)remergeAct();renderSync();
   try{await db.doc("sync/aliases").set(ALIAS);}catch(e){onWriteErr(e);}}
 function renderBenEvents(){const box=$("benev");if(!box||box.contains(document.activeElement))return;box.textContent="";const dis=!db||!canWrite;
   const L=benEvents();const save=next=>saveSet({benEvents:next});
@@ -4459,6 +4508,156 @@ async function resolveNames(){
   try{const ps=await userCap.profiles(need);need.forEach(id=>{NAMES[id]=(ps[id]&&ps[id].name)||"";});scheduleRefresh();}catch(e){}
 }
 
+/* ---------- payments from MISMO Money (the resources.mismo.org copy) ----------
+   MISMO Money's file (data/mismo-money-paid.json: every MISMO payment since its "from" date, one entry per
+   Aptify order with its payments and product lines) is laid over the activity files when it is read:
+   - each product line becomes one activity item (o order, d last paid on, n amount, p product, s start, c category,
+     L the membership level on IIF items); an order with refunds has its lines scaled to add up to its net
+   - the company is "c"+companyId when Aptify gave one; otherwise the payer name is matched through the confirmed
+     aliases and exact names; names that can't be matched go to Payer Names to Match, never into a guess
+   - on or after "from" the file wins: activity items with the same order number are dropped and replaced;
+     older items stay as the activity files have them
+   - IIF paid by year and the renewal payment are worked out again for every company the file touches
+   The file's format is MISMO Money's feed-format.md (kind "mismo-money-paid", version 1; orders keyed by order number;
+   payments [{on, amount, type, id}]; lines [{product, amount, description, start}]; net = paid - refunded).
+   An order missing from the file is not unpaid: only orders in the file replace anything.
+   Nothing is written back, and the page never writes MISMO Money's file. The Claude copy has no such file and
+   is unchanged. */
+let ACT0={},MMF=null,MMINFO=null,REVIEW0=null;
+const MMLEVEL=/champion|corporate membership|sole membership|mismo membership/i;
+function mmCat(p){p=String(p||"");
+  if(/innovation investment/i.test(p))return "IIF";
+  if(/sponsorship/i.test(p))return "Sponsorship";
+  if(MMLEVEL.test(p))return "Membership";
+  if(/summit/i.test(p))return "Summit";
+  if(/boot camp|amsp|cmsp|training|webinar/i.test(p))return "Education";
+  if(/certif|evault|frame advisory/i.test(p))return "Certification";
+  return "Other";}
+function mmNorm(s){s=String(s||"").toLowerCase().replace(/&/g," and ").replace(/’/g,"'").replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+  for(let i=0;i<3;i++)s=s.replace(/\s*\b(inc|incorporated|llc|corp|corporation|company|co|ltd|limited|lp|llp|na|pllc|pc|fsb|the)$/,"").trim();
+  return s.replace(/^the /,"");}
+function mmNum(v){const x=Number(v);return isFinite(x)?x:0;}
+function mmOrders(f){if(!f)return [];if(Array.isArray(f))return f;const o=f.orders||f.items||f.payments;
+  if(Array.isArray(o))return o;if(o&&typeof o==="object")return Object.keys(o).map(k=>Object.assign({order:k},o[k]));return [];}
+function mmItems(r){
+  const lines=(Array.isArray(r.lines)?r.lines:[]).map(l=>({p:String(l.product||l.name||"").trim(),n:mmNum(l.amount),s:l.start||""}));
+  const pays=Array.isArray(r.payments)?r.payments:[];
+  const d=String(r.lastPaidOn||pays.map(p=>p.on||p.date||"").sort().pop()||r.firstPaidOn||"").slice(0,10);
+  const net=r.net!=null?mmNum(r.net):lines.reduce((a,l)=>a+l.n,0);
+  /* an IIF order's membership line is the level the fee unlocks, not a membership payment of its own: it becomes the
+     IIF item's level (L), and any amount on it is counted with the IIF, so an IIF payment never marks a renewal */
+  const isIIF=lines.some(l=>mmCat(l.p)==="IIF");
+  const lvl=isIIF?(lines.find(l=>mmCat(l.p)==="Membership")||{}).p||"":"";
+  let use=lines;
+  if(isIIF){const fold=lines.filter(l=>mmCat(l.p)==="Membership").reduce((a,l)=>a+l.n,0);
+    use=lines.filter(l=>mmCat(l.p)!=="Membership").map(l=>Object.assign({},l));
+    const first=use.find(l=>mmCat(l.p)==="IIF");if(first)first.n+=fold;}
+  if(!use.length)use=[{p:"",n:net,s:""}];
+  /* refunds: scale the lines so they add up to the order's net; the last cent goes on the largest line */
+  const sum=use.reduce((a,l)=>a+l.n,0);
+  let ns=use.map(l=>l.n);
+  if(Math.abs(sum-net)>0.005){
+    if(Math.abs(sum)>0.005){ns=use.map(l=>Math.round(l.n*net/sum*100)/100);}
+    else{ns=use.map((l,i)=>i===0?net:0);}
+    const diff=Math.round((net-ns.reduce((a,x)=>a+x,0))*100)/100;
+    if(diff){let big=0;ns.forEach((x,i)=>{if(Math.abs(x)>Math.abs(ns[big]))big=i;});ns[big]=Math.round((ns[big]+diff)*100)/100;}
+  }
+  return use.map((l,i)=>{const c=mmCat(l.p),it={d,o:String(r.order==null?"":r.order).trim(),c,p:l.p.slice(0,160),n:Math.round(ns[i]*100)/100};
+    if(l.s)it.s=String(l.s).slice(0,10);if(c==="IIF"&&lvl)it.L=lvl;return it;});
+}
+function mmMatcher(){
+  const byCid={},byName={};
+  ORGS.forEach(o=>{if(o.mm)return;if(o.cid)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o.k);const n=mmNorm(o.name);if(n)(byName[n]=byName[n]||[]).push(o.k);});
+  const map=(ALIAS&&ALIAS.map)||{},ign=(ALIAS&&ALIAS.ignore)||[];
+  const m=r=>{
+    const cid=r.companyId!=null&&r.companyId!==""?String(r.companyId).trim().replace(/\.0$/,""):"";
+    if(cid){const c=BY["c"+cid];if(c&&!c.mm)return {k:"c"+cid};const ks=byCid[cid]||[];if(ks.length===1)return {k:ks[0]};}
+    const name=String(r.company||"").trim();
+    if(name&&ign.includes(name))return {ignored:true};
+    if(name&&map[name]&&BY[map[name]]&&!BY[map[name]].mm)return {k:map[name]};
+    const ks=byName[mmNorm(name)]||[];if(ks.length===1)return {k:ks[0]};
+    return {name,cid,ambiguous:ks.length>1};
+  };
+  m.byName=byName;return m;
+}
+/* a likely existing member for a payer name: a close spelling, or one name inside the other as whole words.
+   Only ever offered as a suggestion; never applied without a person. */
+const MMSUG=new Map();
+function mmLev(a,b){if(a===b)return 0;const m=a.length,n=b.length;let prev=Array.from({length:n+1},(_,j)=>j),cur=new Array(n+1);
+  for(let i=1;i<=m;i++){cur[0]=i;for(let j=1;j<=n;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));[prev,cur]=[cur,prev];}return prev[n];}
+function mmSuggest(name,byName){const t=mmNorm(name),ck=t+"|"+ORGS.length;if(MMSUG.has(ck))return MMSUG.get(ck);let best="",bs=0;
+  const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  for(const k in byName){if(byName[k].length!==1||!t)continue;
+    const L=Math.max(k.length,t.length);if(Math.min(k.length,t.length)/L>=0.8){const r=1-mmLev(k,t)/L;if(r>=0.82&&r>bs){bs=r;best=byName[k][0];}}}
+  if(!best&&t.length>=5)for(const k in byName){if(byName[k].length!==1||k.length<5)continue;
+    if(new RegExp("\\b"+esc(t)+"\\b").test(k)||new RegExp("\\b"+esc(k)+"\\b").test(t)){best=byName[k][0];break;}}
+  MMSUG.set(ck,best);return best;}
+function mmHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,"0");}
+const MMLV=[["Chair Champion","Chair"],["Executive Champion","Executive"],["Associate Champion","Associate"],["Corporate Membership","Corporate"],["Sole Membership","Sole"]];
+function mmLevelOf(p){for(const [a,b] of MMLV)if(String(p||"").includes(a))return b;return "";}
+/* A company that pays for a membership (on or after Jan 1 of last year) under a name and Company ID that match no one,
+   and that looks like no existing member, is added as a new member, the way the old daily sync did. It is rebuilt from
+   MISMO Money's file each time the page reads it, under a key that doesn't change ("c"+Company ID, or "m"+a hash of the
+   name), so staff notes and stages saved against it stay put. Staff can still Merge Into Existing or mark Not a Member. */
+function mmNewMember(name,cid,its,subs){
+  const mem=its.filter(i=>i.c==="Membership"&&i.n>0).sort((a,b)=>(a.s||a.d).localeCompare(b.s||b.d));if(!mem.length)return null;
+  const first=mem[0],last=mem[mem.length-1],yrs={};
+  mem.forEach(i=>{const y=(i.s||i.d).slice(0,4);yrs[y]=mmLevelOf(i.p)||yrs[y]||"";});
+  const ys=Object.keys(yrs).sort(),thru=ys[ys.length-1]+"-12-31",lvl=yrs[ys[ys.length-1]];
+  const stage=thru>=RY+"-12-31"?"Renewed":(thru===String(RY-1)+"-12-31"?"Not Renewed Yet":"");
+  return {k:cid?"c"+cid:"m"+mmHash(name),cid:cid||"",row:0,name,sector:"",market:"",cu:false,addr:"",joined:(first.s||first.d),created:first.d,
+    life:"Active",type:"Non-Lender",lossReason:"",twoYear:false,viaForm:false,advisors:[],hand:[],notes:[],dupId:false,noId:!cid,auto:true,mm:true,
+    thru,stage,level:lvl,hist:ys.slice().reverse().map((y,i)=>({y,status:"PAID - "+(i<ys.length-1?"Renewed":"New")+" (MISMO Money)",level:yrs[y]})),
+    people:[...subs].map(n=>({email:"",name:n,title:"",phone:"",roles:["Subscriber"]}))};
+}
+let MMBUSY=false;
+function remergeAct(){
+  if(MMBUSY)return;
+  const out=Object.assign({},ACT0),unm={};let orders=0,matched=0,items=0;
+  const L=mmOrders(MMF);const newRecs=[];
+  if(L.length){
+    const from=String((MMF&&MMF.from)||"").slice(0,10);
+    const match=mmMatcher(),add={},drop=new Set();
+    L.forEach(r=>{orders++;const its=mmItems(r);const m=match(r);
+      if(r.order!=null&&(!from||its[0].d>=from))drop.add(String(r.order).trim());
+      if(m.k){matched++;items+=its.length;(add[m.k]=add[m.k]||[]).push(...its);return;}
+      if(m.ignored||!m.name)return;
+      const u=unm[m.name]=unm[m.name]||{name:m.name,cid:"",amb:false,its:[],subs:new Set()};
+      if(m.cid&&!u.cid)u.cid=m.cid;if(m.ambiguous)u.amb=true;u.its.push(...its);
+      (Array.isArray(r.lines)?r.lines:[]).forEach(l=>{const x=/Company Sub:\s*([^.#]+?)\s*\./.exec(String(l.description||""));if(x&&x[1])u.subs.add(x[1].trim());});
+    });
+    /* who becomes a new member, who goes to the review */
+    const since=String(RY-1)+"-01-01";
+    Object.values(unm).forEach(u=>{
+      const paidMem=u.its.some(i=>i.c==="Membership"&&i.n>0&&i.d>=since);
+      u.suggest=u.amb?"":mmSuggest(u.name,match.byName);
+      if(paidMem&&!u.amb&&!u.suggest){const rec=mmNewMember(u.name,u.cid,u.its,u.subs);if(rec&&!newRecs.some(x=>x.k===rec.k)){newRecs.push(rec);u.added=rec.k;add[rec.k]=(add[rec.k]||[]).concat(u.its);matched++;}}
+    });
+    const touched=new Set(Object.keys(add));
+    for(const k in ACT0){const a=ACT0[k];if(!a||!a.items)continue;
+      if(a.items.some(i=>drop.has(String(i.o==null?"":i.o).trim())&&(!from||(i.d||"")>=from)))touched.add(k);}
+    touched.forEach(k=>{const a=ACT0[k]||{items:[],iif:{},paid:null};
+      const its=(a.items||[]).filter(i=>!(drop.has(String(i.o==null?"":i.o).trim())&&(!from||(i.d||"")>=from))).concat(add[k]||[]);
+      its.sort((x,y)=>(y.d||"").localeCompare(x.d||""));
+      const iif={};its.forEach(i=>{if(i.c==="IIF"&&i.d){const y=i.d.slice(0,4);iif[y]=Math.round(((iif[y]||0)+i.n)*100)/100;}});
+      let pd=null;its.forEach(i=>{if(i.c==="Membership"&&(i.s||"")>=RY+"-01-01"&&i.n>0&&(!pd||i.d<pd.d))pd={d:i.d,o:i.o||"",p:i.p||"",n:i.n,how:"Named membership"};});
+      out[k]=Object.assign({},a,{items:its,iif,paid:pd});});
+  }
+  ACT=out;
+  /* new members join the member list (only when the set changed, so nothing redraws for no reason) */
+  const sig=JSON.stringify(newRecs);
+  if(sig!==remergeAct._sig){remergeAct._sig=sig;EXTRA.mm=newRecs;MMBUSY=true;try{rebuildOrgs();}finally{MMBUSY=false;}}
+  /* names MISMO Money couldn't place join the ones the old sync left for review */
+  const base=(REVIEW0&&REVIEW0.items)||[],have=new Set(base.map(r=>r.name));
+  const extra=Object.values(unm).filter(u=>!u.added&&!have.has(u.name)).map(u=>{const t={count:0,total:0,last:"",cats:new Set(),member:false};
+    u.its.forEach(i=>{t.count++;t.total+=i.n;if(i.d>t.last)t.last=i.d;t.cats.add(i.c);if(i.c==="Membership"||i.c==="Sponsorship"||(i.c==="IIF"&&i.n>=1000))t.member=true;});
+    return t.member?{name:u.name,count:t.count,total:Math.round(t.total*100)/100,last:t.last,cats:[...t.cats].sort(),suggest:u.suggest||"",src:"MISMO Money"}:null;}).filter(Boolean);
+  extra.sort((a,b)=>b.total-a.total);
+  REVIEW=REVIEW0||extra.length?Object.assign({},REVIEW0||{},{items:extra.concat(base)}):null;
+  MMINFO=MMF?{orders,matched,items,unmatched:Object.keys(unm).length,review:extra.length,added:newRecs.length,from:String(MMF.from||"").slice(0,10),
+    updated:MMF.writtenAt||MMF.savedAt||"",through:String(MMF.paymentsThrough||"").slice(0,10),paid:Object.values(out).filter(a=>a&&a.paid).length}:null;
+}
+
 /* ---------- boot ---------- */
 async function boot(){
   try{const r=await fetch("data.json");const d=await r.json();ORGS=d.orgs;META=d.meta||{};if(META.iifYear)IY=String(META.iifYear);if(META.stageYear)DATA_RY=String(META.stageYear);ORGS.forEach(applyContacts);}
@@ -4519,11 +4718,14 @@ async function boot(){
   db.collection("sends").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());SENDS=m;rebuildIdx();scheduleRefresh();},err);
   db.collection("templates").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());TPL=m;resolveNames();
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="plays")renderPlays();},err);
-  db.collection("activity").onSnapshot(s=>{const m={};s.docs.forEach(d=>{const o=(d.data()||{}).orgs||{};for(const k in o)m[k]=o[k];});ACT=m;scheduleRefresh();},err);
+  db.collection("activity").onSnapshot(s=>{const m={};s.docs.forEach(d=>{const o=(d.data()||{}).orgs||{};for(const k in o)m[k]=o[k];});ACT0=m;remergeAct();scheduleRefresh();},err);
+  /* resources.mismo.org: MISMO Money's payments, laid over the activity files (see remergeAct) */
+  if(window.__m360Money)window.__m360Money.onData(d=>{MMF=d||null;remergeAct();scheduleRefresh();
+    const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();});
   db.collection("prospects").onSnapshot(q=>{mergeProspects(q.docs.map(d=>Object.assign({id:d.id},d.data())));scheduleRefresh();},err);
   db.collection("issues").onSnapshot(q=>{ISSUES=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
   db.collection("deals").onSnapshot(q=>{DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
-  db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});
+  db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW0=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});remergeAct();
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();scheduleRefresh();},err);
   db.doc("settings/main").onSnapshot(s=>{if(s.exists){SET=Object.assign({staff:[],rules:{}},s.data());}filterOpts();scheduleRefresh();},err);
 }
