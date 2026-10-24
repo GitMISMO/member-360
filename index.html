@@ -929,7 +929,7 @@ button.tile{display:flex;flex-direction:column;align-items:flex-start;justify-co
 .empty{padding:22px;text-align:center;color:var(--ink-3);font-size:13px}
 
 /* pills */
-.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--chip);color:var(--ink-2)}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 9px;border-radius:4px;white-space:nowrap;background:var(--chip);color:var(--ink-2)}
 .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--pc,var(--ink-3))}
 .pill.s-nry{--pc:var(--ink-3)}
 .pill.s-con{--pc:var(--c1)}
@@ -947,7 +947,7 @@ button.tile{display:flex;flex-direction:column;align-items:flex-start;justify-co
 .auto.a-person{color:var(--warn)}
 .auto.a-hold{color:var(--ink-3)}
 .auto.a-stop{color:var(--ink-3);font-weight:500}
-.tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:999px;background:var(--chip);color:var(--ink-2);white-space:nowrap;margin:0 4px 3px 0}
+.tag{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:2px 7px;border-radius:4px;background:var(--chip);color:var(--ink-2);white-space:nowrap;margin:0 4px 3px 0}
 .reason{display:inline-block;font-size:12px;background:var(--warn-soft);color:var(--ink);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:6px;padding:3px 9px;margin:0 6px 6px 0}
 .late{color:var(--bad);font-weight:600}
 
@@ -997,7 +997,7 @@ details.sect > summary{list-style:none;cursor:pointer;padding:11px 14px;font-wei
 details.sect > summary::-webkit-details-marker{display:none}
 details.sect > summary::before{content:"\25B8";color:var(--ink-3);font-size:11px;transition:transform .15s}
 details.sect[open] > summary::before{transform:rotate(90deg)}
-details.sect > summary .cnt{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-3);background:var(--chip);border-radius:999px;padding:1px 8px}
+details.sect > summary .cnt{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--ink-3);background:var(--chip);border-radius:4px;padding:1px 8px}
 details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset:-2px;border-radius:8px}
 .sbody{padding:4px 14px 14px}
 .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -1061,7 +1061,7 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .draft{white-space:pre-wrap;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:13px;min-height:60px;margin-top:10px}
 .draft:empty{display:none}
 .staff{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.staff span{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border-radius:999px;padding:3px 6px 3px 11px;font-size:12.5px}
+.staff span{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border-radius:4px;padding:3px 6px 3px 11px;font-size:12.5px}
 .staff button{border:0;background:none;cursor:pointer;color:var(--ink-3);font-size:14px;line-height:1;padding:0 4px}
 .toast{position:fixed;bottom:18px;left:50%;z-index:130;width:min(460px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--border);border-left:3px solid var(--good);border-radius:7px;padding:11px 14px;font-size:13px;box-shadow:0 10px 28px rgba(6,32,47,.22);opacity:0;transform:translate(-50%,8px);transition:opacity .16s,transform .16s;pointer-events:none}
 .toast.on{opacity:1;transform:translate(-50%,0)}
@@ -1154,7 +1154,7 @@ details.lane > summary .lsub{flex:1 1 100%;font-weight:400;font-size:12px;color:
 .btn.undo[hidden]{display:none}
 .btn.undo .ui{font-size:15px;line-height:1}
 .btn.undo .ul{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.chipset .dn{font-style:normal;font-family:var(--mono);font-size:10.5px;font-weight:600;background:var(--bad);color:#fff;border-radius:999px;padding:0 6px;margin-left:6px}
+.chipset .dn{font-style:normal;font-family:var(--mono);font-size:10.5px;font-weight:600;background:var(--bad);color:#fff;border-radius:4px;padding:0 6px;margin-left:6px}
 .chipset .dn[hidden]{display:none}
 .pastdue{display:block}
 .pd-bar{display:flex;align-items:center;gap:12px 16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--bad);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2)}
@@ -1225,7 +1225,7 @@ button.lvrow:focus-visible{outline:2px solid var(--sky);outline-offset:-2px}
 .stlist .phead > div{flex:1 1 auto;min-width:0}
 .stlist .phead h2{margin:0}
 .stlist .rows{margin-top:12px}
-.selchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft,var(--surface-2));border:1px solid var(--sky);border-radius:999px;padding:4px 6px 4px 12px;font-size:12.5px;font-weight:600;color:var(--ink)}
+.selchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft,var(--surface-2));border:1px solid var(--sky);border-radius:4px;padding:4px 6px 4px 12px;font-size:12.5px;font-weight:600;color:var(--ink)}
 .selchip button{border:0;background:none;color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;padding:0 4px;border-radius:50%}
 .selchip button:hover{color:var(--bad)}
 #iif-filters{scroll-margin-top:calc(var(--hq-h) + 16px)}
@@ -2489,7 +2489,7 @@ function fillRegs(o,box){
     box.appendChild(wrap);}
   box.appendChild(h("div",{class:"hint",style:"margin-top:8px"},"From MISMO's Summit registration reports and attendance records"+(REGSTATE&&REGSTATE.summits?" ("+sLabel(REGSTATE.summits[0])+" to "+sLabel(REGSTATE.summits[REGSTATE.summits.length-1])+"; workgroups "+(REGSTATE.wgSummits&&REGSTATE.wgSummits.length?sLabel(REGSTATE.wgSummits[0])+" onward":"")+")":"")+". Complimentary means a $0 registration: level benefits, sponsor comps or staff-granted."));
 }
-function engOf(o){const e=(ENG.orgs||{})[o.k]||{};return {certs:e.certs||[],spons:e.spons||[],people:e.people||[]};}
+function engOf(o){const e=(ENG.orgs||{})[o.k]||{};return {certs:e.certs||[],spons:e.spons||[],people:CERTP?(CERTP[o.k]||[]):(e.people||[])};}
 
 /* ---------- contacts: Aptify list plus staff edits saved in Member 360 (orgs/{k}.contacts) ---------- */
 const CROLES=["Primary","Alternate","Billing","Marketing","Authorized Signer","VIP","Senior Advisor","IIF Primary","IIF Secondary","IIF Billing"];
@@ -2556,18 +2556,19 @@ function fillEngage(o,box){
     const tb=h("tbody");e.certs.forEach(c=>tb.appendChild(h("tr",null,h("td",null,c.program),h("td",null,c.product||"—"),h("td",{class:"nw"},h("span",{class:"pill "+(c.live?"c-full":"c-open")},c.live?"Active":c.status.replace(/([a-z])([A-Z])/g,"$1 $2"))),h("td",{class:"nw num"},fmt(c.since)),h("td",{class:"nw num"},c.live?fmt(c.renews):"—"))));
     t.appendChild(tb);box.appendChild(h("div",{class:"tblwrap"},t));}
   if(e.people.length){const pa=e.people.filter(x=>x.cert==="AMSP").length,pc=e.people.length-pa;
-    box.appendChild(h("h4",{class:"subh",style:e.certs.length?"margin-top:18px":null},"Certified Professionals ("+[pc?pc+" CMSP":"",pa?pa+" AMSP":""].filter(Boolean).join(", ")+", from mismo.org)"));
+    box.appendChild(h("h4",{class:"subh",style:e.certs.length?"margin-top:18px":null},"Certified Professionals ("+[pc?pc+" CMSP":"",pa?pa+" AMSP":""].filter(Boolean).join(", ")+(CERTP?", from the AMSP and CMSP registers)":", from mismo.org)")));
     const CN={CMSP:"Certified MISMO Standards Professional",AMSP:"Associate MISMO Standards Professional"};
     const role=x=>{const c=o.people.find(p=>samePerson(p,x.name));return c?(c.roles.join(", ")||"On contact list"):"";};
     const rows=e.people.slice().sort((a,b)=>(a.cert===b.cert?0:a.cert==="CMSP"?-1:1)||a.name.localeCompare(b.name));
-    const t=h("table",{class:"tbl"});t.appendChild(h("thead",null,h("tr",null,["Name","Certification","Contact Role"].map(x=>h("th",null,x)))));
-    const tb=h("tbody");rows.forEach(x=>{const r=role(x);tb.appendChild(h("tr",null,h("td",null,x.name),h("td",null,h("span",{class:"tag",style:"margin-right:8px"},x.cert),CN[x.cert]||""),h("td",{class:r?"":"muted"},r||"\u2014")));});
+    const t=h("table",{class:"tbl"});t.appendChild(h("thead",null,h("tr",null,["Name","Certification","Expires","Contact Role"].map(x=>h("th",null,x)))));
+    const tb=h("tbody");rows.forEach(x=>{const r=role(x),late=x.expires&&x.expires<TODAY;tb.appendChild(h("tr",null,h("td",null,x.name),h("td",{class:"nw",title:CN[x.cert]||""},h("span",{class:"tag"},x.cert)),
+      h("td",{class:"nw"+(late?" late":"")},x.expires?fmt(x.expires)+(late?" (expired)":""):"\u2014"),h("td",{class:r?"":"muted"},r||"\u2014")));});
     t.appendChild(tb);box.appendChild(h("div",{class:"tblwrap"},t));}
   if(e.spons.length){box.appendChild(h("h4",{class:"subh",style:"margin-top:18px"},"Summit Sponsorships (from the Sponsorship Portal)"));
     const t=h("table",{class:"tbl"});t.appendChild(h("thead",null,h("tr",null,["Summit","Level","Opportunity","Status",{t:"Amount",r:1}].map(x=>h("th",x.r?{style:"text-align:right"}:null,x.t||x)))));
     const tb=h("tbody");e.spons.forEach(s=>tb.appendChild(h("tr",null,h("td",{class:"nw"},s.event),h("td",{class:"nw"},s.level||"—"),h("td",null,s.opp||"—",s.comps?h("span",{class:"muted"}," · "+s.comps+" complimentary registrations per Summit"):null),h("td",{class:"nw"},s.status),h("td",{class:"nw num",style:"text-align:right"},money(s.amount)))));
     t.appendChild(tb);box.appendChild(h("div",{class:"tblwrap"},t));}
-  box.appendChild(h("div",{class:"hint",style:"margin-top:8px"},"Updated daily from the CMS, the Sponsorship Portal and the certified-professional lists on mismo.org"+(ENG.updatedAt?" · last update "+fmt(ENG.updatedAt.slice(0,10)):"")+"."));
+  box.appendChild(h("div",{class:"hint",style:"margin-top:8px"},"Updated daily from the CMS and the Sponsorship Portal"+(ENG.updatedAt?" (last update "+fmt(ENG.updatedAt.slice(0,10))+")":"")+(CERTP&&APT.certified?". Certified professionals are from the AMSP and CMSP registers uploaded "+fmt(APT.certified.asOf)+".":", and certified professionals from the lists on mismo.org.")));
 }
 /* ---------- activity snapshot: a member-facing picture of the organization's engagement ---------- */
 const SNAP_CATS=[
@@ -4241,6 +4242,9 @@ function isChecks(){
     {key:"apt-norecord",cat:"Name Matching",title:"Aptify Memberships with No Member 360 Record",
       why:"The weekly Aptify upload has an active MISMO membership term for these companies or people, but no Member 360 record has their Company ID (or, for a Sole membership, their name). Their membership doesn't show anywhere in Member 360. Tell Claude which record each belongs to, or mark it Not an Issue.",
       items:()=>APTR.noRecord.map(r=>({id:"a:"+r.name,name:r.name,note:r.note}))},
+    {key:"cert-names",cat:"Name Matching",title:"Certified People Not Matched to a Record",
+      why:"The AMSP and CMSP registers list these people, but their company, email domain and earlier match don't point to exactly one Member 360 record, so they don't show on any record. Most work for non-members or list a personal email. Mark the ones that don't need a record as Not an Issue, and tell Claude which record any of the others belong to.",
+      items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note}))},
     {key:"apt-noterm",cat:"Missing Information",title:"Current Members with No Active Aptify Term",
       why:"Marked as current Non-Lender members, but the weekly Aptify upload has no active MISMO membership term for them. Check Aptify: the membership may have lapsed, been filed under another company, or (for Sole members) under a slightly different name.",
       items:()=>APT&&APT.uploadedAt?O(APTR.noTerm,o=>(o.level||"No level")+" · ends "+fmt(o.thru)):[]},
@@ -4261,7 +4265,9 @@ function isChecks(){
       items:()=>((NSYNC&&NSYNC.conflicts)||[]).map(c=>({id:"c:"+c.name+"|"+c.says,name:c.name,note:c.why}))},
     {key:"lead-nonmember",cat:"Member Counts",title:"Workgroup Leaders from Organizations That Aren't Current Members",
       why:"Serving as a workgroup leader or official representative is a member benefit, but these leaders' organizations aren't current members (or the leader matched a record that has ended). Check whether they should renew, or whether the leader moved companies.",
-      items:()=>O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o))},
+      /* a leader who holds a Sole membership in their own name is a member, whatever company the tracker lists (Brian Stucky at Decision X) */
+      items:()=>{const soleOn=new Set(ORGS.filter(x=>x.life==="Active"&&/^Sole/.test(x.level||"")).map(x=>aptN(x.name)));
+        return O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"&&!leadOf(o).every(x=>soleOn.has(aptN(x.n)))),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o));}},
     {key:"lead-names",cat:"Name Matching",title:"Workgroup Leaders Not Matched to a Record",
       why:"The Leadership Tracker lists these companies (or people, when no company is given), but no Member 360 record matched. Self-employed leaders need a Sole membership in their name to match. Tell Claude which record any of them belong to.",
       items:()=>((LEAD&&LEAD.unmatched)||[]).map(u=>({id:"l:"+u.name,name:u.name,note:u.count+(u.count===1?" leadership seat":" leadership seats")}))},
@@ -4287,11 +4293,11 @@ function isChecks(){
       why:"Marked as lender members, but their "+Y+" IIF is under $1,000 and they aren't on a membership special.",
       items:()=>O(Lm.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
     {key:"nl-none",cat:"Payments",title:"Non-Lender Members with No Payments under Their Name",
-      why:"No payment of any kind is on file under these names. They probably pay under another name: match it under Payer Names to Match.",
-      items:()=>O(NL.filter(o=>!fsItems(o).length),o=>(o.level||"Level not recorded")+" · "+lifeTag(o))},
+      why:"No payment of any kind is on file under these names, and Aptify has no active MISMO term covering "+Y+" for them. They probably pay under another name: match it under Payer Names to Match.",
+      items:()=>O(NL.filter(o=>!fsItems(o).length&&!aptCovers(o,Y)),o=>(o.level||"Level not recorded")+" · "+lifeTag(o))},
     {key:"nl-last",cat:"Payments",title:"Non-Lender Members Whose Last Payment Is for an Earlier Year",
-      why:"Marked as current members, but their latest membership payment covers an earlier year.",
-      items:()=>O(NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)),o=>"Last membership payment is for "+lastMemFor(o)+" · "+(o.level||""))},
+      why:"Marked as current members, but their latest membership payment covers an earlier year, and Aptify has no active MISMO term covering "+Y+" for them.",
+      items:()=>O(NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)&&!aptCovers(o,Y)),o=>"Last membership payment is for "+lastMemFor(o)+" · "+(o.level||""))},
     {key:"not-reported",cat:"Payments",title:"Membership Payments Not on the Monthly Report",
       why:"Membership payments the Financial System received this month with no commitment recorded by the team. Open the record and add it under Sales and Renewals if it belongs on the report.",
       items:()=>paidNotReported(TODAY.slice(0,7)).map(({o,i})=>({id:o.k+"|"+i.d+"|"+i.n,o,note:money(i.n)+" · "+fmt(i.d)+" · "+(i.p||"Membership")}))}];
@@ -4324,6 +4330,7 @@ function isMatchCtl(r){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(!o.aut
   ok.addEventListener("click",()=>{const k=byLabel[inp.value];if(!k){msg.textContent="Pick a name from the list.";return;}saveAlias({map:Object.assign({},ALIAS.map,{[r.name]:k})});toast(r.name+" matched to "+BY[k].name+". It applies at the next morning's sync.");});
   no.addEventListener("click",()=>{saveAlias({ignore:(ALIAS.ignore||[]).concat([r.name])});toast(r.name+" marked as not a member.");});
   return h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,"Belongs to This Record"),inp,msg),h("div",{class:"btnrow",style:"margin-top:0"},ok,no));}
+const ISALL=new Set();
 function isItems(x,wrap){
   const d=x.doc||{},dis=!db||!canWrite;
   const setOk=(id,on)=>{const s=new Set(d.ok||[]);on?s.add(id):s.delete(id);saveIssue(x.id,{ok:[...s]});toast(on?"Marked Not an Issue.":"Put back on the list.");};
@@ -4331,11 +4338,12 @@ function isItems(x,wrap){
     const grp=it.os?h("div",{class:"isgrp"},it.os.map(o=>h("div",null,h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(o.k)},o.name),h("span",{class:"isg-t"},lifeTag(o))))):null;
     const btn=dis?null:h("button",{type:"button",class:"btn ghost sm"},marked?"Put Back":"Not an Issue");if(btn)btn.addEventListener("click",()=>setOk(it.id,!marked));
     return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r):null),btn);};
-  const L=x.list,cap=wrap._all?L.length:25;
+  /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
+  const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
   if(!L.length)box.appendChild(h("div",{class:"hint",style:"padding:10px 12px"},"Nothing to look at right now."));
   const out=[box];
-  if(L.length>cap){const more=h("button",{type:"button",class:"linkbtn",style:"margin-top:8px"},"Show All "+n(L.length));more.addEventListener("click",()=>{wrap._all=true;renderIssues();});out.push(more);}
+  if(L.length>cap){const more=h("button",{type:"button",class:"linkbtn",style:"margin-top:8px"},"Show All "+n(L.length));more.addEventListener("click",e=>{ISALL.add(x.id);e.currentTarget.blur();renderIssues();});out.push(more);}
   if(x.okd.length){const dd=h("details",{class:"sect",style:"margin-top:10px"},h("summary",null,"Marked Not an Issue",h("span",{class:"cnt"},String(x.okd.length))));
     const b2=h("div",{class:"isitems"});x.okd.forEach(it=>b2.appendChild(row(it,true)));dd.appendChild(h("div",{class:"sbody"},b2));out.push(dd);}
   return out;}
@@ -4475,7 +4483,7 @@ function fillBenefits(o,box){box.textContent="";const dis=!db||!canWrite,bl=benL
     inp.addEventListener("change",()=>{const v=Math.max(0,Math.round(Number(inp.value)||0));saveOv(o.k,{bootcamp:Object.assign({},ov(o).bootcamp||{},{[y]:v}),bootcampBy:myName()||""});toast("Saved.");});
     R("Free Boot Camp Seats",n(Math.max(0,ba-u))+" of "+n(ba)+" left for "+y,n(ls)+" used in the registration lists"+(ot?" + "+n(ot)+" recorded here":"")+(u>ba?" · "+n(u-ba)+" more than the level includes":"")+(B?" · next Boot Camp "+fmt(B.date)+(evCode(B)?", comp code "+evCode(B):""):""),h("div",{class:"fld bn-f"},h("label",{for:inp.id},"Other Free Seats in "+y),inp));}
   if(ca){const y=TODAY.slice(0,4),pp=engOf(o).people||[];const co=aptOrders(o,y);
-    if(co){R("Free Certifications",n(Math.max(0,ca-co.free))+" of "+n(ca)+" left for "+y,n(co.free)+" free and "+n(co.paid)+" paid CMSP or AMSP enrollment"+(co.free+co.paid===1?"":"s")+", renewal"+(co.free+co.paid===1?"":"s")+" or exam"+(co.free+co.paid===1?"":"s")+" in "+y+(co.free>ca?" ("+n(co.free-ca)+" more free than the level includes)":"")+" · Aptify orders through "+fmt(APT.orders.asOf)+(pp.length?" · "+n(pp.length)+" certified professionals on mismo.org":""));}
+    if(co){R("Free Certifications",n(Math.max(0,ca-co.free))+" of "+n(ca)+" left for "+y,n(co.free)+" free and "+n(co.paid)+" paid CMSP or AMSP enrollment"+(co.free+co.paid===1?"":"s")+", renewal"+(co.free+co.paid===1?"":"s")+" or exam"+(co.free+co.paid===1?"":"s")+" in "+y+(co.free>ca?" ("+n(co.free-ca)+" more free than the level includes)":"")+" · Aptify orders through "+fmt(APT.orders.asOf)+(pp.length?" · "+n(pp.length)+" certified professional"+(pp.length===1?"":"s"):""));}
     else{const pe=fsItems(o).filter(i=>i.c==="Education"&&/[AC]MSP/.test(i.p||"")&&i.n>0&&i.d.slice(0,4)===y).length;
     R("Free Certifications",n(ca)+" CMSP or AMSP enrollments and renewals a year",(pp.length?n(pp.length)+" certified professionals on mismo.org":"No certified professionals on mismo.org")+" · "+n(pe)+" paid enrollment"+(pe===1?"":"s")+" or renewal"+(pe===1?"":"s")+" in "+y+" · free ones used aren't tracked until the Aptify orders file is uploaded");}}
   if(rows.childElementCount)box.appendChild(rows);
@@ -4585,12 +4593,15 @@ function aptN(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[
 function applyAptify(){
   const R={noRecord:[],noTerm:[],changed:{level:0,thru:0,life:0,joined:0,cu:0,addr:0}};
   ORGS.forEach(o=>{if(o._apt0){Object.assign(o,o._apt0);}delete o.aptStart;delete o.aptTerm;});
-  if(!APT||!APT.terms){APTR=R;return;}
+  if(!APT||!APT.terms){certMatch(R);APTR=R;return;}
   const byCid={},byName={};
   ORGS.forEach(o=>{if(o.cid&&!o.mm)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o);
     /* a Sole record can carry a nickname in brackets, "Prabhakar Bhogaraju (PB)" */
     [...new Set([aptN(o.name),aptN(String(o.name||"").replace(/\s*\([^)]*\)\s*/g," "))])].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
-  const orgFor=cid=>{const c=BY["c"+cid];if(c&&!c.mm)return c;const l=byCid[cid]||[];return l.length===1?l[0]:null;};
+  /* two records can share a Company ID (ServiceLink and "Service Link, A Black Knight..."): the current one gets
+     the term, so a lapsed duplicate isn't revived and the real member isn't listed as having no term */
+  const orgFor=cid=>{const l=(byCid[cid]||[]).slice(),c=BY["c"+cid];if(c&&!c.mm&&!l.includes(c))l.push(c);if(!l.length)return null;
+    const act=l.filter(o=>o.life==="Active");if(act.length===1)return act[0];if(c&&!c.mm&&(!act.length||act.includes(c)))return c;return l.length===1?l[0]:(act[0]||null);};
   const set=(o,f,v)=>{if(o[f]===v)return;if(!o._apt0)o._apt0={level:o.level,thru:o.thru,life:o.life,joined:o.joined,cu:o.cu,addr:o.addr};
     if(!(f in o._apt0))o._apt0[f]=o[f];o[f]=v;R.changed[f]=(R.changed[f]||0)+1;};
   const seen=new Set();
@@ -4611,9 +4622,30 @@ function applyAptify(){
     if(/credit union/i.test(c.ct||"")&&!o.cu)set(o,"cu",true);
     if(!o.addr&&(c.city||c.st))set(o,"addr",[c.city,c.st].filter(Boolean).join(", "));});
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
+  certMatch(R);
   APTR=R;
 }
+/* the certified people in the registers, matched to records: company name (or a confirmed name match), then the
+   email domain when only one record uses it, then the record the same person was matched to before (mismo.org list).
+   Nobody is matched on a guess; the rest are listed in the Issues Log. */
+let CERTP=null;
+const FREEDOM=/^(gmail|yahoo|outlook|hotmail|aol|icloud|comcast|me|msn|live|verizon|att|protonmail)\./;
+function certMatch(R){R.certNo=[];CERTP=null;if(!APT||!APT.certified||!APT.certified.people)return;
+  const byName={},dom={},prior={};
+  ORGS.forEach(o=>{const n=aptN(o.name);if(n)(byName[n]=byName[n]||new Set()).add(o.k);
+    o.people.forEach(p=>{const d=(p.email||"").toLowerCase().split("@")[1];if(d&&!FREEDOM.test(d))(dom[d]=dom[d]||new Set()).add(o.k);});
+    ((ENG.orgs||{})[o.k]||{people:[]}).people&&(((ENG.orgs||{})[o.k]||{}).people||[]).forEach(x=>{(prior[aptN(x.name)]=prior[aptN(x.name)]||new Set()).add(o.k);});});
+  Object.keys(ALIAS.map||{}).forEach(nm=>{const k=ALIAS.map[nm];if(BY[k])(byName[aptN(nm)]=byName[aptN(nm)]||new Set()).add(k);});
+  const one=set=>set&&set.size===1?[...set][0]:null;
+  CERTP={};
+  APT.certified.people.forEach(x=>{const d=(x.e||"").split("@")[1]||"";
+    const k=one(byName[aptN(x.co)])||(d&&!FREEDOM.test(d)?one(dom[d]):null)||one(prior[aptN(x.n)]);
+    if(k&&BY[k])(CERTP[k]=CERTP[k]||[]).push({name:x.n,cert:x.cert,since:x.d,expires:x.x,email:x.e});
+    else R.certNo.push({name:x.n,note:x.cert+" · "+(x.co||"no company")+(x.x?" · expires "+fmt(x.x):"")});});
+}
 /* the Aptify orders for a record (by its Company ID): certifications in a year, and webinar registrations newest first */
+/* Aptify has an active MISMO term that covers some of year y (a prepaid or multi-year term counts) */
+function aptCovers(o,y){const t=o.aptTerm;return !!(t&&t.s<=y+"-12-31"&&t.e>=y+"-01-01");}
 function aptOrders(o,y){if(!APT||!APT.orders||!o.cid)return null;const l=(APT.orders.c[String(o.cid)]||[]).filter(x=>x[0].slice(0,4)===y);
   return {free:l.filter(x=>!x[2]).length,paid:l.filter(x=>x[2]>0).length,list:l};}
 function aptWebinars(o){if(!APT||!APT.orders||!o.cid)return [];return (APT.orders.w[String(o.cid)]||[]).slice().sort((a,b)=>b[0].localeCompare(a[0]));}
@@ -4627,13 +4659,14 @@ function aptDate(v){if(v==null||v==="")return "";if(v instanceof Date&&!isNaN(v)
   const s=String(v).trim();let m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);if(m)return m[1]+"-"+m[2]+"-"+m[3];
   m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);if(m)return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");return "";}
 async function aptRead(files){
-  const X=await loadXlsx();let comp=null,terms=null,ords=null;const names={};
+  const X=await loadXlsx();let comp=null,terms=null,ords=null,certs=null;const names={};
   for(const f of files){const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=X.utils.sheet_to_json(ws,{raw:true,defval:""});const cols=rows.length?Object.keys(rows[0]):[];
     if(cols.includes("Product")&&cols.includes("End Date")&&cols.includes("Subscriber Company")){terms=rows;names.terms={name:f.name,rows:rows.length};}
     else if(cols.includes("ID")&&cols.includes("Name")&&cols.includes("CompanyType")){comp=rows;names.companies={name:f.name,rows:rows.length};}
-    else if(cols.includes("Line1_ProductName")&&cols.includes("Bill To Company")){ords=rows;names.orders={name:f.name,rows:rows.length};}}
-  if(!terms&&!ords)throw new Error("The membership terms file wasn't found. It's the export of Member 360 - MISMO Membership Terms, with Product, Start Date, End Date and Subscriber Company.");
+    else if(cols.includes("Line1_ProductName")&&cols.includes("Bill To Company")){ords=rows;names.orders={name:f.name,rows:rows.length};}
+    else if(cols.includes("Sheet Name")&&cols.includes("Primary")&&cols.includes("Certification Expiry Date")){certs=rows;names.certified={name:f.name,rows:rows.length};}}
+  if(!terms&&!ords&&!certs)throw new Error("The membership terms file wasn't found. It's the export of Member 360 - MISMO Membership Terms, with Product, Start Date, End Date and Subscriber Company.");
   const T={},S=[];let kept=0,skipped=0;
   (terms||[]).forEach(r=>{const lv=APT_LV[String(r["Product"]).trim()];const s=aptDate(r["Start Date"]),e=aptDate(r["End Date"]);
     const who=String(r["Subscriber"]||"").trim(),co=String(r["SubscriberCompany"]||"").trim(),cid=String(r["Subscriber Company"]||"").replace(/\.0+$/,"").trim();
@@ -4654,7 +4687,12 @@ async function aptRead(files){
       if(!cid||!d||/\btest\b/i.test(co))return;if(d>O.asOf)O.asOf=d;
       if(/\b(CMSP|AMSP)\b/.test(nm)){(O.c[cid]=O.c[cid]||[]).push([d,nm.replace(/^MISMO\s+/,""),tot]);}
       else if(nm&&!NOTWEB.test(nm)){if(!(nm in wi)){wi[nm]=O.wt.length;O.wt.push(nm);}(O.w[cid]=O.w[cid]||[]).push([d,wi[nm]]);}});}
-  return {terms:terms?T:null,sole:terms?S:null,companies:comp?C:null,orders:O,files:names,kept,skipped};
+  /* the AMSP and CMSP registers (AMSP_CMSP QuickView: Sheet Name, Primary, E-mail address, Company Name,
+     Certification Date, Certification Expiry Date): the certified people, matched to records on read */
+  let CP=null;
+  if(certs){CP=[];certs.forEach(r=>{const n=String(r["Primary"]||"").trim();if(!n)return;const sh=String(r["Sheet Name"]||"");
+    CP.push({n,e:String(r["E-mail address"]||"").trim().toLowerCase(),co:String(r["Company Name"]||"").trim(),cert:/cmsp/i.test(sh)?"CMSP":"AMSP",d:aptDate(r["Certification Date"]),x:aptDate(r["Certification Expiry Date"])});});}
+  return {terms:terms?T:null,sole:terms?S:null,companies:comp?C:null,orders:O,certified:CP,files:names,kept,skipped};
 }
 function renderApt(){
   const box=$("aptinfo");if(!box)return;const ae=document.activeElement;if(box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;box.textContent="";
@@ -4667,7 +4705,8 @@ function renderApt(){
       h("div",{class:"fact"},h("label",null,"End Dates Set"),h("div",{class:"num"},n(c.thru||0))),
       h("div",{class:"fact"},h("label",null,"Made Current"),h("div",{class:"num"},n(c.life||0))),
       h("div",{class:"fact"},h("label",null,"Joined Dates Filled"),h("div",{class:"num"},n(c.joined||0))),
-      APT.orders?h("div",{class:"fact"},h("label",null,"Orders Through"),h("div",{style:"white-space:nowrap"},fmt(APT.orders.asOf))):null));
+      APT.orders?h("div",{class:"fact"},h("label",null,"Orders Through"),h("div",{style:"white-space:nowrap"},fmt(APT.orders.asOf))):null,
+      APT.certified?h("div",{class:"fact"},h("label",null,"Certified People"),h("div",{class:"num"},n(APT.certified.people.length)+" ("+n(APT.certified.people.length-(APTR.certNo||[]).length)+" matched)")):null));
     box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify is the record for levels and membership dates, so these replace what the member list had. "+n(APTR.noRecord.length)+" Aptify membership"+(APTR.noRecord.length===1?" has":"s have")+" no Member 360 record and "+n(APTR.noTerm.length)+" current Non-Lender member"+(APTR.noTerm.length===1?" has":"s have")+" no active Aptify term. Both lists are in the Issues Log for someone to look at."));}
   else box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"No Aptify files have been uploaded yet."));
   const inp=h("input",{type:"file",id:"apt-files",multiple:true,accept:".xlsx,.xls,.csv",style:"position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"});
@@ -4675,16 +4714,17 @@ function renderApt(){
   pick.addEventListener("click",()=>inp.click());inp.addEventListener("change",()=>{const fs=[...(inp.files||[])];picked.textContent=fs.length?fs.map(f=>f.name).join(", "):"No files chosen";});
   const go=h("button",{type:"button",class:"btn",style:"min-width:max-content",disabled:!db||!canWrite},"Upload Aptify Files");const msg=h("span",{class:"hint",style:"margin:0"});
   box.appendChild(h("div",{class:"fld",style:"margin-bottom:8px"},h("label",{for:"apt-files"},"The Weekly Exports"),inp,h("div",{class:"btnrow",style:"margin-top:4px"},pick,picked)));
-  box.appendChild(h("div",{class:"hint",style:"margin-bottom:10px"},"Choose all three at once: mismo-membership-terms, mismo-member-companies and mismo-orders. A file left out keeps last week's. The Help tab has how to export them."));
+  box.appendChild(h("div",{class:"hint",style:"margin-bottom:10px"},"Choose all three at once: mismo-membership-terms, mismo-member-companies and mismo-orders. The AMSP and CMSP register (AMSP_CMSP QuickView) can go in with them whenever it changes. A file left out keeps last week's. The Help tab has how to export them."));
   box.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},go,msg));
   go.addEventListener("click",async()=>{if(blocked())return;const fs=[...(inp.files||[])];if(!fs.length){msg.textContent="Choose the two files first.";return;}
     go.disabled=true;msg.textContent="Reading the files…";
     try{const r=await aptRead(fs);
       const old=APT||{},now=new Date().toISOString();
       const doc={uploadedAt:now,uploadedBy:ME||"",uploadedByName:myName()||"",files:Object.assign({},old.files||{},r.files),
-        kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null};
+        kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null,
+        certified:r.certified?{asOf:now.slice(0,10),people:r.certified}:(old.certified||null)};
       await db.doc("aptify/main").set(doc);APT=doc;applyAptify();ISGEN++;scheduleRefresh();
-      toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":""].filter(Boolean).join(", ")+".");inp.value="";renderApt();
+      toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":"",r.certified?n(r.certified.length)+" certified people":""].filter(Boolean).join(", ")+".");inp.value="";renderApt();
     }catch(e){msg.textContent=e&&e.message?e.message:"The files couldn't be read.";go.disabled=false;}});
 }
 
@@ -5064,7 +5104,7 @@ async function boot(){
   db.doc("leaders/main").onSnapshot(s=>{LEAD=s.exists?Object.assign({orgs:{},groups:[]},s.data()):{orgs:{},groups:[]};scheduleRefresh();},err);
   db.doc("bootcamp/main").onSnapshot(s=>{BC=s.exists?Object.assign({orgs:{},camps:[]},s.data()):{orgs:{},camps:[]};scheduleRefresh();},err);
   db.collection("meetings").onSnapshot(s=>{const D={};s.docs.forEach(d=>D[d.id]=d.data()||{});const m=D.main||{},orgs={};(m.buckets||[]).forEach(b=>Object.assign(orgs,(D[b]||{}).orgs||{}));MTG=Object.assign({groups:[],unmatched:[]},m,{orgs});MTGC={};scheduleRefresh();},err);
-  db.doc("engage/main").onSnapshot(s=>{ENG=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
+  db.doc("engage/main").onSnapshot(s=>{ENG=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};if(APT){applyAptify();ISGEN++;}scheduleRefresh();},err);
   db.collection("plans").onSnapshot(s=>{PLANS=s.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
   db.collection("touchpoints").onSnapshot(s=>{TP=s.docs.map(d=>Object.assign({id:d.id},d.data()));rebuildIdx();resolveNames();scheduleRefresh();},err);
   db.collection("sends").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());SENDS=m;rebuildIdx();scheduleRefresh();},err);
