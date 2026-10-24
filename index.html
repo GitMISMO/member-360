@@ -4569,7 +4569,7 @@ function tplProblem(st){const t=tplOf(st);if(!t.subject.trim()||!t.body.trim())r
 /* one recipient's values: plain for the subject, HTML-safe for the body */
 function recVals(o,p){const nm=splitName(p.name);const ben=levelBenefits(o).concat(BEN_COMMON);
   return {fn:nm[0]||"there",ln:nm[1]||"",co:o.name,lvl:o.level||"",type:o.type||"",ends:fmt(o.thru),
-    benH:'<ul style="margin:6px 0 22px;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul>",benT:ben.map(x=>"• "+x).join("\n")};}
+    benH:'<ul style="margin:6px 0 0;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>",benT:ben.map(x=>"• "+x).join("\n")};}
 function fillPlain(t,v,sender){return t.replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return sender.name;if(k==="Sender First Name")return sender.name.split(" ")[0];
   const key=MTOK[k];if(!key)return m;return key==="ben"?v.benT:v[key];});}
 /* the email body with %%tokens%% where each recipient's values go */
@@ -4578,7 +4578,7 @@ function bodyTokens(body,sender){
   return paras.map(p=>{
     if(/^\s*\{\{\s*Level Benefits\s*\}\}\s*$/.test(p))return "%%ben%%";
     const lines=p.split("\n");
-    if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 22px;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul>";
+    if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 0;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>";
     return '<p style="margin:0 0 14px">'+lines.join("<br>")+"</p>";
   }).join("").replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return escH(sender.name);if(k==="Sender First Name")return escH(sender.name.split(" ")[0]);const key=MTOK[k];return key?"%%"+key+"%%":m;});
 }
