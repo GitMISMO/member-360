@@ -3962,7 +3962,9 @@ async function dealsMarkSent(){if(blocked())return;const L=dealsShown().filter(d
 function orgLabel(o){return o.name+(o.cid?" \u00b7 ID "+o.cid:" \u00b7 "+o.life);}
 function fillOrgList(){const dl=$("orgnames");if(dl.childElementCount)return;ORGS.forEach(o=>dl.appendChild(h("option",{value:orgLabel(o)})));}
 function renderSync(){
-  const box=$("syncinfo");if(box.contains(document.activeElement))return;box.textContent="";
+  /* don't redraw under someone typing a match; a pressed button inside the panel (Show All, Save Match,
+     Merge Into Existing, Not a Member) still redraws it */
+  const box=$("syncinfo"),ae=document.activeElement;if(box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;box.textContent="";
   if(MMINFO){const up=MMINFO.updated?new Date(MMINFO.updated):null;
     box.appendChild(h("div",{class:"facts"},
       h("div",{class:"fact"},h("label",null,"MISMO Money Payments"),h("div",null,up&&!isNaN(up)?up.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"Received")),
@@ -4015,7 +4017,7 @@ function renderSync(){
       h("div",{class:"fld"},h("label",null,"Member Record"),inp,msg),h("div",{class:"btnrow",style:"margin-top:18px"},ok,no)));
   });
   box.appendChild(list);
-  if(items.length>25&&!box._all)box.appendChild(h("button",{type:"button",class:"linkbtn",style:"margin-top:8px",onclick:()=>{box._all=true;renderSync();}},"Show All "+n(items.length)));
+  if(items.length>25&&!box._all)box.appendChild(h("button",{type:"button",class:"linkbtn",style:"margin-top:8px",onclick:e=>{box._all=true;e.currentTarget.blur();renderSync();}},"Show All "+n(items.length)));
 }
 async function saveAlias(patch){if(blocked())return;ALIAS=Object.assign({map:{},ignore:[]},ALIAS,patch);if(MMF)remergeAct();renderSync();
   try{await db.doc("sync/aliases").set(ALIAS);}catch(e){onWriteErr(e);}}
