@@ -645,8 +645,9 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
      - the application itself: the flow saves it into Member 360's
        Applications section, saves the logo beside it, and emails the details
        to membership@mismo.org.
-   Both go as a form post with one field, "payload", so the browser doesn't
-   have to ask the flow's permission first. The answers are kept in this
+   Both go as a plain-text POST carrying JSON — the same shape the
+   certification forms use — so the browser doesn't have to ask the flow's
+   permission first. The answers are kept in this
    browser as the applicant types, and can be saved to a file and resumed
    later; nothing reaches MISMO until Submit Application is pressed.
    ============================================================================ */
@@ -674,9 +675,9 @@ function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return
 function usd(x){var v=Number(x)||0;return "$"+v.toLocaleString("en-US",{maximumFractionDigits:0});}
 function today(){return new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"});}
 function post(payload,ms){
-  var body=new URLSearchParams();body.set("payload",JSON.stringify(payload));
   var ctl=window.AbortController?new AbortController():null,t=setTimeout(function(){if(ctl)ctl.abort();},ms||45000);
-  return fetch(FLOW_URL,{method:"POST",body:body,signal:ctl?ctl.signal:undefined}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error("HTTP "+r.status);return r.json().catch(function(){return {};});},function(e){clearTimeout(t);throw e;});
+  return fetch(FLOW_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},
+    body:JSON.stringify(payload),signal:ctl?ctl.signal:undefined}).then(function(r){clearTimeout(t);if(!r.ok)throw new Error("HTTP "+r.status);return r.json().catch(function(){return {};});},function(e){clearTimeout(t);throw e;});
 }
 
 
