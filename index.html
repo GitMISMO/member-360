@@ -3716,7 +3716,7 @@ function renderPlays(){
       try{await db.doc("templates/"+st.id).set(b);TPL[st.id]=b;toast(st.name+" wording saved.");}catch(e){onWriteErr(e);}save.disabled=false;});
     sb.appendChild(h("div",{class:"formgrid"},h("div",{class:"fld wide"},h("label",{for:subj.id},"Subject Line"),subj),h("div",{class:"fld wide"},h("label",{for:body.id},"Email Body"),body)));
     sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Text in [brackets] has to be replaced before the email can be sent."));
-    const prow=h("div",{class:"btnrow"},save);if(canEmail()){const ptest=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");ptest.addEventListener("click",()=>playTest(st,ptest));prow.appendChild(ptest);}prow.appendChild(who);sb.appendChild(prow);
+    const prow=h("div",{class:"btnrow"},save);{const ptest=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");ptest.addEventListener("click",()=>playTest(st,ptest));prow.appendChild(ptest);}prow.appendChild(who);sb.appendChild(prow);
     d.appendChild(sb);box.appendChild(d);
   });
   const r=$("plays-rules");r.textContent="";
