@@ -1331,6 +1331,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0;flex:0 0 auto;vertical-alig
 .isi-a small{display:block;font-size:11px;color:var(--ink-3);margin-top:2px}
 .isi-a b{font-weight:600}
 .ismatch{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:8px}
+.ismatch[hidden]{display:none}
 .ismatch .fld{flex:1 1 260px;margin:0}
 .ismatch input{width:100%;border:1px solid var(--border);border-radius:6px;padding:7px 9px;font-size:13px;background:var(--surface);color:var(--ink)}
 .btn.sm{padding:4px 10px;font-size:12px;white-space:nowrap}
@@ -4029,7 +4030,7 @@ function renderSync(){
   box.appendChild(list);
   if(items.length>25&&!box._all)box.appendChild(h("button",{type:"button",class:"linkbtn",style:"margin-top:8px",onclick:e=>{box._all=true;e.currentTarget.blur();renderSync();}},"Show All "+n(items.length)));
 }
-async function saveAlias(patch){if(blocked())return;ALIAS=Object.assign({map:{},ignore:[]},ALIAS,patch);if(MMF)remergeAct();renderSync();
+async function saveAlias(patch){if(blocked())return;ALIAS=Object.assign({map:{},ignore:[]},ALIAS,patch);if(MMF)remergeAct();if(APT)applyAptify();ISGEN++;renderSync();renderIssues();scheduleRefresh();
   try{await db.doc("sync/aliases").set(ALIAS);}catch(e){onWriteErr(e);}}
 function renderBenEvents(){const box=$("benev");if(!box||box.contains(document.activeElement))return;box.textContent="";const dis=!db||!canWrite;
   const L=benEvents();const save=next=>saveSet({benEvents:next});
@@ -4228,11 +4229,11 @@ function isChecks(){
       why:"These companies paid for a membership in the Financial System and weren't in Member 360, so they were added as new members. If one is an existing member under another name, merge it and the two records combine at the next morning's sync.",
       items:()=>ORGS.filter(o=>o.auto&&!(ALIAS.map||{})[o.name]&&!(ALIAS.ignore||[]).includes(o.name)).map(o=>({id:o.k,o,note:(o.level||"Membership")+" · joined "+fmt(joinedOf(o)),r:{name:o.name}}))},
     {key:"speaker-names",cat:"Name Matching",title:"Speaker Companies Not Matched to a Record",
-      why:"Summit HQ's speaker list has speakers from these companies, but no Member 360 record matched, so those speakers don't show on any record. Most are non-members. Mark the ones that don't need a record as Not an Issue, and tell Claude which record any of the others belong to.",
-      items:()=>((SPK&&SPK.unmatched)||[]).map(u=>({id:"s:"+u.name,name:u.name==="(no company)"?"No Company Listed":u.name,note:u.count+" speaker"+(u.count>1?"s":"")}))},
+      why:"Summit HQ's speaker list has speakers from these companies, but no Member 360 record matched, so those speakers don't show on any record. Most are non-members. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
+      fix:"match",items:()=>((SPK&&SPK.unmatched)||[]).map(u=>({id:"s:"+u.name,name:u.name==="(no company)"?"No Company Listed":u.name,note:u.count+" speaker"+(u.count>1?"s":""),r:u.name==="(no company)"?null:{name:u.name}}))},
     {key:"meeting-names",cat:"Name Matching",title:"Meeting Tracker Companies Not Matched to a Record",
-      why:"The Meeting Trackers page lists people from these companies at monthly workgroup meetings, but no Member 360 record matched, so those meetings don't show on any record. Most are non-members, government agencies or consultants. Mark the ones that don't need a record as Not an Issue, and tell Claude which record any of the others belong to.",
-      items:()=>((MTG&&MTG.unmatched)||[]).filter(u=>!/^(self-?employed|retired|independent|\(no company\))$/i.test(u.name)).map(u=>({id:"m:"+u.name,name:u.name,note:n(u.records)+" meeting attendance"+(u.records===1?"":"s")}))},
+      why:"The Meeting Trackers page lists people from these companies at monthly workgroup meetings, but no Member 360 record matched, so those meetings don't show on any record. Most are non-members, government agencies or consultants. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
+      fix:"match",items:()=>((MTG&&MTG.unmatched)||[]).filter(u=>!/^(self-?employed|retired|independent|\(no company\))$/i.test(u.name)).map(u=>({id:"m:"+u.name,name:u.name,note:n(u.records)+" meeting attendance"+(u.records===1?"":"s"),r:{name:u.name}}))},
     {key:"dupes",cat:"Possible Duplicates",title:"Possible Duplicate Records",
       why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Open both, check Aptify, and mark the pair Not an Issue if they really are different companies. Merging records happens in Aptify.",
       items:()=>dupPairs()},
@@ -4241,10 +4242,10 @@ function isChecks(){
       items:()=>O(A.filter(o=>kindIn(o,Y)==="Type Not Recorded"),lifeTag)},
     {key:"apt-norecord",cat:"Name Matching",title:"Aptify Memberships with No Member 360 Record",
       why:"The weekly Aptify upload has an active MISMO membership term for these companies or people, but no Member 360 record has their Company ID (or, for a Sole membership, their name). Their membership doesn't show anywhere in Member 360. Tell Claude which record each belongs to, or mark it Not an Issue.",
-      items:()=>APTR.noRecord.map(r=>({id:"a:"+r.name,name:r.name,note:r.note}))},
+      fix:"match",items:()=>APTR.noRecord.map(r=>({id:"a:"+r.name,name:r.name,note:r.note,r:{name:r.name}}))},
     {key:"cert-names",cat:"Name Matching",title:"Certified People Not Matched to a Record",
-      why:"The AMSP and CMSP registers list these people, but their company, email domain and earlier match don't point to exactly one Member 360 record, so they don't show on any record. Most work for non-members or list a personal email. Mark the ones that don't need a record as Not an Issue, and tell Claude which record any of the others belong to.",
-      items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note}))},
+      why:"The AMSP and CMSP registers list these people, but their company, email domain and earlier match don't point to exactly one Member 360 record, so they don't show on any record. Most work for non-members or list a personal email. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
+      fix:"match",items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note,r:r.co?{name:r.co}:null}))},
     {key:"apt-noterm",cat:"Missing Information",title:"Current Members with No Active Aptify Term",
       why:"Marked as current Non-Lender members, but the weekly Aptify upload has no active MISMO membership term for them. Check Aptify: the membership may have lapsed, been filed under another company, or (for Sole members) under a slightly different name.",
       items:()=>APT&&APT.uploadedAt?O(APTR.noTerm,o=>(o.level||"No level")+" · ends "+fmt(o.thru)):[]},
@@ -4270,7 +4271,7 @@ function isChecks(){
         return O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"&&!leadOf(o).every(x=>soleOn.has(aptN(x.n)))),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o));}},
     {key:"lead-names",cat:"Name Matching",title:"Workgroup Leaders Not Matched to a Record",
       why:"The Leadership Tracker lists these companies (or people, when no company is given), but no Member 360 record matched. Self-employed leaders need a Sole membership in their name to match. Tell Claude which record any of them belong to.",
-      items:()=>((LEAD&&LEAD.unmatched)||[]).map(u=>({id:"l:"+u.name,name:u.name,note:u.count+(u.count===1?" leadership seat":" leadership seats")}))},
+      fix:"match",items:()=>((LEAD&&LEAD.unmatched)||[]).map(u=>({id:"l:"+u.name,name:u.name,note:u.count+(u.count===1?" leadership seat":" leadership seats"),r:{name:u.name}}))},
     {key:"bc-over",cat:"Payments",title:"More Free Boot Camp Seats Used Than the Level Includes",
       why:"These members used more free Boot Camp seats (comp code) in "+TODAY.slice(0,4)+" than their level includes: Chair 10, Executive 5, Associate 3, Corporate 1. Decide whether to allow it or follow up.",
       items:()=>O(ORGS.filter(o=>{const y=TODAY.slice(0,4),u=bootUsed(o,y);if(!u)return false;const lv=benLevel(o,y+"-12-31").lv;return BEN_BOOT[lv]&&u>BEN_BOOT[lv]&&o.life==="Active";}),o=>{const y=TODAY.slice(0,4),lv=benLevel(o,y+"-12-31").lv,u=bootUsed(o,y);return n(u)+(u===1?" free seat":" free seats")+" used in "+y+" · "+lv+" includes "+n(BEN_BOOT[lv]);})},
@@ -4302,6 +4303,7 @@ function isChecks(){
       why:"Membership payments the Financial System received this month with no commitment recorded by the team. Open the record and add it under Sales and Renewals if it belongs on the report.",
       items:()=>paidNotReported(TODAY.slice(0,7)).map(({o,i})=>({id:o.k+"|"+i.d+"|"+i.n,o,note:money(i.n)+" · "+fmt(i.d)+" · "+(i.p||"Membership")}))}];
   C.forEach(c=>{const d=isDoc("auto-"+c.key)||{},ok=new Set(d.ok||[]);let all=[];try{all=c.items();}catch(e){all=[];}
+    if(c.fix==="match"&&c.key!=="auto-added")all=all.filter(x=>!(x.r&&((ALIAS.map||{})[x.r.name]||(ALIAS.ignore||[]).includes(x.r.name))));
     c.all=all;c.list=all.filter(x=>!ok.has(x.id));c.okd=all.filter(x=>ok.has(x.id));c.doc=d;c.id="auto-"+c.key;c.auto=true;
     const rc=d.resolvedCount||0;
     if(!c.list.length){c.status="Resolved";c.clear=d.status!=="Resolved";}
@@ -4324,12 +4326,85 @@ async function saveIssue(id,patch){if(blocked())return;const cur=isDoc(id)||{};
   scheduleRefresh();try{await db.doc("issues/"+id).set(body);}catch(e){onWriteErr(e);}}
 function statusPatch(x,v){const p={status:v};if(v==="Resolved"){p.resolvedAt=TODAY;p.resolvedBy=myName()||"";if(x.auto)p.resolvedCount=x.list.length;}else{p.resolvedAt="";p.resolvedBy="";p.resolvedCount=0;}return p;}
 /* the item lists inside a check */
-function isMatchCtl(r){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(!o.auto)byLabel[orgLabel(o)]=o.k;});
-  const inp=h("input",{type:"text",list:"orgnames",value:r.suggest&&BY[r.suggest]?orgLabel(BY[r.suggest]):"",placeholder:"Start typing a member name","aria-label":"Member record for "+r.name});
-  const ok=h("button",{type:"button",class:"btn",disabled:!db||!canWrite},"Save Match"),no=h("button",{type:"button",class:"btn ghost",disabled:!db||!canWrite},"Not a Member"),msg=h("span",{class:"hint"});
-  ok.addEventListener("click",()=>{const k=byLabel[inp.value];if(!k){msg.textContent="Pick a name from the list.";return;}saveAlias({map:Object.assign({},ALIAS.map,{[r.name]:k})});toast(r.name+" matched to "+BY[k].name+". It applies at the next morning's sync.");});
-  no.addEventListener("click",()=>{saveAlias({ignore:(ALIAS.ignore||[]).concat([r.name])});toast(r.name+" marked as not a member.");});
-  return h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,"Belongs to This Record"),inp,msg),h("div",{class:"btnrow",style:"margin-top:0"},ok,no));}
+/* the closest records for a name, for a person to say yes or no to (never applied on its own).
+   Close Match: the same name once spacing, punctuation and endings (Inc, LLC) are set aside, the same
+   distinctive words, a near-identical spelling of them, or one name inside the other (Docutech).
+   Otherwise shared words count by how rare they are among member names, so "Network" or "Bank" barely count,
+   and the best of those is at most a Possible Match. A Sole member's first name never counts. */
+const SUGC=new Map();const SUG_STOP=new Set(["mortgage","company","inc","llc","corp","corporation","financial","services","service","the","of","and","group","bank","banks","lending","home","homes","loan","loans","solutions","na","co","ltd","lp","llp","fsb","usa","us","for","a","an","in","at","on","department","division","office","network","consultant","consultants","consulting","finance","federal","state","national","agency","international","systems","technology","technologies","tech","software","data","partners","partnership","capital","advisors","advisory","association","credit","union","funding","america","american","first","united","trust","title","real","estate","insurance","settlement","settlements","management","holdings","enterprises","global","digital","platform","labs","bankers","banking","bancorp","savings","lenders","lender","realty","appraisal","notary","escrow","associates","institute","securities","investment","investments","investors","markets","market","resources","properties","community","residential","mutual","strategies","dba","authority","corporation","fund","pros","firm"]);
+const SUG_SELF=/^(self|independent|retired|consultant|freelance|n\/?a|none|personal|private|individual|student|unemployed|tbd)\b/i;
+function sugWords(s){return mmNorm(s).split(" ").filter(w=>w.length>1);}
+function sugSig(ws){return ws.filter(w=>!SUG_STOP.has(w));}
+function sugInit(s){return mmNorm(s).split(" ").filter(w=>w&&!["of","and","the","for","a","an","u","s","us"].includes(w)).map(w=>w[0]).join("");}
+function sugSole(o){return /sole/i.test(o.level||"");}
+function sugIndex(){if(suggestRec.idx&&suggestRec.n===ORGS.length)return suggestRec.idx;const idx={},df={},ini={},short={},sq=[];
+  ORGS.forEach(o=>{if(o.mm||o.auto)return;let ws=[...new Set(sugWords(o.name))];if(sugSole(o))ws=ws.slice(1);
+    ws.forEach(w=>{df[w]=(df[w]||0)+1;if(!SUG_STOP.has(w))(idx[w]=idx[w]||[]).push(o);});
+    if(sugSole(o))return;const n=mmNorm(o.name);sq.push([n.replace(/ /g,""),o]);
+    const i=sugInit(o.name);if(i.length>=3)(ini[i]=ini[i]||[]).push(o);
+    const paren=String(o.name).match(/\(([A-Za-z]{2,6})\)/);if(paren)(short[paren[1].toLowerCase()]=short[paren[1].toLowerCase()]||[]).push(o);
+    if(n&&!n.includes(" ")&&n.length<=6)(short[n]=short[n]||[]).push(o);});
+  suggestRec.idx={idx,df,ini,short,sq,N:ORGS.length};suggestRec.n=ORGS.length;return suggestRec.idx;}
+/* the kind of business a name says it is; two names that say different kinds are never a Close Match */
+const SUG_KIND={bank:["bank","banks","bancorp","savings","credit","union","fcu","trust","bankshares"],mort:["mortgage","lending","loans","loan","lender","lenders","funding","home","homes"],
+  gov:["department","division","office","state","secretary","commission","commissioner","authority","agency","bureau","regulation","county","city"],
+  adv:["consulting","consultant","consultants","advisors","advisory","associates","strategies","solutions","technologies","technology","tech","software","data","systems","analytics","law","pllc","firm"],
+  inv:["securities","investment","investments","investors","markets","capital","asset","management","securitization"],title:["title","escrow","settlement","settlements","closing","notary"]};
+function sugKinds(ws){const k=new Set();ws.forEach(w=>{for(const c in SUG_KIND)if(SUG_KIND[c].includes(w))k.add(c);});return k;}
+function suggestRecs(name){const key=name+"|"+ORGS.length;if(SUGC.has(key))return SUGC.get(key);
+  const t=mmNorm(name);if(!t||SUG_SELF.test(String(name).trim())){SUGC.set(key,[]);return [];}
+  const X=sugIndex(),idf=w=>Math.log((X.N+1)/((X.df[w]||0)+1))*(SUG_STOP.has(w)?0.15:1);
+  const tk=sugKinds(sugWords(name)),twA=[...new Set(sugWords(name))],tw=new Set(twA),sig=sugSig(twA),ts=sig.join(" "),tq=t.replace(/ /g,"");
+  const paren=String(name).match(/\(([A-Za-z]{2,6})\)/);
+  /* initials: a short name like "HUD" against a long one, or a long name against a short record */
+  const acro=new Map();const addA=(L)=>(L||[]).forEach(o=>acro.set(o,L.length));
+  if(!t.includes(" ")&&t.length<=6)addA(X.ini[t]);const ti=sugInit(name);if(ti.length>=3)addA(X.short[ti]);if(paren)addA(X.short[paren[1].toLowerCase()]);
+  const cand=new Set(acro.keys());sig.forEach(w=>(X.idx[w]||[]).forEach(o=>cand.add(o)));
+  if(tq.length>=5)X.sq.forEach(([q,o])=>{if(q.length>=5&&(q.startsWith(tq)||tq.startsWith(q)))cand.add(o);});
+  const out=[];
+  cand.forEach(o=>{if(o.mm||o.auto)return;const n=mmNorm(o.name);if(!n)return;const sole=sugSole(o);
+    let owA=[...new Set(sugWords(o.name))];if(sole)owA=owA.slice(1);const ow=new Set(owA),os=sugSig(owA).join(" "),nq=n.replace(/ /g,"");
+    const shared=[...tw].filter(w=>ow.has(w)),sigShared=shared.filter(w=>!SUG_STOP.has(w));
+    let close=0,eq=false;
+    if(!sole&&nq===tq)close=1;
+    else if(!sole&&ts&&ts===os&&ts.length>=3){close=0.9;eq=true;}
+    else if(ts&&os&&Math.min(ts.length,os.length)>=5&&1-mmLev(ts,os)/Math.max(ts.length,os.length)>=0.85)close=0.85;
+    else if(!sole){const sh=tq.length<nq.length?tq:nq,lg=sh===tq?nq:tq;if(sh.length>=7&&lg.startsWith(sh)&&(sh===tq?ts:os))close=0.8;
+      else{const sw=t.length<n.length?t:n,lw=sw===t?n:t;if(sw.length>=7&&sugSig(sw.split(" ")).length&&(" "+lw+" ").includes(" "+sw+" "))close=0.8;}}
+    if(!close&&acro.has(o))close=acro.get(o)===1?0.78:0.5;
+    if(close&&close<1){const ok=sugKinds(sugWords(o.name));if(tk.size&&ok.size&&![...tk].some(c=>ok.has(c)))close=Math.min(close,0.7);}
+    if(sole&&close)close=Math.min(close,0.7);
+    let sc=close;
+    if(!sc){if(!sigShared.length)return;const uni=new Set([...tw,...ow]);
+      const sumS=shared.reduce((a,w)=>a+idf(w),0),sumU=[...uni].reduce((a,w)=>a+idf(w),0);
+      sc=Math.min(0.72,sumU?sumS/sumU:0);}
+    if(o.life==="Active")sc+=0.01;
+    if(sc>=0.3)out.push({k:o.k,sc,eq});});
+  if(out.filter(x=>x.eq&&x.sc>=0.75).length>1)out.forEach(x=>{if(x.eq)x.sc=Math.min(x.sc,0.7);});
+  out.sort((a,b)=>b.sc-a.sc||String(BY[a.k].name).localeCompare(BY[b.k].name));
+  const r=out.slice(0,3);SUGC.set(key,r);return r;}
+function suggestRec(name){const r=suggestRecs(name);return r.length?r[0]:null;}
+/* the match control under a name: the closest record with Yes / No; No shows the next closest,
+   a field to pick any record, and Not a Member */
+function isMatchCtl(r,payer){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(!o.auto)byLabel[orgLabel(o)]=o.k;});
+  const dis=!db||!canWrite;
+  const save=k=>{saveAlias({map:Object.assign({},ALIAS.map,{[r.name]:k})});toast(r.name+" matched to "+BY[k].name+". "+(payer?"Its payments move over now.":"It shows on that record after the next morning's update."));};
+  const B=(txt,ghost,fn)=>{const b=h("button",{type:"button",class:"btn"+(ghost?" ghost":""),disabled:dis,style:"min-width:max-content"},txt);b.addEventListener("click",fn);return b;};
+  const lab=sc=>sc>=0.75?"Close Match":sc>=0.45?"Possible Match":"Long Shot";
+  const recLine=o=>h("div",null,h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(o.k)},o.name),h("span",{class:"hint"}," · "+[o.level,lifeTag(o)].filter(Boolean).join(" · ")));
+  let sgs=suggestRecs(r.name);if(r.suggest&&BY[r.suggest])sgs=[{k:r.suggest,sc:0.9}].concat(sgs.filter(x=>x.k!==r.suggest)).slice(0,3);
+  const inp=h("input",{type:"text",list:"orgnames",placeholder:"Start typing a member name","aria-label":"Member record for "+r.name});
+  const msg=h("span",{class:"hint"});
+  const ok=B("Save Match",false,()=>{const k=byLabel[inp.value];if(!k){msg.textContent="Pick a name from the list.";return;}save(k);});
+  const notm=B("Not a Member",true,()=>{saveAlias({ignore:(ALIAS.ignore||[]).concat([r.name])});toast(r.name+" marked as not a member. It drops off this list.");});
+  const pick=h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,sgs.length?"Or Pick Another Record":"No Close Record Found. Pick One"),inp,msg),h("div",{class:"btnrow",style:"margin-top:0"},ok,notm));
+  if(!sgs.length)return pick;
+  const others=sgs.slice(1).map(x=>{const o=BY[x.k];return h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,lab(x.sc)),recLine(o)),h("div",{class:"btnrow",style:"margin-top:0"},B("Yes, This One",false,()=>save(x.k))));});
+  const more=h("div",null,...others,pick);more.hidden=true;
+  const top=BY[sgs[0].k];
+  const nah=B("No",true,()=>{first.hidden=true;more.hidden=false;try{inp.focus();}catch(e){}});
+  const first=h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,lab(sgs[0].sc)),recLine(top)),h("div",{class:"btnrow",style:"margin-top:0"},B("Yes, Same Company",false,()=>save(sgs[0].k)),nah));
+  return h("div",null,first,more);}
 const ISALL=new Set();
 function isItems(x,wrap){
   const d=x.doc||{},dis=!db||!canWrite;
@@ -4337,7 +4412,7 @@ function isItems(x,wrap){
   const row=(it,marked)=>{const nm=it.o?h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(it.o.k)},it.o.name):h("b",null,it.name);
     const grp=it.os?h("div",{class:"isgrp"},it.os.map(o=>h("div",null,h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(o.k)},o.name),h("span",{class:"isg-t"},lifeTag(o))))):null;
     const btn=dis?null:h("button",{type:"button",class:"btn ghost sm"},marked?"Put Back":"Not an Issue");if(btn)btn.addEventListener("click",()=>setOk(it.id,!marked));
-    return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r):null),btn);};
+    return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r,x.key==="payer-names"):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
@@ -4613,9 +4688,10 @@ function applyAptify(){
     if(cur.e>=TODAY&&o.life!=="Active")set(o,"life","Active");
     if(!o.joined&&first.s)set(o,"joined",first.s);};
   Object.keys(APT.terms).forEach(cid=>{const ts=APT.terms[cid].filter(t=>t.lv!=="Sole");if(!ts.length)return;
-    const o=orgFor(cid);if(o)take(o,ts);else R.noRecord.push({name:ts[0].co||("Company ID "+cid),note:"Company ID "+cid+" · "+ts[ts.length-1].lv+" · ends "+fmt(ts[ts.length-1].e)});});
+    const am=(ALIAS.map||{})[ts[0].co];const o=orgFor(cid)||(am&&BY[am]&&!BY[am].mm?BY[am]:null);if(o)take(o,ts);else R.noRecord.push({name:ts[0].co||("Company ID "+cid),note:"Company ID "+cid+" · "+ts[ts.length-1].lv+" · ends "+fmt(ts[ts.length-1].e)});});
   const sole={};Object.keys(APT.terms).forEach(cid=>APT.terms[cid].filter(t=>t.lv==="Sole").forEach(t=>(sole[aptN(t.who)]=sole[aptN(t.who)]||[]).push(t)));
   (APT.sole||[]).forEach(t=>(sole[aptN(t.who)]=sole[aptN(t.who)]||[]).push(t));
+  Object.keys(ALIAS.map||{}).forEach(nm=>{const k=ALIAS.map[nm];if(BY[k]&&!BY[k].mm){const n=aptN(nm);if(n&&!(byName[n]||[]).includes(BY[k]))(byName[n]=byName[n]||[]).push(BY[k]);}});
   Object.keys(sole).forEach(n=>{const l=byName[n]||[];const ts=sole[n];
     if(l.length===1)take(l[0],ts);else R.noRecord.push({name:ts[0].who,note:"Sole membership · ends "+fmt(ts[ts.length-1].e)+(l.length>1?" · more than one record has this name":"")});});
   Object.keys(APT.companies||{}).forEach(cid=>{const c=APT.companies[cid],o=orgFor(cid);if(!o)return;
@@ -4641,7 +4717,7 @@ function certMatch(R){R.certNo=[];CERTP=null;if(!APT||!APT.certified||!APT.certi
   APT.certified.people.forEach(x=>{const d=(x.e||"").split("@")[1]||"";
     const k=one(byName[aptN(x.co)])||(d&&!FREEDOM.test(d)?one(dom[d]):null)||one(prior[aptN(x.n)]);
     if(k&&BY[k])(CERTP[k]=CERTP[k]||[]).push({name:x.n,cert:x.cert,since:x.d,expires:x.x,email:x.e});
-    else R.certNo.push({name:x.n,note:x.cert+" · "+(x.co||"no company")+(x.x?" · expires "+fmt(x.x):"")});});
+    else R.certNo.push({name:x.n,co:x.co,note:x.cert+" · "+(x.co||"no company")+(x.x?" · expires "+fmt(x.x):"")});});
 }
 /* the Aptify orders for a record (by its Company ID): certifications in a year, and webinar registrations newest first */
 /* Aptify has an active MISMO term that covers some of year y (a prepaid or multi-year term counts) */
@@ -5120,7 +5196,7 @@ async function boot(){
   db.collection("outbox").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]=d.data());OUTBOX=m;scheduleRefresh();},err);
   if(window.__m360Sent)window.__m360Sent.onData(d=>{const m={};((d&&d.list)||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});MAILED=m;scheduleRefresh();});
   db.collection("deals").onSnapshot(q=>{DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
-  db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW0=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});remergeAct();
+  db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW0=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});remergeAct();if(APT)applyAptify();ISGEN++;
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();scheduleRefresh();},err);
   db.doc("settings/main").onSnapshot(s=>{if(s.exists){SET=Object.assign({staff:[],rules:{}},s.data());}filterOpts();scheduleRefresh();},err);
 }
