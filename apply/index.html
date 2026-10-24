@@ -118,6 +118,31 @@ h1,h2,h3{margin:0}
 .navrow .aside{font-size:13.5px;color:var(--mm-text,#44607a)}
 .btn{cursor:pointer}
 .btn[disabled]{opacity:.6;cursor:progress}
+/* ---------- the saved / progress bar (the certification forms' .bar) ---------- */
+.bar{position:sticky; top:var(--mast-h,62px); z-index:30;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:11px 15px; margin-bottom:20px;}
+.bar .prog{flex:1 1 230px; min-width:180px;}
+.bar .ptxt{font-size:12px; color:var(--ink-3); margin-bottom:6px;
+  display:flex; align-items:baseline; gap:8px; white-space:nowrap;}
+.bar .ptxt b{color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums;}
+.bar .pct{margin-left:auto; font-weight:700; color:var(--navy); font-size:12.5px;
+  font-variant-numeric:tabular-nums;}
+:root[data-theme="dark"] .bar .pct{color:var(--sky);}
+.ptrack{height:8px; border-radius:99px; background:var(--track,#e3f1fc); overflow:hidden;}
+.pfill{height:100%; background:var(--sky); border-radius:99px; transition:width .25s ease;}
+.saved{font-size:12px; color:var(--ink-3); white-space:nowrap;}
+.saved b{color:var(--good); font-weight:600;}
+.bar-acts{display:flex; gap:8px; flex-wrap:wrap;}
+.miss-list{font-size:12.5px; color:var(--ink-2); line-height:1.7; margin:10px 0 0; padding-left:20px;}
+.miss-list a{cursor:pointer; color:var(--mm-blue,#1a8fe3); text-decoration:underline;}
+.toast{position:fixed; top:16px; left:50%; z-index:70; width:min(440px, calc(100vw - 32px));
+  background:var(--surface); color:var(--ink); border:1px solid var(--border);
+  border-left:3px solid var(--good); border-radius:7px; padding:11px 14px; font-size:13px;
+  box-shadow:0 10px 28px rgba(6,32,47,.22); opacity:0; transform:translate(-50%,-8px);
+  transition:opacity .16s ease, transform .16s ease; pointer-events:none;}
+.toast.on{opacity:1; transform:translate(-50%,0);}
 
 /* ---------- review ---------- */
 .rev{border:1px solid var(--mm-line,#cfdeeb);border-radius:12px;margin-bottom:12px;overflow:hidden}
@@ -438,7 +463,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
 <p style="margin: 0 0 14px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: #74bfeb; font-family: inherit; line-height: 1.5;">MISMO Membership</p>
 <h1 style="margin: 0 0 18px; font-family: inherit; font-size: clamp(33px,5.3vw,53px); font-weight: bold; line-height: 1.04; letter-spacing: -.027em; color: #ffffff; text-shadow: 0 2px 18px rgba(7,29,46,.6);">Become a<span style="display: block; color: #74bfeb;">MISMO Member</span></h1>
 <p style="margin: 0 0 12px; font-family: inherit; font-size: clamp(16.5px,1.8vw,19px); font-weight: 500; line-height: 1.5; color: #ffffff; max-width: 40ch;">Join the organizations that shape the standards the mortgage industry runs on.</p>
-<p style="margin: 0; font-family: inherit; font-size: 15px; line-height: 1.6; color: #a9d8f3; max-width: 52ch;">Five short steps: your organization, a membership level, your contacts, a signature and a review. Have your contacts&rsquo; details and your company logo handy.</p>
+<p style="margin: 0; font-family: inherit; font-size: 15px; line-height: 1.6; color: #a9d8f3; max-width: 52ch;">Five short steps: your organization, a membership level, your contacts, a signature and a review. Look through every step first to see what to gather &mdash; your answers are kept as you type, so you can come back whenever you like.</p>
 <div style="margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px; max-width: 560px;"><a href="#form" style="flex: 1 1 190px; min-width: max-content; box-sizing: border-box; display: block; text-align: center; white-space: nowrap; padding: 14px 22px; border-radius: 8px; background: linear-gradient(180deg,#2e9dee 0%,#1a8fe3 100%); box-shadow: 0 5px 16px -4px rgba(26,143,227,.55); color: #ffffff; font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; text-decoration: none; border: 1.5px solid #1a8fe3;">Start the Application&nbsp;&rarr;</a></div>
 </div>
 <div style="flex: 0 1 200px; box-sizing: border-box; min-width: 170px; border-left: 1px solid rgba(116,191,235,.35); padding-left: 26px;">
@@ -456,10 +481,23 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   <div class="sect-head">
     <p class="mm-eyebrow">Application</p>
     <h2>Apply for MISMO Membership</h2>
-    <p>Work through the five steps below. Required answers are marked when something is missing, and you can go back to any step before you submit.</p>
+    <p>Work through the five steps in any order &mdash; look ahead at any time to see what you&rsquo;ll need to gather. Required answers are marked, the bar shows how much is left, and everything is kept as you type: use Save to take a copy away with you, and Resume to pick it back up.</p>
   </div>
   <div class="note"><b>Note to lenders:</b> Membership for lenders comes through MISMO's annual Innovation Investment Fee, so lenders don't complete this application. For information, email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</div>
   <div class="stages" id="steps" role="tablist" aria-label="Application steps"></div>
+
+  <div class="bar">
+    <div class="prog">
+      <div class="ptxt" id="ptxt"></div>
+      <div class="ptrack"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    </div>
+    <div class="saved" id="saved"></div>
+    <div class="bar-acts">
+      <button class="btn ghost" type="button" id="saveprog" title="Save a file you can open again later to carry on">Save</button>
+      <button class="btn ghost" type="button" id="loadprog" title="Open a file you saved earlier and carry on from there">Resume</button>
+      <input type="file" id="progfile" accept=".json,application/json" hidden>
+    </div>
+  </div>
 
   <form id="appform" novalidate autocomplete="on">
     <div class="hp" aria-hidden="true"><label>Fax <input type="text" name="fax" id="fax" tabindex="-1" autocomplete="off"></label></div>
@@ -562,6 +600,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <h2 class="ph">Review and Submit</h2>
       <p class="lead">Check everything below. Use Edit to change a section.</p>
       <div id="review"></div>
+      <div id="notready" class="problem" hidden></div>
       <div id="problem" class="problem" hidden></div>
       <div class="navrow"><button type="button" class="btn ghost" data-go="back">Back</button><button type="button" class="btn" id="submit">Submit Application</button></div>
     </section>
@@ -579,6 +618,8 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     </section>
   </form>
 </div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <footer class="mm-footer">
   <div class="mm-footer-bar">
     <a class="mm-f-logo" href="https://collaborate.mismo.org/mismowebsite/home"><svg class="mm-f-mark" role="img" aria-label="MISMO" viewBox="0 0 708 108"><use href="#mismo-logo"/></svg></a>
@@ -605,7 +646,9 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
        Applications section, saves the logo beside it, and emails the details
        to membership@mismo.org.
    Both go as a form post with one field, "payload", so the browser doesn't
-   have to ask the flow's permission first. Nothing is kept in the browser.
+   have to ask the flow's permission first. The answers are kept in this
+   browser as the applicant types, and can be saved to a file and resumed
+   later; nothing reaches MISMO until Submit Application is pressed.
    ============================================================================ */
 var FLOW_URL = "PASTE_FLOW_URL_HERE";
 var STARTED = new Date().toISOString();
@@ -624,7 +667,7 @@ var STEPS = ["Organization","Level","Contacts","Authorization","Review"];
 var SUBS = ["Name, address, sector, logo","Choose a membership level","Four contacts","Signer and policies","Check and submit"];
 
 var $ = function(id){return document.getElementById(id);};
-var form = $("appform"), step = 0, maxStep = 0, sending = false, LOGO = null, levelsFrom = "page";
+var form = $("appform"), step = 0, maxStep = 0, sending = false, LOGO = null, levelsFrom = "page", WANT_LEVEL = "";
 function val(id){var e=$(id);return e?String(e.value||"").trim():"";}
 function radio(n){var e=form.querySelector('input[name="'+n+'"]:checked');return e?e.value:"";}
 function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
@@ -639,7 +682,7 @@ function post(payload,ms){
 
 /* ---------- levels: drawn from whatever list is current ---------- */
 function drawLevels(){
-  var box=$("levels"),was=radio("level");box.innerHTML="";
+  var box=$("levels"),was=radio("level")||WANT_LEVEL;box.innerHTML="";
   LEVELS.forEach(function(L){
     var d=document.createElement("div");d.className="level";
     d.innerHTML='<label><input type="radio" name="level" value="'+esc(L.v)+'"><span class="lt">'+esc(L.l)+'</span><span class="lp">'+(L.price?usd(L.price)+" a year":"")+'</span>'+(L.blurb?'<span class="ls">'+esc(L.blurb)+'</span>':'')+'</label>'+
@@ -685,7 +728,7 @@ function takeLogo(f){
   var rd=new FileReader();
   rd.onload=function(){var s=String(rd.result||""),i=s.indexOf(",");
     LOGO={name:f.name.replace(/[^\w.\- ]+/g,"_").slice(-120),type:f.type||"application/octet-stream",size:f.size,data:s.slice(i+1),preview:/^image\/(png|jpeg|svg\+xml)$/.test(f.type)?s:""};
-    box.classList.remove("bad");paintLogo();};
+    box.classList.remove("bad");paintLogo();touch();};
   rd.readAsDataURL(f);
 }
 function paintLogo(){
@@ -708,26 +751,71 @@ function adapt(){
 form.addEventListener("change",function(e){if(e.target.name==="sector")adapt();var f=e.target.closest(".f");if(f&&e.target.id!=="logo")f.classList.remove("bad");});
 form.addEventListener("input",function(e){var f=e.target.closest(".f");if(f)f.classList.remove("bad");});
 
-/* ---------- checking a step ---------- */
+/* ---------- checking a step ----------
+   scan() is the single place that works out what a step is still missing.
+   mark=true paints the fields red; mark=false only counts, so the bar, the
+   step tabs and the review list can all ask without turning the page red. */
 var EMAIL=/^[^\s@]{1,64}@[^\s@]+\.[A-Za-z]{2,}$/;
 function shown(el){return !!(el.offsetParent||el.getClientRects().length);}
-function check(i){
-  var p=form.querySelector('[data-step="'+i+'"]'),bad=[];
-  if(i===0&&radio("sector")==="Lender"){$("lenderStop").scrollIntoView({block:"center",behavior:"smooth"});return false;}
+var NEEDLABEL={agree:"Agreement to MISMO's policies",logo:"Company Logo",signature:"Signature",level:"Membership Level",sector:"Industry Sector",focus:"Commercial or Residential"};
+function fieldLabel(f){
+  var k=f.dataset.need,t=NEEDLABEL[k];
+  if(!t){var l=f.querySelector("label");t=l?String(l.textContent||""):"";}
+  t=t.replace(/\(optional\)/ig,"").replace(/\s+/g," ").trim();
+  if(t.length>70)t=t.slice(0,70).replace(/\s\S*$/,"")+"\u2026";
+  var c=f.closest(".contact");
+  if(c){var b=c.querySelector(".ch b");if(b)t=String(b.textContent||"").replace(/\(optional\)/ig,"").replace(/\s+/g," ").trim()+" \u2014 "+t;}
+  return t;
+}
+function scan(i,mark){
+  var p=form.querySelector('[data-step="'+i+'"]'),bad=[],need=0,miss=0;
+  var lender=(i===0&&radio("sector")==="Lender");
+  /* A step the applicant isn't looking at is display:none, and a hidden field
+     measures as hidden. The panel is shown for the length of this function so
+     every step can be counted from anywhere; nothing is painted in between. */
+  var washidden=p.hidden; if(washidden)p.hidden=false;
+  try{
   p.querySelectorAll("[data-need]").forEach(function(f){
-    if(!shown(f))return;var k=f.dataset.need,ok=true;
+    if(!shown(f))return;var k=f.dataset.need,ok=true,opt=false;
     if(["sector","focus","level"].indexOf(k)>=0)ok=!!radio(k);
     else if(k==="agree")ok=$("agree").checked;
-    else if(k==="logo"){ok=!!LOGO;if(!ok&&!f.classList.contains("bad"))$("logoErr").textContent="Add your company logo.";}
+    else if(k==="logo"){ok=!!LOGO;if(!ok&&mark&&!f.classList.contains("bad"))$("logoErr").textContent="Add your company logo.";}
     else if(k==="signature"){var sg=val("signature").toLowerCase().replace(/\s+/g," "),nm=person("signer").name.toLowerCase().replace(/\s+/g," ").trim();
-      ok=sg.length>=3;$("sigErr").textContent="Type the signer's full name.";
-      if(ok&&nm&&sg!==nm){ok=false;$("sigErr").textContent="This should match the authorized signer: "+person("signer").name+".";}}
+      ok=sg.length>=3;if(mark)$("sigErr").textContent="Type the signer's full name.";
+      if(ok&&nm&&sg!==nm){ok=false;if(mark)$("sigErr").textContent="This should match the authorized signer: "+person("signer").name+".";}}
     else{var e=$(k);if(!e)return;var v=val(k);
-      var opt=f.dataset.opt==="1"||(/^alternate-/.test(k)&&!["first","last","title","email","phone"].some(function(x){return val("alternate-"+x);}));
+      opt=f.dataset.opt==="1"||(/^alternate-/.test(k)&&!["first","last","title","email","phone"].some(function(x){return val("alternate-"+x);}));
       ok=opt&&!v?true:!!v;if(ok&&v&&e.type==="email")ok=EMAIL.test(v);}
-    f.classList.toggle("bad",!ok);if(!ok)bad.push(f);});
-  if(bad.length){var t=bad[0].querySelector("input:not([type=file]),select,textarea");try{(t||bad[0]).focus({preventScroll:true});}catch(e){}bad[0].scrollIntoView({block:"center",behavior:"smooth"});}
-  return !bad.length;
+    if(!opt)need++;
+    if(mark)f.classList.toggle("bad",!ok);
+    if(!ok){bad.push({el:f,label:fieldLabel(f)});if(!opt)miss++;}});
+  }finally{ if(washidden)p.hidden=true; }
+  return {bad:bad,need:need,done:Math.max(0,need-miss),lender:lender};
+}
+/* kept for the one caller that wants the old behaviour: mark, focus, report */
+function check(i){
+  var r=scan(i,true);
+  if(r.lender){$("lenderStop").scrollIntoView({block:"center",behavior:"smooth"});return false;}
+  if(r.bad.length){var t=r.bad[0].el.querySelector("input:not([type=file]),select,textarea");
+    try{(t||r.bad[0].el).focus({preventScroll:true});}catch(e){}
+    r.bad[0].el.scrollIntoView({block:"center",behavior:"smooth"});}
+  return !r.bad.length;
+}
+/* everything still outstanding, across the four answering steps */
+function allMissing(){
+  var out=[];
+  for(var i=0;i<4;i++){
+    var r=scan(i,false);
+    if(r.lender)out.push({step:0,plain:true,label:"Lenders don't complete this application \u2014 membership for lenders comes through the Innovation Investment Fee"});
+    r.bad.forEach(function(b){out.push({step:i,label:b.label});});
+  }
+  return out;
+}
+function totals(){
+  var done=0,need=0,per=[];
+  for(var i=0;i<4;i++){var r=scan(i,false);per[i]={done:r.done,need:r.need};done+=r.done;need+=r.need;}
+  per[4]={done:0,need:0};
+  return {done:done,need:need,per:per};
 }
 
 /* ---------- collecting the answers ---------- */
@@ -766,21 +854,46 @@ function revHtml(a,edit){return sections(a).map(function(s){return '<div class="
 
 /* ---------- moving between steps ---------- */
 function paintSteps(){
+  var T=totals();
   $("steps").innerHTML=STEPS.map(function(t,i){var cur=i===step,done=i<=maxStep&&!cur;
-    return '<button type="button" role="tab" class="stage'+(cur?' on':'')+(done?' past':'')+'" data-to="'+i+'" aria-selected="'+cur+'"'+(i>maxStep||step===5?" disabled":"")+'><span class="num">'+(i+1)+'.</span> <span class="t">'+t+'</span><span class="sn">'+SUBS[i]+'</span></button>';}).join("");
+    var sn=SUBS[i]+(i<4&&T.per[i].need?" \u00b7 "+T.per[i].done+" of "+T.per[i].need:"");
+    return '<button type="button" role="tab" class="stage'+(cur?' on':'')+(done?' past':'')+'" data-to="'+i+'" aria-selected="'+cur+'"'+(step===5?" disabled":"")+'><span class="num">'+(i+1)+'.</span> <span class="t">'+t+'</span><span class="sn">'+sn+'</span></button>';}).join("");
+  paintProgress(T);
 }
-function go(i){if(i>step){for(var k=step;k<i;k++)if(!check(k)){show(k);return;}}show(i);}
+function paintProgress(T){
+  T=T||totals();
+  var pct=T.need?Math.round(T.done/T.need*100):0,p=$("ptxt"),f=$("pfill");
+  if(p)p.innerHTML='<span><b>'+T.done+'</b> of <b>'+T.need+'</b> filled in</span><span class="pct">'+(pct===100?"Complete":pct+"%")+'</span>';
+  if(f)f.style.width=pct+"%";
+}
+/* What is still missing, said plainly, with a way back to each answer. */
+function paintNotReady(){
+  var box=$("notready");if(!box)return;
+  var miss=allMissing();
+  if(!miss.length){box.hidden=true;box.innerHTML="";return;}
+  box.hidden=false;
+  box.innerHTML='<b>Not ready to send yet.</b> These are needed before the application can go to MISMO:'+
+    '<ul class="miss-list">'+miss.map(function(m){
+      return m.plain?'<li>'+esc(m.label)+'</li>'
+        :'<li><a data-to="'+m.step+'">'+esc(m.label)+'</a> \u2014 step '+(m.step+1)+', '+esc(STEPS[m.step])+'</li>';}).join("")+'</ul>';
+}
+/* Moving on is never blocked: the step being left is marked so nothing is a
+   surprise later, but the applicant can read every step before filling any. */
+function go(i){if(i>step){for(var k=step;k<i;k++)scan(k,true);}show(i);}
 function show(i){
   step=i;if(i<5)maxStep=Math.max(maxStep,i);
   form.querySelectorAll("[data-step]").forEach(function(p){p.hidden=Number(p.dataset.step)!==i;});
-  if(i===4){$("review").innerHTML=revHtml(collect(),true);$("problem").hidden=true;}
+  if(i===4){$("review").innerHTML=revHtml(collect(),true);$("problem").hidden=true;paintNotReady();}
   paintSteps();
   var top=$("steps");if(window.scrollY>top.offsetTop-20)window.scrollTo({top:Math.max(0,top.offsetTop-20),behavior:"smooth"});
+  /* Where they are is part of the draft, but only once there is a draft to add it to. */
+  if(savedAt)touch();
 }
 $("steps").addEventListener("click",function(e){var b=e.target.closest("button[data-to]");if(b&&!b.disabled)go(Number(b.dataset.to));});
 form.addEventListener("click",function(e){
   var g=e.target.closest("[data-go]");if(g){go(g.dataset.go==="next"?step+1:step-1);return;}
-  var ed=e.target.closest("[data-edit]");if(ed)show(Number(ed.dataset.edit));
+  var ed=e.target.closest("[data-edit]");if(ed){show(Number(ed.dataset.edit));return;}
+  var to=e.target.closest("[data-to]");if(to){var n=Number(to.dataset.to);show(n);scan(n,true);return;}
 });
 form.addEventListener("submit",function(e){e.preventDefault();});
 
@@ -791,7 +904,14 @@ function newRef(){var d=new Date(),y=String(d.getFullYear()).slice(2),m=String(d
   for(var j=0;j<4;j++)r+=A[b[j]%A.length];return "MA-"+y+m+dd+"-"+r;}
 var REF=null;
 $("submit").addEventListener("click",function(){
-  if(sending)return;for(var k=0;k<4;k++)if(!check(k)){show(k);return;}
+  if(sending)return;
+  var missing=allMissing();
+  if(missing.length){
+    for(var k=0;k<4;k++)scan(k,true);
+    paintSteps();paintNotReady();
+    $("notready").scrollIntoView({block:"center",behavior:"smooth"});
+    return;
+  }
   var a=collect(),btn=$("submit"),prob=$("problem");REF=REF||newRef();
   var rows=[["Reference",REF],["Submitted",new Date().toLocaleString("en-US",{timeZone:"America/New_York",dateStyle:"long",timeStyle:"short"})+" ET"]];
   sections(a).forEach(function(s){rows.push(["",s.t]);s.rows.forEach(function(r){if(r[1])rows.push(r);});});
@@ -809,6 +929,7 @@ $("submit").addEventListener("click",function(){
   });
 });
 function finish(a){
+  try{localStorage.removeItem(KEY);}catch(e){}
   $("doneRef").textContent=REF;
   var bill=a.contacts.billing&&!a.contacts.billing.sameAsPrimary?a.contacts.billing:a.contacts.primary;
   var steps=["MISMO's membership team reviews your application and sets up your membership.",
@@ -820,9 +941,92 @@ function finish(a){
 }
 $("printBtn").addEventListener("click",function(){window.print();});
 
+/* ---------- keeping the answers: the Save and Resume of the certification forms ----------
+   Written through one pair of functions, so the browser could be swapped for the
+   relay later without touching a single control. */
+var KEY="mismo.apply.membership",saveTimer=null,savedAt=null,toastTimer=null;
+function snapshot(){
+  var d={};
+  form.querySelectorAll("input,select,textarea").forEach(function(e){
+    if(e.id==="fax"||e.type==="file")return;
+    if(e.type==="radio"){if(e.checked&&e.name)d["r:"+e.name]=e.value;return;}
+    if(e.type==="checkbox"){d["c:"+(e.id||("same:"+(e.dataset.same||"")))]=!!e.checked;return;}
+    if(e.id)d[e.id]=e.value;});
+  return {v:1,step:step,data:d,logo:LOGO};
+}
+function applySnap(snap){
+  if(!snap||!snap.data)return;
+  var d=snap.data;
+  Object.keys(d).forEach(function(k){
+    if(k.indexOf("r:")===0){var n=k.slice(2);if(n==="level")WANT_LEVEL=d[k];
+      var r=form.querySelector('input[name="'+n+'"][value="'+String(d[k]).replace(/"/g,"")+'"]');if(r)r.checked=true;return;}
+    if(k.indexOf("c:")===0){var id=k.slice(2);
+      var el=id.indexOf("same:")===0?form.querySelector('input[data-same="'+id.slice(5)+'"]'):$(id);
+      if(el){el.checked=!!d[k];if(el.dataset.same)$("c-"+el.dataset.same).dataset.same=el.checked?"1":"";}
+      return;}
+    var e=$(k);if(e&&e.type!=="file")e.value=d[k];});
+  if(snap.logo){LOGO=snap.logo;}
+  paintLogo();adapt();
+}
+/* A logo can be bigger than the browser will keep. Rather than lose the whole
+   draft, the answers are kept and the logo is asked for again. */
+function persist(){
+  var snap=snapshot();snap.savedAt=new Date().toISOString();
+  try{localStorage.setItem(KEY,JSON.stringify(snap));savedAt=new Date();}
+  catch(e){snap.logo=null;snap.logoDropped=true;
+    try{localStorage.setItem(KEY,JSON.stringify(snap));savedAt=new Date();}catch(e2){}}
+  paintSaved();
+}
+function restore(){
+  try{var raw=localStorage.getItem(KEY);if(!raw)return;
+    var o=JSON.parse(raw);applySnap(o);
+    if(o.savedAt)savedAt=new Date(o.savedAt);
+    if(typeof o.step==="number"&&o.step>=0&&o.step<5)step=o.step;
+  }catch(e){}
+}
+function touch(){if(saveTimer)clearTimeout(saveTimer);saveTimer=setTimeout(function(){persist();paintSteps();if(step===4)paintNotReady();},400);}
+function paintSaved(){
+  var s=$("saved");if(!s)return;
+  if(!savedAt){s.innerHTML="<span>Not saved yet</span>";return;}
+  var hh=savedAt.getHours(),mm=String(savedAt.getMinutes()).padStart(2,"0");
+  var ap=hh>=12?"pm":"am";hh=hh%12||12;
+  s.innerHTML="<b>Saved</b> at "+hh+":"+mm+" "+ap;
+}
+function toast(msg){var t=$("toast");if(!t)return;t.textContent=msg;t.classList.add("on");
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("on");},2600);}
+function linkDownload(name,text,type){
+  try{var blob=new Blob([text],{type:type||"application/json"});var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1500);}
+  catch(e){toast("This browser would not save the file \u2014 please try another.");}
+}
+function saveProgress(){
+  var snap=snapshot();snap.mismoForm="membership";snap.savedAt=new Date().toISOString();
+  linkDownload("mismo-membership-application-in-progress.json",JSON.stringify(snap,null,2),"application/json");
+  toast("Progress saved to your computer. Use Resume to pick it up again.");
+}
+function loadProgress(file){
+  var r=new FileReader();
+  r.onload=function(){
+    var snap;
+    try{snap=JSON.parse(String(r.result));}catch(e){toast("That file could not be read \u2014 please choose the progress file you saved.");return;}
+    if(!snap||!snap.data||typeof snap.data!=="object"){toast("That file is not a saved MISMO form.");return;}
+    if(snap.mismoForm&&snap.mismoForm!=="membership"){toast("That progress file is for the "+snap.mismoForm+" form, not this one.");return;}
+    applySnap(snap);drawLevels();persist();
+    show(typeof snap.step==="number"&&snap.step>=0&&snap.step<5?snap.step:0);
+    toast("Picked up where you left off.");
+  };
+  r.readAsText(file);
+}
+form.addEventListener("input",touch);
+form.addEventListener("change",touch);
+$("saveprog").addEventListener("click",saveProgress);
+$("loadprog").addEventListener("click",function(){$("progfile").click();});
+$("progfile").addEventListener("change",function(e){var f=e.target.files&&e.target.files[0];if(f)loadProgress(f);e.target.value="";});
+
 /* Phone and tablet menu: the hamburger opens the same menu as a panel under the header bar. */
 (function(){var h=document.querySelector(".mm-header"),b=h.querySelector(".mm-burger");b.addEventListener("click",function(){var o=h.classList.toggle("is-open");b.setAttribute("aria-expanded",o?"true":"false");b.setAttribute("aria-label",o?"Close menu":"Open menu");});document.addEventListener("keydown",function(e){if(e.key==="Escape"&&h.classList.contains("is-open")){h.classList.remove("is-open");b.setAttribute("aria-expanded","false");b.focus();}});})();
-adapt();paintSteps();loadLevels();
+restore();adapt();paintLogo();paintSaved();show(step);loadLevels();
 })();
 </script>
 </body>
