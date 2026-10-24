@@ -248,6 +248,9 @@
     var attempt = function () {
       return ensure(f).then(function () {
         var next = applyOps(f, clone(f.server), batch);
+        /* the email outbox also carries its batches as a plain list: Power Automate can
+           loop over a list but not over an object (the Sponsorship Portal does the same) */
+        if (f.name === 'outbox') next.list = Object.keys(next.docs).map(function (k) { return Object.assign({ id: idOf(k) }, next.docs[k]); });
         if (JSON.stringify(next).length > MAX_FILE) throw err('TOO_BIG', 'This part of Member 360 has grown too big to save in one piece.');
         return put(f.name, { content: next, sha: f.sha }).then(function (b) {
           f.server = next; f.sha = (b && b.sha) || f.sha; f.loadedAt = now();
@@ -662,6 +665,31 @@
   window.__m360Money = {
     onData: function (cb) { MM.cbs.push(cb); if (MM.sha !== undefined) { try { cb(MM.data); } catch (e) { console.error(e); } } },
     refresh: loadMoney, status: function () { return { at: MM.at, sha: MM.sha, error: MM.err, has: !!MM.data }; }
+  };
+
+  /* ---------- what Power Automate has sent ----------
+     Pressing Send in Member 360 saves an email batch into data/outbox.json. That save is a
+     commit to member-360-data, and the repository's webhook wakes the "Member 360 Emails"
+     flow, which sends each email from the person who pressed Send (their own Outlook) and
+     records the result in data/outbox-sent.json. Only the flow writes that file; this page
+     reads it every minute while it is open. */
+  var SENT_FILE = 'outbox-sent', SENT_POLL_MS = 60000;
+  var SN = { data: null, sha: undefined, at: 0, cbs: [], busy: false };
+  function loadSent() {
+    if (SN.busy || !ready || !(RS() && RS().token())) return Promise.resolve();
+    SN.busy = true;
+    return net('GET', SENT_FILE).then(function (b) {
+      var sha = (b && b.sha) || null; SN.at = now();
+      if (sha === SN.sha) return;
+      SN.sha = sha; SN.data = (b && b.data) || null;
+      SN.cbs.forEach(function (cb) { try { cb(SN.data); } catch (e) { console.error(e); } });
+    }, function () { SN.at = now(); }).then(function () { SN.busy = false; });
+  }
+  setInterval(function () { if (document.visibilityState !== 'hidden' && now() - SN.at >= SENT_POLL_MS) loadSent(); }, 15000);
+  whenReady().then(loadSent);
+  window.__m360Sent = {
+    onData: function (cb) { SN.cbs.push(cb); if (SN.sha !== undefined) { try { cb(SN.data); } catch (e) { console.error(e); } } },
+    refresh: function () { SN.at = 0; return loadSent(); }
   };
 
   /* ---------- the door ---------- */
@@ -2204,6 +2232,9 @@ function renderProfile(o,box){
   if(o.auto)F("Source","Added automatically from a Financial System payment. Add contacts and the Company ID in Aptify.");
   if(renewable(o))facts.appendChild(h("div",{class:"fact"},h("label",null,RY+" Dues"),h("div",{"data-part":"dues"},"\u2014")));
   box.appendChild(facts);
+  if(canEmail()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
+    se.addEventListener("click",()=>{const nx=nextStep(o);openSend({stId:nx?nx.st.id:"r90",thru:o.thru||"",orgs:[o],pick:true});});
+    box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},se));}
   box.appendChild(h("div",{"data-part":"ctrls"}));
   box.appendChild(h("div",{"data-part":"reasons"}));
   if(renewable(o))box.appendChild(sect("Renewal Timeline","timeline",null));
@@ -3229,15 +3260,16 @@ function renderWeek(){
     b1.addEventListener("click",()=>{const rows=[["Email","First Name","Last Name","Company","Company ID","Contact Role","Membership Level","Member Type","Membership Ends","Renewal Email","Level Benefits"]];
       rec.forEach(([o,p])=>{const nm=splitName(p.name);rows.push([p.email,nm[0],nm[1],o.name,o.cid,p.roles.join("; "),o.level,o.type,fmt(o.thru),g.st.name,benefitsText(o)]);});
       offer("member360-"+slug+"-"+g.d+".csv",csv(rows));});
-    const b2=h("button",{type:"button",class:"btn ghost"},"Download Do-Not-Send List");
-    b2.addEventListener("click",()=>{const rows=[["Email","Company","Company ID","Reason"]];
-      renewalGroup().forEach(o=>{const hd=handling(o);if(hd!=="person"&&hd!=="hold")return;o.people.forEach(p=>{if(p.email)rows.push([p.email,o.name,o.cid,hd==="hold"?"On hold":"Personal outreach"]);});});
-      offer("member360-do-not-send-"+TODAY+".csv",csv(rows));});
+    /* send it from Member 360, from the person pressing the button (Jonna, Oct 24, 2026) */
+    const b0=canEmail()?h("button",{type:"button",class:"btn",style:"min-width:max-content",disabled:!g.auto.length&&!g.person},"Choose Recipients and Send"):null;
+    if(b0)b0.addEventListener("click",()=>{const others=renewalGroup().filter(o=>handling(o)==="person"&&(o.thru||END)===g.thru&&nextStep(o)&&nextStep(o).st.id===g.st.id);
+      openSend({stId:g.st.id,thru:g.thru,orgs:g.auto,extra:others});});
+    if(b0)b1.className="btn ghost";
     const b3=h("button",{type:"button",class:"btn ghost",disabled:!g.auto.length||!db||!canWrite},"Mark as Sent");
     const conf=h("div",{class:"confirm",hidden:true});
     const yes=h("button",{type:"button",class:"btn"},"Yes, Mark "+n(g.auto.length)+" Sent");
     const no=h("button",{type:"button",class:"btn ghost"},"Cancel");
-    conf.appendChild(h("div",null,"Mark the "+g.st.name+" email as sent to "+n(g.auto.length)+" organizations? Do this after Higher Logic sends it."));
+    conf.appendChild(h("div",null,"Mark the "+g.st.name+" email as sent to "+n(g.auto.length)+" organizations? Use this only when the email went out some other way."));
     conf.appendChild(h("div",{class:"btnrow"},yes,no));
     b3.addEventListener("click",()=>{conf.hidden=false;});no.addEventListener("click",()=>{conf.hidden=true;});
     yes.addEventListener("click",async()=>{if(blocked())return;yes.disabled=true;
@@ -3245,7 +3277,8 @@ function renderWeek(){
       const body={thru:g.thru,step:g.st.id,batches:(cur.batches||[]).concat([{at:new Date().toISOString(),by:ME||"",orgs:g.auto.map(o=>o.k)}])};
       try{await db.doc("sends/"+id).set(body);SENDS[id]=body;rebuildIdx();toast(g.st.name+" marked sent for "+n(g.auto.length)+" organizations.");scheduleRefresh();}
       catch(e){onWriteErr(e);yes.disabled=false;}});
-    card.appendChild(h("div",{class:"btnrow"},b1,b2,b3));card.appendChild(conf);
+    card.appendChild(h("div",{class:"btnrow"},b0,b1,b3));card.appendChild(conf);
+    batchesFor(g.st.id,g.thru).slice(0,4).forEach(bt=>card.appendChild(batchLine(bt)));
     box.appendChild(card);
   });
   const done=Object.values(SENDS).sort((a,b)=>String(b.batches&&b.batches.length&&b.batches[b.batches.length-1].at).localeCompare(String(a.batches&&a.batches.length&&a.batches[a.batches.length-1].at)));
@@ -3682,7 +3715,7 @@ function renderPlays(){
       const b={subject:subj.value.trim(),body:body.value,updatedAt:new Date().toISOString(),updatedBy:ME||""};
       try{await db.doc("templates/"+st.id).set(b);TPL[st.id]=b;toast(st.name+" wording saved.");}catch(e){onWriteErr(e);}save.disabled=false;});
     sb.appendChild(h("div",{class:"formgrid"},h("div",{class:"fld wide"},h("label",{for:subj.id},"Subject Line"),subj),h("div",{class:"fld wide"},h("label",{for:body.id},"Email Body"),body)));
-    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled by Higher Logic from the send list columns. Text in [brackets] needs your wording before the first send."));
+    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Text in [brackets] has to be replaced before the email can be sent."));
     sb.appendChild(h("div",{class:"btnrow"},save,who));
     d.appendChild(sb);box.appendChild(d);
   });
@@ -4508,6 +4541,178 @@ async function resolveNames(){
   try{const ps=await userCap.profiles(need);need.forEach(id=>{NAMES[id]=(ps[id]&&ps[id].name)||"";});scheduleRefresh();}catch(e){}
 }
 
+/* ---------- send from Member 360 (the resources.mismo.org copy) ----------
+   Jonna, Oct 24, 2026: staff choose who gets a playbook email and press Send; it goes from
+   their own Outlook through Power Automate. Member 360 builds the branded email; nothing
+   goes through Higher Logic for these.
+   How it travels (the Sponsorship Portal's pattern): Send saves one batch into the outbox
+   (data/outbox.json, through the relay). That commit wakes the "Member 360 Emails" flow,
+   which checks the sender is one of SENDERS, sends each email from that person's Outlook
+   connection, and records the result in data/outbox-sent.json, which only the flow writes.
+   A batch holds the email once, with %%tokens%%, and each recipient's own values (already
+   made safe for HTML), so a hundred recipients stay small. The flow swaps the tokens in.
+   The Claude copy has no relay, so it never shows Send. */
+const SENDERS={amoses:"Amy Moses",kbradshaw:"Kelly Bradshaw",bvieaux:"Brian Vieaux",jcritchley:"Jonna Critchley"};
+const EMAIL_LOGO="https://resources.mismo.org/member-360/mismo-logo-email.png";
+let OUTBOX={},MAILED={};
+function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLowerCase():"";}
+function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
+function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
+function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+/* the template's merge fields -> the flow's tokens (each recipient's value is filled in by the flow) */
+const MTOK={"First Name":"fn","Last Name":"ln","Company":"co","Membership Level":"lvl","Member Type":"type","Membership Ends":"ends","Level Benefits":"ben"};
+function tplOf(st){const t=TPL[st.id]||{};return {subject:t.subject||"",body:t.body||""};}
+function tplProblem(st){const t=tplOf(st);if(!t.subject.trim()||!t.body.trim())return "This email has no wording yet.";
+  const b=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);return b?"Fill in "+b.slice(0,3).join(", ")+(b.length>3?" and the rest":"")+" in Playbooks first.":"";}
+/* one recipient's values: plain for the subject, HTML-safe for the body */
+function recVals(o,p){const nm=splitName(p.name);const ben=levelBenefits(o).concat(BEN_COMMON);
+  return {fn:nm[0]||"there",ln:nm[1]||"",co:o.name,lvl:o.level||"",type:o.type||"",ends:fmt(o.thru),
+    benH:'<ul style="margin:6px 0 14px;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul>",benT:ben.map(x=>"• "+x).join("\n")};}
+function fillPlain(t,v,sender){return t.replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return sender.name;if(k==="Sender First Name")return sender.name.split(" ")[0];
+  const key=MTOK[k];if(!key)return m;return key==="ben"?v.benT:v[key];});}
+/* the email body with %%tokens%% where each recipient's values go */
+function bodyTokens(body,sender){
+  const paras=escH(body).replace(/\r/g,"").split(/\n{2,}/);
+  return paras.map(p=>{
+    if(/^\s*\{\{\s*Level Benefits\s*\}\}\s*$/.test(p))return "%%ben%%";
+    const lines=p.split("\n");
+    if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 14px;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul>";
+    return '<p style="margin:0 0 14px">'+lines.join("<br>")+"</p>";
+  }).join("").replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return escH(sender.name);if(k==="Sender First Name")return escH(sender.name.split(" ")[0]);const key=MTOK[k];return key?"%%"+key+"%%":m;});
+}
+/* MISMO's email shell: white card, the logo on white (it needs a light ground), a sky rule, navy ink */
+function emailShell(inner){
+  const F='font-family:Arial,Helvetica,sans-serif';
+  return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
+  '<body style="margin:0;padding:0;background:#f1f6fa">'+
+  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f6fa"><tr><td align="center" style="padding:24px 12px">'+
+  '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #d5e2ed;border-radius:8px">'+
+  '<tr><td style="padding:22px 32px 18px"><img src="'+EMAIL_LOGO+'" width="190" height="29" alt="MISMO" style="display:block;border:0;outline:none;width:190px;height:auto"></td></tr>'+
+  '<tr><td style="height:3px;line-height:3px;font-size:0;background:#74bfeb">&nbsp;</td></tr>'+
+  '<tr><td style="padding:26px 32px 14px;'+F+';font-size:15px;line-height:1.6;color:#0d314c">'+inner+'</td></tr>'+
+  '<tr><td style="background:#0d314c;padding:14px 32px;border-radius:0 0 7px 7px;'+F+';font-size:12px;line-height:1.5;color:#a9d8f3">MISMO &middot; Mortgage Industry Standards Maintenance Organization &middot; '+
+  '<a href="https://www.mismo.org" style="color:#ffffff;text-decoration:underline">mismo.org</a></td></tr>'+
+  '</table></td></tr></table></body></html>';
+}
+function previewHtml(html,v){return html.replace(/%%fn%%/g,escH(v.fn)).replace(/%%ln%%/g,escH(v.ln)).replace(/%%co%%/g,escH(v.co)).replace(/%%lvl%%/g,escH(v.lvl))
+  .replace(/%%type%%/g,escH(v.type)).replace(/%%ends%%/g,escH(v.ends)).replace(/%%ben%%/g,v.benH);}
+function batchesFor(stId,thru){return Object.keys(OUTBOX).map(id=>Object.assign({id},OUTBOX[id])).filter(b=>b.step===stId&&(!thru||b.thru===thru)).sort((a,b)=>String(b.queuedAt).localeCompare(String(a.queuedAt)));}
+function batchWord(b){const s=MAILED[b.id];
+  if(s&&s.status==="sent")return n(s.sent||b.recipients.length)+" sent"+(s.failed&&s.failed.length?", "+n(s.failed.length)+" didn't go":"");
+  if(s&&s.status==="failed")return "not sent: "+(s.error||"the flow stopped");
+  if(s&&s.status==="sending")return "sending now";
+  const mins=(Date.now()-Date.parse(b.queuedAt||0))/60000;
+  return mins>15?"waiting on Power Automate for "+Math.round(mins)+" minutes — tell Jonna":"waiting for Power Automate";}
+function batchLine(b){const t=new Date(b.queuedAt);return h("div",{class:"hint",style:"margin-top:6px"},
+  h("b",null,(b.test?"Test · ":"")+(b.fromName||"")+" · "+t.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})),
+  " · "+n(b.recipients.length)+" email"+(b.recipients.length===1?"":"s")+" · "+batchWord(b));}
+/* the Send pane: choose who gets it, see it as they will, press Send */
+function openSend(opt){
+  const sender=mySender();if(!canEmail()){toast("Sending works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}
+  const body=$("m360-pane-body");paneK="__send";markSel();
+  let st=STEPS.find(x=>x.id===opt.stId)||STEPS[0];
+  const chosen=new Map();   /* "k|email" -> {o,p} */
+  const orgsIn=[];          /* org keys shown, in order */
+  const addOrg=(o,checkDefault)=>{if(!o||orgsIn.includes(o.k))return;orgsIn.push(o.k);
+    if(checkDefault)recipients(o,st).forEach(p=>chosen.set(o.k+"|"+p.email.toLowerCase(),{o,p}));};
+  (opt.orgs||[]).forEach(o=>addOrg(o,true));(opt.extra||[]).forEach(o=>addOrg(o,false));
+  const paint=()=>{
+    $("m360-pane-t").textContent="Send: "+st.name;
+    $("m360-pane-sub").textContent="From "+sender.name+" ("+sender.email+") · through Outlook";
+    body.textContent="";
+    if(opt.pick){const sel=h("select",{id:"snd-step"});STEPS.forEach(x=>sel.appendChild(h("option",{value:x.id,selected:x.id===st.id},x.name)));
+      sel.addEventListener("change",()=>{st=STEPS.find(x=>x.id===sel.value);chosen.clear();orgsIn.slice().forEach(k=>recipients(BY[k],st).forEach(p=>chosen.set(k+"|"+p.email.toLowerCase(),{o:BY[k],p})));paint();});
+      body.appendChild(h("div",{class:"fld",style:"margin-bottom:12px;max-width:340px"},h("label",{for:"snd-step"},"Email"),sel));}
+    const prob=tplProblem(st);
+    if(prob){const go=h("button",{type:"button",class:"btn ghost"},"Open Playbooks");go.addEventListener("click",()=>{closePane();show("plays");});
+      body.appendChild(h("div",{class:"warnnote"},h("b",null,"Not ready to send. "),prob," ",go));}
+    /* the Send button first, so the whole job is: look, press, press again */
+    const send=h("button",{type:"button",class:"btn",style:"min-width:max-content"});const note=h("span",{class:"hint",style:"margin:0"});
+    const test=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");
+    body.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},send,test,note));
+    const sect_=(title,open)=>{const d=h("details",{class:"sect",open:open||false});const sm=h("summary",null,title);d.appendChild(sm);const sb=h("div",{class:"sbody"});d.appendChild(sb);body.appendChild(d);return {d,sm,sb};};
+    /* who gets it: the organizations this email is due for, then everyone routed to a person, then anyone added */
+    const rowsFor=(keys,box)=>{const list=h("div",{class:"rows"});
+      keys.forEach(k=>{const o=BY[k];if(!o)return;
+        const ps=o.people.filter(p=>p.email);
+        const row=h("div",{class:"rv",style:"grid-template-columns:minmax(0,1fr);gap:4px"});
+        row.appendChild(h("div",null,h("b",null,o.name),h("span",{class:"hint"}," · "+[o.level,o.thru?fmt(o.thru):""].filter(Boolean).join(" · "))));
+        if(!ps.length)row.appendChild(h("div",{class:"hint late"},"No email on file. Add a contact on the record."));
+        ps.forEach(p=>{const key=k+"|"+p.email.toLowerCase();const cb=h("input",{type:"checkbox",checked:chosen.has(key)});
+          cb.addEventListener("change",()=>{if(cb.checked)chosen.set(key,{o,p});else chosen.delete(key);count();});
+          const who=p.name&&p.name.toLowerCase()!==p.email.toLowerCase()?p.name+" · "+p.email:p.email;
+          row.appendChild(h("label",{class:"tgl",style:"padding:2px 0"},cb,h("span",null,who+(p.roles&&p.roles.length?" · "+p.roles.join(", "):""))));});
+        list.appendChild(row);});
+      box.appendChild(list);};
+    const due=orgsIn.filter(k=>(opt.orgs||[]).some(o=>o.k===k)),routed=orgsIn.filter(k=>(opt.extra||[]).some(o=>o.k===k)),added=orgsIn.filter(k=>!due.includes(k)&&!routed.includes(k));
+    const W=sect_("Who Gets It",false);
+    if(due.length||added.length)rowsFor(added.concat(due),W.sb);else W.sb.appendChild(h("div",{class:"empty"},"No one yet. Add a member below."));
+    if(routed.length){const R=sect_("Also Up for This Email: Routed to a Person ("+n(routed.length)+")",false);
+      R.sb.appendChild(h("div",{class:"hint",style:"margin:0 0 8px"},"These members hear from a person instead of the automated series. Tick anyone you want this email to go to from you."));rowsFor(routed,R.sb);}
+    /* add a member */
+    fillOrgList();const byLabel={};ORGS.forEach(o=>byLabel[orgLabel(o)]=o.k);
+    const inp=h("input",{type:"text",list:"orgnames",id:"snd-add",placeholder:"Start typing a member or prospect"});
+    const add=h("button",{type:"button",class:"btn ghost"},"Add");
+    const doAdd=()=>{const k=byLabel[inp.value];if(!k){toast("Pick a name from the list.",true);return;}addOrg(BY[k],true);paint();};
+    add.addEventListener("click",doAdd);inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();doAdd();}});
+    body.appendChild(h("div",{class:"fld",style:"margin:4px 0 14px"},h("label",{for:"snd-add"},"Add Someone"),h("div",{style:"display:flex;gap:8px"},inp,add)));
+    /* preview */
+    const P=sect_("What They'll See",false);
+    const pv=h("iframe",{title:"Email preview",style:"width:100%;height:540px;border:1px solid var(--border);border-radius:8px;background:#f1f6fa"});
+    const pvSel=h("select",{id:"snd-pv"});const pvSubj=h("div",{class:"hint",style:"margin:6px 0 8px"});
+    let pvOn=false;P.d.addEventListener("toggle",()=>{pvOn=P.d.open;if(pvOn)drawPv();});
+    const drawPv=()=>{if(!pvOn)return;const arr=[...chosen.values()];pvSel.textContent="";
+      if(!arr.length){pvSubj.textContent="Choose at least one person to see the email.";pv.srcdoc="";return;}
+      arr.forEach(({o,p},i)=>pvSel.appendChild(h("option",{value:String(i)},(p.name||p.email)+" · "+o.name)));
+      const one=()=>{const {o,p}=arr[Number(pvSel.value)||0];const v=recVals(o,p);const t=tplOf(st);
+        pvSubj.textContent="Subject: "+fillPlain(t.subject,v,sender);pv.srcdoc=previewHtml(emailShell(bodyTokens(t.body,sender)),v);};
+      pvSel.onchange=one;one();};
+    P.sb.appendChild(h("div",{class:"fld",style:"max-width:420px"},h("label",{for:"snd-pv"},"Preview For"),pvSel));P.sb.appendChild(pvSubj);P.sb.appendChild(pv);
+    /* send */
+    let armedAt=0;
+    function count(){const c=chosen.size,orgs=new Set([...chosen.values()].map(x=>x.o.k)).size;
+      send.textContent=armedAt?"Press Again to Send "+n(c):"Send "+n(c)+" Email"+(c===1?"":"s")+" From Me";send.disabled=!c||!!prob;
+      note.textContent=c?"to "+n(orgs)+" organization"+(orgs===1?"":"s")+". Each goes to one person, from your Outlook.":"";
+      W.sm.textContent="Who Gets It: "+n(c)+" "+(c===1?"Person":"People")+" at "+n(orgs)+" Organization"+(orgs===1?"":"s");drawPv();}
+    /* a test goes only to the person pressing it, filled in as the first person ticked; nothing is marked sent */
+    test.addEventListener("click",async()=>{const first=[...chosen.values()][0];if(!first){toast("Tick at least one person first.",true);return;}
+      test.disabled=true;const {o,p}=first;const t=tplOf(st),v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);
+      const bk=(o.level||"none").replace(/[^A-Za-z]/g,"")||"none";
+      const doc={step:st.id,stepName:st.name,thru:opt.thru||"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},
+        recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],
+        status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};
+      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}
+      test.disabled=false;});
+    send.addEventListener("click",async()=>{
+      if(!armedAt){armedAt=Date.now();count();setTimeout(()=>{armedAt=0;if(document.body.contains(send))count();},4000);return;}
+      armedAt=0;send.disabled=true;send.textContent="Sending…";
+      const t=tplOf(st),html=emailShell(bodyTokens(t.body,sender)),now=new Date(),id="m"+now.getTime().toString(36)+sender.key.slice(0,2);
+      /* each level's benefits list is stored once for the batch; a recipient points at it with bk */
+      const benefits={};
+      const rec=[...chosen.values()].map(({o,p})=>{const v=recVals(o,p);const bk=(o.level||"none").replace(/[^A-Za-z]/g,"")||"none";benefits[bk]=v.benH;
+        return {to:p.email,name:p.name||"",org:o.k,subject:fillPlain(t.subject,v,sender).slice(0,250),
+          fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk};});
+      const thru=opt.thru||"";
+      const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};
+      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;
+        /* the planner moves on: each organization is marked as sent this step, as Mark as Sent did */
+        const orgsDone=[...new Set(rec.map(r=>r.org))].filter(k=>BY[k]&&inCohort(BY[k]));
+        const byThru={};orgsDone.forEach(k=>{const tt=BY[k].thru||END;(byThru[tt]=byThru[tt]||[]).push(k);});
+        for(const tt in byThru){const sid=sendId(tt,st.id);const cur=SENDS[sid]||{thru:tt,step:st.id,batches:[]};
+          const b={thru:tt,step:st.id,batches:(cur.batches||[]).concat([{at:now.toISOString(),by:ME||"",orgs:byThru[tt],via:"email",batch:id}])};
+          try{await db.doc("sends/"+sid).set(b);SENDS[sid]=b;}catch(e){}}
+        /* keep the outbox small (the relay saves at most about 1 MB a file): batches sent over 30 days ago are cleared */
+        Object.keys(OUTBOX).forEach(oid=>{const sx=MAILED[oid];if(sx&&sx.status==="sent"&&Date.now()-Date.parse(OUTBOX[oid].queuedAt||0)>30*864e5){db.doc("outbox/"+oid).delete().catch(()=>{});}});
+        rebuildIdx();toast(n(rec.length)+" email"+(rec.length===1?"":"s")+" on the way from "+sender.name+". Power Automate sends them within a minute or two.");
+        closePane();scheduleRefresh();
+      }catch(e){onWriteErr(e);send.disabled=false;count();}});
+    const past=batchesFor(st.id,opt.thru);if(past.length){body.appendChild(h("h3",{style:"font-size:13.5px;margin:18px 0 2px"},"Already Sent"));past.slice(0,8).forEach(b=>body.appendChild(batchLine(b)));}
+    count();
+  };
+  paint();body.scrollTop=0;document.body.classList.add("paneon");$("m360-pane").setAttribute("aria-hidden","false");
+  setTimeout(()=>{try{$("m360-pane-x").focus({preventScroll:true});}catch(e){}},30);
+}
+
 /* ---------- payments from MISMO Money (the resources.mismo.org copy) ----------
    MISMO Money's file (data/mismo-money-paid.json: every MISMO payment since its "from" date, one entry per
    Aptify order with its payments and product lines) is laid over the activity files when it is read:
@@ -4724,6 +4929,8 @@ async function boot(){
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();});
   db.collection("prospects").onSnapshot(q=>{mergeProspects(q.docs.map(d=>Object.assign({id:d.id},d.data())));scheduleRefresh();},err);
   db.collection("issues").onSnapshot(q=>{ISSUES=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
+  db.collection("outbox").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]=d.data());OUTBOX=m;scheduleRefresh();},err);
+  if(window.__m360Sent)window.__m360Sent.onData(d=>{const m={};((d&&d.list)||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});MAILED=m;scheduleRefresh();});
   db.collection("deals").onSnapshot(q=>{DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
   db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW0=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});remergeAct();
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();scheduleRefresh();},err);
