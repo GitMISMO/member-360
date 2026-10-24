@@ -3716,7 +3716,7 @@ function renderPlays(){
       try{await db.doc("templates/"+st.id).set(b);TPL[st.id]=b;toast(st.name+" wording saved.");}catch(e){onWriteErr(e);}save.disabled=false;});
     sb.appendChild(h("div",{class:"formgrid"},h("div",{class:"fld wide"},h("label",{for:subj.id},"Subject Line"),subj),h("div",{class:"fld wide"},h("label",{for:body.id},"Email Body"),body)));
     sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Text in [brackets] has to be replaced before the email can be sent."));
-    sb.appendChild(h("div",{class:"btnrow"},save,who));
+    const prow=h("div",{class:"btnrow"},save);if(canEmail()){const ptest=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");ptest.addEventListener("click",()=>playTest(st,ptest));prow.appendChild(ptest);}prow.appendChild(who);sb.appendChild(prow);
     d.appendChild(sb);box.appendChild(d);
   });
   const r=$("plays-rules");r.textContent="";
@@ -4569,7 +4569,7 @@ function tplProblem(st){const t=tplOf(st);if(!t.subject.trim()||!t.body.trim())r
 /* one recipient's values: plain for the subject, HTML-safe for the body */
 function recVals(o,p){const nm=splitName(p.name);const ben=levelBenefits(o).concat(BEN_COMMON);
   return {fn:nm[0]||"there",ln:nm[1]||"",co:o.name,lvl:o.level||"",type:o.type||"",ends:fmt(o.thru),
-    benH:'<ul style="margin:6px 0 14px;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul>",benT:ben.map(x=>"• "+x).join("\n")};}
+    benH:'<ul style="margin:6px 0 22px;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul>",benT:ben.map(x=>"• "+x).join("\n")};}
 function fillPlain(t,v,sender){return t.replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return sender.name;if(k==="Sender First Name")return sender.name.split(" ")[0];
   const key=MTOK[k];if(!key)return m;return key==="ben"?v.benT:v[key];});}
 /* the email body with %%tokens%% where each recipient's values go */
@@ -4578,7 +4578,7 @@ function bodyTokens(body,sender){
   return paras.map(p=>{
     if(/^\s*\{\{\s*Level Benefits\s*\}\}\s*$/.test(p))return "%%ben%%";
     const lines=p.split("\n");
-    if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 14px;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul>";
+    if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 22px;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul>";
     return '<p style="margin:0 0 14px">'+lines.join("<br>")+"</p>";
   }).join("").replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return escH(sender.name);if(k==="Sender First Name")return escH(sender.name.split(" ")[0]);const key=MTOK[k];return key?"%%"+key+"%%":m;});
 }
@@ -4608,7 +4608,7 @@ function batchWord(b){const s=MAILED[b.id];
 function batchLine(b){const t=new Date(b.queuedAt);return h("div",{class:"hint",style:"margin-top:6px"},
   h("b",null,(b.test?"Test · ":"")+(b.fromName||"")+" · "+t.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})),
   " · "+n(b.recipients.length)+" email"+(b.recipients.length===1?"":"s")+" · "+batchWord(b));}
-/* the Send pane: choose who gets it, see it as they will, press Send */
+/* Send Me a Test on a playbook card: goes only to the person pressing it, filled in with a real member as the sample; nothing is marked sent */ async function playTest(st,btn){const sender=mySender();if(!canEmail()){toast("Sending works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}const se=document.getElementById("tpl-s-"+st.id),be=document.getElementById("tpl-b-"+st.id),sv=tplOf(st);const t={subject:se?se.value:sv.subject,body:be?be.value:sv.body};if(!t.subject.trim()||!t.body.trim()){toast("This email has no wording yet.",true);return;}const br=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);if(br){toast("Fill in "+br.slice(0,3).join(", ")+(br.length>3?" and the rest":"")+" first.",true);return;}let o=null,p=null;for(const g of ORGS){const ps=(g.people||[]).filter(x=>x&&x.email);if(!ps.length)continue;if(!o){o=g;p=ps[0];}if(g.level){o=g;p=ps[0];break;}}if(!o){toast("No member with an email on file to fill the sample in with.",true);return;}btn.disabled=true;try{const v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);const bk=(o.level||"none").replace(/[^A-Za-z0-9]/g,"")||"none";const doc={step:st.id,stepName:st.name,thru:"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test of "+st.name+" is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}btn.disabled=false;} /* the Send pane: choose who gets it, see it as they will, press Send */
 function openSend(opt){
   const sender=mySender();if(!canEmail()){toast("Sending works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}
   const body=$("m360-pane-body");paneK="__send";markSel();
