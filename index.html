@@ -3702,7 +3702,7 @@ function renderPlays(){
     d.appendChild(h("summary",null,st.name,h("span",{class:"cnt"},rel+" · "+fmtS(addDays(END,st.off)))));
     const sb=h("div",{class:"sbody"});
     sb.appendChild(h("div",{class:"facts"},
-      h("div",{class:"fact"},h("label",null,"Sends"),h("div",null,rel+" the membership end date")),
+      h("div",{class:"fact"},h("label",null,"Sends"),h("div",null,rel+(st.off===0?"":" the membership end date"))),
       h("div",{class:"fact"},h("label",null,"For Dec 31 Memberships"),h("div",null,fmt(addDays(END,st.off)))),
       h("div",{class:"fact"},h("label",null,"Goes To"),h("div",null,st.to.join(" and ")+" contacts")),
       h("div",{class:"fact"},h("label",null,"Purpose"),h("div",null,st.what)),
