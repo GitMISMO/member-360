@@ -2282,7 +2282,7 @@ function isSole(o){return String(o.level||"")==="Sole";}
    waiting on a merge in Aptify. Nothing is deleted: the folded-away record
    keeps its own notes and comes back whole when the merge is undone, and
    every lookup by its key answers with the record it was folded into. */
-const MERGED={};
+const MERGED={};let MERGESIG=null;
 function applyMerges(){
   Object.keys(MERGED).forEach(k=>delete MERGED[k]);
   ORGS.forEach(o=>{delete o.mergedIn;});
@@ -5650,7 +5650,11 @@ async function boot(){
   if(!db)return;
   const err=()=>{};
   db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;
-    if(applyCidOv()&&APT)applyAptify();
+    /* a merge saved here or on someone else's screen changes which records
+       exist, so the list has to be built again rather than only repainted */
+    const sig=Object.keys(m).filter(k=>m[k]&&m[k].mergedInto).sort().map(k=>k+">"+m[k].mergedInto).join(",");
+    if(sig!==MERGESIG){MERGESIG=sig;rebuildOrgs();}
+    else if(applyCidOv()&&APT)applyAptify();
     scheduleRefresh();},err);
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
