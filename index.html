@@ -2282,14 +2282,22 @@ function isSole(o){return String(o.level||"")==="Sole";}
    waiting on a merge in Aptify. Nothing is deleted: the folded-away record
    keeps its own notes and comes back whole when the merge is undone, and
    every lookup by its key answers with the record it was folded into. */
-const MERGED={};let MERGESIG=null;
+const MERGED={},MERGEDRECS={};let MERGESIG=null;
 function applyMerges(){
   Object.keys(MERGED).forEach(k=>delete MERGED[k]);
   ORGS.forEach(o=>{delete o.mergedIn;});
+  /* A record folded away in an earlier pass is no longer in ORGS, so it is
+     held here and considered again every time — otherwise the next rebuild
+     would forget both the fold and the way back. */
+  const pool=ORGS.concat(Object.keys(MERGEDRECS).map(k=>MERGEDRECS[k]).filter(o=>o&&ORGS.indexOf(o)<0));
   const keep=[],drop=[];
-  ORGS.forEach(o=>{const w=(OV[o.k]||{}).mergedInto;
-    if(w&&w!==o.k&&BY[w]&&!(OV[w]||{}).mergedInto)drop.push([o,w]);else keep.push(o);});
+  pool.forEach(o=>{const w=(OV[o.k]||{}).mergedInto;
+    if(w&&w!==o.k&&BY[w]&&BY[w].k===w&&!(OV[w]||{}).mergedInto){drop.push([o,w]);MERGEDRECS[o.k]=o;}
+    else{keep.push(o);delete MERGEDRECS[o.k];}});
+  keep.sort((a,b)=>a.name.localeCompare(b.name));
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));
+  for(const k in BY)delete BY[k];
+  ORGS.forEach(o=>BY[o.k]=o);
   drop.forEach(([o,w])=>{MERGED[o.k]=w;BY[o.k]=BY[w];
     (BY[w].mergedIn=BY[w].mergedIn||[]).push({k:o.k,name:o.name,cid:o.cid||""});});
 }
