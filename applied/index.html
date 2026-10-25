@@ -377,6 +377,24 @@ div[style*="max-width: 560px"] > a{flex:0 0 auto !important}
   div[style*="max-width: 560px"] > a{flex:0 0 100% !important}
 }
 </style>
+
+<!-- MISMO site chrome v2 (October 25, 2026): loads IBM Plex Sans and matches the website header -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style id="mm-chrome-v2">
+.mm-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.mm-actions .mm-login{margin-left:0}
+.mm-login{display:inline-block;padding:10px 20px;border-radius:50px;background:var(--mm-pill,#0f314c);color:#ffffff;font-family:var(--mm-font,inherit);font-size:16px;font-weight:600;line-height:16px;text-decoration:none;white-space:nowrap;min-width:max-content}
+.mm-login:hover{background:#17476d;color:#ffffff}
+.mm-login:focus-visible,.mm-search-btn:focus-visible,.mm-search-in:focus-visible{outline:2px solid var(--mm-sky,#74bfeb);outline-offset:2px}
+.mm-search{display:flex;align-items:center;margin:0}
+.mm-search-in{box-sizing:border-box;width:0;height:34px;padding:0;border:0;border-radius:6px;opacity:0;background:#ffffff;color:#0d314c;font-family:var(--mm-font,inherit);font-size:15px;transition:width .2s ease,opacity .2s ease,padding .2s ease}
+.mm-search.is-open .mm-search-in{width:200px;padding:0 10px;opacity:1}
+.mm-search-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:0;background:transparent;color:#ffffff;cursor:pointer}
+@media (max-width:1100px){.mm-search{display:none}}
+@media (max-width:720px){.mm-login{padding:9px 16px;font-size:15px}}
+</style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
 0 -101 4 -132 25 -197 57 -172 168 -280 335 -323 84 -22 723 -22 808 0 222 58
