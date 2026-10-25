@@ -1361,6 +1361,13 @@ button.wk-stat:focus-visible{outline:2px solid var(--sky);outline-offset:1px}
 .bevrow{display:grid;grid-template-columns:140px minmax(0,1.4fr) 160px 230px auto;gap:10px;align-items:end;padding:10px 0;border-bottom:1px solid var(--rule)}
 .bevrow.past{opacity:.55}
 .bev-x{padding-bottom:2px}
+.lvrow{display:grid;grid-template-columns:150px minmax(0,1.4fr) 150px auto;gap:10px;align-items:end;padding:12px 0;border-bottom:1px solid var(--rule)}
+.lvrow.off{opacity:.55}
+.lv-x{padding-bottom:2px}
+.lv-2{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.lv-ben{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.lv-bh{font-size:12px;font-weight:600;color:var(--ink-2);margin:6px 0 2px}
+@media(max-width:760px){.lvrow{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.benrow{grid-template-columns:1fr}.bevrow{grid-template-columns:1fr 1fr}}
 .bev-2{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:10px}
 .benrow.bcrow{grid-template-columns:220px minmax(0,1fr)}
@@ -1768,6 +1775,18 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
         <div class="hint">The Summits and Boot Camps that drive the Unused Member Benefits lane on the Outreach Planner. Members show up there once an event is this many days away and they still have free registrations or seats left. Past events are greyed out.</div>
         <div id="benev" style="margin-top:10px"></div>
         <div class="btnrow"><button class="btn ghost" type="button" id="bev-add">Add an Event</button></div>
+      </div>
+    </details>
+    <details class="sect">
+      <summary>Membership Levels and Benefits</summary>
+      <div class="sbody">
+        <div class="hint">The membership levels, what each costs a year and what it includes. The public application form reads this list, so what you save here is what applicants see and choose from. Untick <b>Show on the Application Form</b> to keep a level off the form without deleting it.</div>
+        <div id="levels" style="margin-top:10px"></div>
+        <div class="btnrow"><button class="btn ghost" type="button" id="lv-add">Add a Level</button></div>
+        <div class="lv-bh" style="margin-top:22px">Included With Every Level</div>
+        <div class="hint">Benefits every member gets, whatever their level. These show once on the form, under the levels.</div>
+        <div id="lvcommon" style="margin-top:10px"></div>
+        <div class="btnrow"><button class="btn ghost" type="button" id="lvc-add">Add a Shared Benefit</button></div>
       </div>
     </details>
     <details class="sect">
@@ -3745,6 +3764,8 @@ function renderSettings(){
   const spx=$("specials");spx.textContent="";
   specialsList().forEach(x=>spx.appendChild(h("span",null,x.name+(x.level?" \u00b7 level "+x.level:""),h("button",{type:"button","aria-label":"Remove "+x.name,onclick:()=>{if(ORGS.some(o=>ov(o).special===x.name)&&!confirm("Some records are marked "+x.name+". Remove the special anyway?"))return;saveSet({specials:specialsList().filter(y=>y.name!==x.name)});}},"\u00d7"))));
   renderBenEvents();
+  renderLevels();
+  renderCommonBenefits();
   renderSync();
   renderApt();
   const di=$("datainfo");di.textContent="";
@@ -4080,6 +4101,114 @@ function renderStYear(){const box=$("st-year");box.textContent="";const Y0=RY-1;
 /* specials are a Settings list, so new ones can be added later; TMC and Broker also match their membership level */
 const DEF_SPECIALS=[{name:"TMC",level:"Corporate (TMC)"},{name:"Broker",level:"Corporate (Broker)"},{name:"ACUMA",level:""}];
 function specialsList(){return (SET.specials&&SET.specials.length?SET.specials:DEF_SPECIALS);}
+
+/* ---------- membership levels: the list the public application form offers ----------
+   Saved under settings/main so the application flow can read it. Until a list is
+   saved here the form falls back to the four levels built into the page, so the
+   form keeps working either way. */
+var LEVELS_DEFAULT=[{"v": "Chair", "l": "Chair Champion", "price": 55000, "blurb": "", "benefits": ["6 complimentary MISMO Summit registrations per Summit", "10 complimentary MISMO Boot Camp registrations per year", "10 complimentary CMSP and AMSP certification enrollments and renewals", "Complimentary corporate memberships for up to 3 wholly owned subsidiaries", "Consideration for introducing speakers at MISMO events", "Opportunity to be featured in a MISMO webinar on successful standards implementation"], "onForm": true}, {"v": "Executive", "l": "Executive Champion", "price": 20000, "blurb": "", "benefits": ["3 complimentary MISMO Summit registrations per Summit", "5 complimentary MISMO Boot Camp registrations per year", "5 complimentary CMSP and AMSP certification enrollments and renewals", "Complimentary corporate membership for 1 wholly owned subsidiary", "Opportunity to be featured in a MISMO webinar on successful standards implementation"], "onForm": true}, {"v": "Associate", "l": "Associate Champion", "price": 10000, "blurb": "", "benefits": ["2 complimentary MISMO Summit registrations per Summit", "3 complimentary MISMO Boot Camp registrations per year", "3 complimentary CMSP and AMSP certification enrollments and renewals"], "onForm": true}, {"v": "Corporate", "l": "Corporate Member", "price": 5000, "blurb": "", "benefits": ["1 complimentary enrollment in MISMO Boot Camp"], "onForm": true}];
+var COMMON_DEFAULT=["Access to MISMO Connect, the member-only collaboration portal", "Early access to works in progress, before public release", "Serve as a leader or official representative within MISMO", "Vote in MISMO's 30+ workgroups", "Download member-only products, including the MISMO API Toolkit", "Credentials for MISMO's E-Eligibility Exchange", "Complimentary enrollment in MISMO's monthly webinar series and its recordings"];
+function levelsList(){return Array.isArray(SET.levels)?SET.levels:[];}
+function commonBenefits(){return Array.isArray(SET.commonBenefits)?SET.commonBenefits:[];}
+function seedLevels(){
+  if(blocked())return;
+  saveSet({levels:LEVELS_DEFAULT.map(function(x){return Object.assign({},x,{benefits:x.benefits.slice()});}),commonBenefits:COMMON_DEFAULT.slice()});
+  toast("Levels added. Edit them below.");
+}
+function addLevel(){
+  if(blocked())return;
+  saveSet({levels:levelsList().concat([{v:"",l:"New Level",price:0,blurb:"",benefits:[],onForm:true}])});
+  toast("Level added. Give it a name and a price.");
+}
+function renderLevels(){
+  var box=$("levels");
+  if(!box||box.contains(document.activeElement))return;
+  box.textContent="";
+  var dis=!db||!canWrite,L=levelsList();
+  var save=function(next){saveSet({levels:next});};
+  if(!L.length){
+    box.appendChild(h("div",{class:"hint"},"No levels saved yet \u2014 the application form is showing the four levels built into the page until you save a list here."));
+    var sb=h("button",{type:"button",class:"btn",disabled:dis},"Start From MISMO's Current Levels");
+    sb.addEventListener("click",seedLevels);
+    box.appendChild(h("div",{class:"btnrow"},sb));
+    return;
+  }
+  L.forEach(function(lv,i){
+    var id=function(f){return "lv-"+i+"-"+f;};
+    var vI=h("input",{type:"text",id:id("v"),value:lv.v||"",placeholder:"e.g. Chair",disabled:dis}),
+        lI=h("input",{type:"text",id:id("l"),value:lv.l||"",placeholder:"e.g. Chair Champion",disabled:dis}),
+        pI=h("input",{type:"number",min:"0",step:"1",id:id("p"),value:String(Number(lv.price)||0),disabled:dis}),
+        bI=h("input",{type:"text",id:id("b"),value:lv.blurb||"",placeholder:"One short line under the level (optional)",disabled:dis}),
+        oI=h("input",{type:"checkbox",id:id("o"),disabled:dis});
+    oI.checked=lv.onForm!==false;
+    var upd=function(){
+      var next=levelsList().slice();
+      next[i]=Object.assign({},next[i],{v:vI.value.trim(),l:lI.value.trim()||vI.value.trim(),price:Math.max(0,Number(pI.value)||0),blurb:bI.value.trim(),onForm:oI.checked});
+      if(!next[i].v){toast("Give the level a short name, the one recorded on a member.",true);return;}
+      save(next);toast("Saved.");
+    };
+    [vI,lI,pI,bI,oI].forEach(function(x){x.addEventListener("change",upd);});
+    var rm=h("button",{type:"button",class:"btn ghost danger sm",disabled:dis},"Remove");
+    rm.addEventListener("click",function(){
+      if(!confirm("Remove "+(lv.l||lv.v||"this level")+" from the application form?"))return;
+      save(levelsList().filter(function(x,j){return j!==i;}));toast("Removed.");
+    });
+    var F=function(l,el){return h("div",{class:"fld"},h("label",{for:el.id},l),el);};
+    var ben=h("div",null);
+    ben.appendChild(h("div",{class:"lv-bh"},"What This Level Includes"));
+    (lv.benefits||[]).forEach(function(bt,bi){
+      var tI=h("input",{type:"text",id:id("ben"+bi),value:bt,disabled:dis});
+      tI.addEventListener("change",function(){
+        var next=levelsList().slice(),bs=(next[i].benefits||[]).slice();
+        bs[bi]=tI.value.trim();
+        next[i]=Object.assign({},next[i],{benefits:bs.filter(function(x){return x;})});
+        save(next);toast("Saved.");
+      });
+      var bx=h("button",{type:"button",class:"btn ghost danger sm",disabled:dis},"Remove");
+      bx.addEventListener("click",function(){
+        var next=levelsList().slice();
+        next[i]=Object.assign({},next[i],{benefits:(next[i].benefits||[]).filter(function(x,j){return j!==bi;})});
+        save(next);toast("Removed.");
+      });
+      ben.appendChild(h("div",{class:"lv-ben"},tI,bx));
+    });
+    if(!(lv.benefits||[]).length)ben.appendChild(h("div",{class:"hint"},"Nothing listed for this level yet."));
+    var ba=h("button",{type:"button",class:"btn ghost sm",disabled:dis},"Add a Benefit");
+    ba.addEventListener("click",function(){
+      var next=levelsList().slice();
+      next[i]=Object.assign({},next[i],{benefits:(next[i].benefits||[]).concat(["New benefit"])});
+      save(next);
+    });
+    ben.appendChild(h("div",{class:"btnrow"},ba));
+    box.appendChild(h("div",{class:"lvrow"+(oI.checked?"":" off")},
+      F("Level (as Recorded on a Member)",vI),F("Name Shown on the Form",lI),F("Dues a Year ($)",pI),h("div",{class:"lv-x"},rm),
+      h("div",{class:"lv-2"},F("Short Description",bI),
+        h("label",{class:"tgl",style:"padding:4px 0"},oI,h("span",null,"Show on the Application Form")),ben)));
+  });
+}
+function renderCommonBenefits(){
+  var box=$("lvcommon");
+  if(!box||box.contains(document.activeElement))return;
+  box.textContent="";
+  var dis=!db||!canWrite,C=commonBenefits();
+  if(!C.length)box.appendChild(h("div",{class:"hint"},"Nothing shared listed yet."));
+  C.forEach(function(bt,i){
+    var tI=h("input",{type:"text",id:"lvc-"+i,value:bt,disabled:dis});
+    tI.addEventListener("change",function(){
+      var next=commonBenefits().slice();next[i]=tI.value.trim();
+      saveSet({commonBenefits:next.filter(function(x){return x;})});toast("Saved.");
+    });
+    var bx=h("button",{type:"button",class:"btn ghost danger sm",disabled:dis},"Remove");
+    bx.addEventListener("click",function(){
+      saveSet({commonBenefits:commonBenefits().filter(function(x,j){return j!==i;})});toast("Removed.");
+    });
+    box.appendChild(h("div",{class:"lv-ben"},tI,bx));
+  });
+}
+function addCommonBenefit(){
+  if(blocked())return;
+  saveSet({commonBenefits:commonBenefits().concat(["New benefit"])});
+}
 Object.defineProperty(window,"SPECIALS",{get(){return specialsList().map(x=>x.name);},configurable:true});
 function specialOf(o){const v=ov(o).special;if(v!==undefined&&v!==null&&v!=="")return v==="none"?"":v;const m=specialsList().find(x=>x.level&&x.level===o.level);return m?m.name:"";}
 function fsItems(o){return ((ACT[o.k]||{}).items||[]);}
@@ -5150,6 +5279,8 @@ async function boot(){
   $("np-open").addEventListener("click",openNewProspect);
   $("sp-add").addEventListener("click",addSpecial);
   $("bev-add").addEventListener("click",addBenEvent);
+  $("lv-add").addEventListener("click",addLevel);
+  $("lvc-add").addEventListener("click",addCommonBenefit);
   $("is-new").addEventListener("click",()=>openNewIssue());
   ["is-status","is-cat","is-src","is-owner"].forEach(id=>$(id).addEventListener("change",()=>{ISOPEN=null;renderIssues();}));$("is-q").addEventListener("input",renderIssues);
   $("dl-csv").addEventListener("click",dealsCsv);$("dl-sent").addEventListener("click",dealsMarkSent);
