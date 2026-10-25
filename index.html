@@ -2285,7 +2285,7 @@ function cidFact(facts,o){
       const v=String(inp.value||"").trim();
       if(v&&!/^\d+$/.test(v)){toast("A Company ID is digits only — copy it from the Aptify company record.",true);return;}
       if(o.cidWas===undefined)o.cidWas=o.cid||"";
-      o.cid=v;saveOv(o.k,{cid:v});rebuildOrgs();
+      o.cid=v;saveOv(o.k,{cid:v});rebuildOrgs();show();
       toast(v?("Company ID set to "+v+". The next Aptify upload joins on it."):"Company ID cleared.");
     });
     no.addEventListener("click",show);
