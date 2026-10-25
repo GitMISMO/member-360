@@ -2300,6 +2300,11 @@ function applyMerges(){
   ORGS.forEach(o=>BY[o.k]=o);
   drop.forEach(([o,w])=>{MERGED[o.k]=w;BY[o.k]=BY[w];
     (BY[w].mergedIn=BY[w].mergedIn||[]).push({k:o.k,name:o.name,cid:o.cid||""});});
+  /* "shared with another row" is worked out from the rows there are now, not
+     from what the member list was built with, so folding two together or
+     correcting a Company ID settles it straight away */
+  const byc={};ORGS.forEach(o=>{if(o.cid)(byc[String(o.cid)]=byc[String(o.cid)]||[]).push(o);});
+  ORGS.forEach(o=>{o.dupId=!!(o.cid&&byc[String(o.cid)].length>1);});
 }
 function unmerge(k){if(blocked())return;saveOv(k,{mergedInto:""});rebuildOrgs();toast("Put back as its own record.");}
 /* the merge offered on a duplicate group, only where Aptify already calls them one company */
