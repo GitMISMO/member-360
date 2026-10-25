@@ -4541,7 +4541,7 @@ function isChecks(){
       fix:"match",items:()=>APTR.noRecord.map(r=>({id:"a:"+r.name,name:r.name,note:r.note,r:{name:r.name}}))},
     {key:"cert-names",cat:"Name Matching",title:"Certified People Not Matched to a Record",
       why:"The AMSP and CMSP registers list these people, but their company, email domain and earlier match don't point to exactly one Member 360 record, so they don't show on any record. Most work for non-members or list a personal email. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
-      fix:"match",items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note,r:r.co?{name:r.co}:null}))},
+      fix:"match",items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note,r:{name:r.co||r.name}}))},
     {key:"apt-noterm",cat:"Missing Information",title:"Current Members with No Active Aptify Term",
       why:"Marked as current Non-Lender members, but the weekly Aptify upload has no active MISMO membership term for them. Check Aptify: the membership may have lapsed, been filed under another company, or (for Sole members) under a slightly different name.",
       items:()=>APT&&APT.uploadedAt?O(APTR.noTerm,o=>(o.level||"No level")+" · ends "+fmt(o.thru)):[]},
@@ -5033,7 +5033,10 @@ function certMatch(R){R.certNo=[];CERTP=null;if(!APT||!APT.certified||!APT.certi
   const one=set=>set&&set.size===1?[...set][0]:null;
   CERTP={};
   APT.certified.people.forEach(x=>{const d=(x.e||"").split("@")[1]||"";
-    const k=one(byName[aptN(x.co)])||(d&&!FREEDOM.test(d)?one(dom[d]):null)||one(prior[aptN(x.n)]);
+    /* company, then work email domain, then an earlier match, then the person's
+       own name — which is what a match saved against a register row that
+       carries no company is keyed on */
+    const k=one(byName[aptN(x.co)])||(d&&!FREEDOM.test(d)?one(dom[d]):null)||one(prior[aptN(x.n)])||one(byName[aptN(x.n)]);
     if(k&&BY[k])(CERTP[k]=CERTP[k]||[]).push({name:x.n,cert:x.cert,since:x.d,expires:x.x,email:x.e});
     else R.certNo.push({name:x.n,co:x.co,note:x.cert+" · "+(x.co||"no company")+(x.x?" · expires "+fmt(x.x):"")});});
 }
