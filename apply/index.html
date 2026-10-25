@@ -483,7 +483,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     <h2>Apply for MISMO Membership</h2>
     <p>Work through the five steps in any order &mdash; look ahead at any time to see what you&rsquo;ll need to gather. Required answers are marked, the bar shows how much is left, and everything is kept as you type: use Save to take a copy away with you, and Resume to pick it back up.</p>
   </div>
-  <div class="note"><b>Note to lenders:</b> Membership for lenders comes through MISMO's annual Innovation Investment Fee, so lenders don't complete this application. For information, email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</div>
+  <div class="note"><b>Note to lenders:</b> Membership for lenders comes through MISMO's annual Innovation Investment Fund, so lenders don't complete this application. For information, email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</div>
   <div class="stages" id="steps" role="tablist" aria-label="Application steps"></div>
 
   <div class="bar">
@@ -542,12 +542,12 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
         <div class="choices two" role="radiogroup" aria-label="Industry sector">
           <label class="choice"><input type="radio" name="sector" value="Tech/Service Provider"><span><b>Technology or Service Provider</b><small>Software, data, settlement, valuation, consulting and other services.</small></span></label>
           <label class="choice"><input type="radio" name="sector" value="Gov't/Non-Profit/Association"><span><b>Government, Non-Profit or Association</b></span></label>
-          <label class="choice"><input type="radio" name="sector" value="Lender"><span><b>Mortgage Lender</b><small>Lenders join through the Innovation Investment Fee.</small></span></label>
+          <label class="choice"><input type="radio" name="sector" value="Lender"><span><b>Mortgage Lender</b><small>Lenders join through the Innovation Investment Fund.</small></span></label>
           <label class="choice"><input type="radio" name="sector" value="Other"><span><b>Something Else</b><small>Tell us below.</small></span></label>
         </div>
         <div class="err">Choose the sector that fits best.</div>
       </div>
-      <div id="lenderStop" class="note warn" hidden style="margin-top:12px"><b>Lenders don't complete this application.</b> Membership for lenders comes through MISMO's annual Innovation Investment Fee, billed by MERSCORP. For information, email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</div>
+      <div id="lenderStop" class="note warn" hidden style="margin-top:12px"><b>Lenders don't complete this application.</b> Membership for lenders comes through MISMO's annual Innovation Investment Fund, billed by MERSCORP. For information, email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</div>
       <div class="grid" style="margin-top:14px">
         <div class="f c6" id="sectorOtherBox" hidden data-need="sectorOther"><label for="sectorOther">Describe Your Organization</label><input type="text" id="sectorOther" maxlength="150"><div class="err">Tell us what your organization does.</div></div>
         <div class="f c6" data-need="focus">
@@ -569,7 +569,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
         </div>
         <div class="f c6"><label for="po">Purchase Order Number <span class="optl">(optional)</span></label><input type="text" id="po" maxlength="60" style="max-width:320px"><div class="help">Only if your invoice needs one.</div></div>
       </div>
-      <div class="navrow"><span class="aside">Applying as an individual? Sole membership is by request: email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</span><button type="button" class="btn" data-go="next">Continue</button></div>
+      <div class="navrow" style="justify-content:flex-end"><button type="button" class="btn" data-go="next">Continue</button></div>
     </section>
 
     <!-- 2. Level -->
@@ -875,7 +875,7 @@ function allMissing(){
   var out=[];
   for(var i=0;i<4;i++){
     var r=scan(i,false);
-    if(r.lender)out.push({step:0,plain:true,label:"Lenders don't complete this application \u2014 membership for lenders comes through the Innovation Investment Fee"});
+    if(r.lender)out.push({step:0,plain:true,label:"Lenders don't complete this application \u2014 membership for lenders comes through the Innovation Investment Fund"});
     r.bad.forEach(function(b){out.push({step:i,label:b.label});});
   }
   return out;
