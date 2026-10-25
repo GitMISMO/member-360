@@ -4668,6 +4668,11 @@ function isChecks(){
       items:()=>{const M=mersMap();
         return O(ORGS.filter(o=>o.cid&&M.has(String(o.cid))),o=>{const m=M.get(String(o.cid));
           return "Company ID "+o.cid+" is "+(m===o?"this record's own":m.name+"'s")+" MERS ID · "+lifeTag(o);});}},
+    {key:"cid-unknown",cat:"Missing Information",title:"Company IDs Aptify Doesn't Have",
+      why:"The number on these records doesn't appear anywhere in the weekly Aptify upload — not as a company, a membership term or an order — so nothing Aptify sends can ever reach them. Usually it's a number copied from somewhere else, a MERS Org ID most often. Open the company in Aptify, copy the ID from its record and put it in below.",
+      items:()=>{if(!APT||!APT.companies)return [];const S=aptIds(),M=mersMap();
+        return O(ORGS.filter(o=>o.cid&&!o.mm&&!S.has(String(o.cid))&&!(o.pid&&S.has(String(o.pid)))),
+          o=>"Company ID "+o.cid+(M.has(String(o.cid))?" is a MERS ID":" isn't in Aptify")+" · "+lifeTag(o));}},
     {key:"no-joined",cat:"Missing Information",title:"Members with No Joined Date",
       act:{label:"Set Joined Date",field:"joined",date:true},
       why:"Current members with no joined date on record. Member Since and any count \"as of\" a past date are estimates for these. Add the Last Joined Date under Membership History and Levels on each record, or ask for the Aptify export with original join dates.",
@@ -4846,6 +4851,15 @@ function mersMap(){const M=new Map();
   ORGS.forEach(o=>{const m=o.iif&&String(o.iif.mers||"").trim();if(m&&!M.has(m))M.set(m,o);});
   return M;}
 function mersOwner(v){v=String(v||"").trim();if(!v)return null;return mersMap().get(v)||null;}
+/* every Company ID the weekly Aptify upload actually knows, across all three exports.
+   A number on a record that appears in none of them is not an Aptify Company ID at all. */
+function aptIds(){const S=new Set();if(!APT)return S;
+  Object.keys(APT.terms||{}).forEach(k=>S.add(String(k)));
+  Object.keys(APT.companies||{}).forEach(k=>S.add(String(k)));
+  const r=APT.orders||{};
+  Object.keys(r.c||{}).forEach(k=>S.add(String(k)));
+  Object.keys(r.w||{}).forEach(k=>S.add(String(k)));
+  return S;}
 /* put the right Aptify Company ID on a record, or take a wrong number off it */
 function cidFixCtl(o){
   const dis=!db||!canWrite;
@@ -4949,7 +4963,7 @@ function isItems(x,wrap){
       x.act&&!marked&&it.o?actCtl(x.act,it.o):null,
       x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
       x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null,
-      x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null),btn);};
+      (x.key==="cid-mers"||x.key==="cid-unknown")&&!marked&&it.o?cidFixCtl(it.o):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
