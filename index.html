@@ -4564,7 +4564,8 @@ function isChecks(){
       why:"Serving as a workgroup leader or official representative is a member benefit, but these leaders' organizations aren't current members (or the leader matched a record that has ended). Check whether they should renew, or whether the leader moved companies.",
       /* a leader who holds a Sole membership in their own name is a member, whatever company the tracker lists (Brian Stucky at Decision X) */
       items:()=>{const soleOn=new Set(ORGS.filter(x=>x.life==="Active"&&/^Sole/.test(x.level||"")).map(x=>aptN(x.name)));
-        return O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"&&!leadOf(o).every(x=>soleOn.has(aptN(x.n)))),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o));}},
+        return O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"&&!leadOf(o).every(x=>soleOn.has(aptN(x.n)))),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o))
+          .map(it=>Object.assign(it,{r:{name:it.o.name}}));}},
     {key:"lead-names",cat:"Name Matching",title:"Workgroup Leaders Not Matched to a Record",
       why:"The Leadership Tracker lists these companies (or people, when no company is given), but no Member 360 record matched. Self-employed leaders need a Sole membership in their name to match. Tell Claude which record any of them belong to.",
       fix:"match",items:()=>((LEAD&&LEAD.unmatched)||[]).map(u=>({id:"l:"+u.name,name:u.name,note:u.count+(u.count===1?" leadership seat":" leadership seats"),r:{name:u.name}}))},
@@ -4992,9 +4993,11 @@ function applyAptify(){
   Object.keys(sole).forEach(n=>{const l=byName[n]||[];const ts=sole[n];
     if(l.length===1)take(l[0],ts);else R.noRecord.push({name:ts[0].who,note:"Sole membership · ends "+fmt(ts[ts.length-1].e)+(l.length>1?" · more than one record has this name":"")});});
   Object.keys(APT.companies||{}).forEach(cid=>{const c=APT.companies[cid],o=orgFor(cid);if(!o)return;
-    /* where Aptify states a company type it decides the flag both ways; a blank
-       type is Aptify saying nothing, so the flag is left alone */
-    if(c.ct){const isCU=/credit union/i.test(c.ct);if(o.cu!==isCU)set(o,"cu",isCU);}
+    /* Aptify can set this flag but never clear it: its company type calls plenty
+       of real credit unions an Independent Mortgage Bank, so a type that doesn't
+       say credit union is not Aptify saying they aren't one. Tried both ways on
+       25 Oct 2026 and it turned 1 flagged record into 38. */
+    if(/credit union/i.test(c.ct||"")&&!o.cu)set(o,"cu",true);
     if(!o.addr&&(c.city||c.st))set(o,"addr",[c.city,c.st].filter(Boolean).join(", "));});
   applyLifeOv();
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
