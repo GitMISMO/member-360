@@ -2259,42 +2259,52 @@ function refreshHeads(){
    record's own key never moves — notes, stages and owners stay where they are. */
 function applyCidOv(){
   let changed=false;
-  ORGS.forEach(o=>{const c=(OV[o.k]||{}).cid;if(c===undefined)return;
-    const v=String(c||"").trim();
-    if(o.cid!==v){if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=v;changed=true;}});
+  ORGS.forEach(o=>{
+    const d=OV[o.k]||{};
+    if(d.cid!==undefined){const v=String(d.cid||"").trim();
+      if(o.cid!==v){if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=v;changed=true;}}
+    /* A Sole membership is bought by a person and paid for by their firm, so
+       Aptify records it under the person while Accounting looks for the
+       company. The record holds both, and either one finds it. */
+    if(d.pid!==undefined){const v=String(d.pid||"").trim();
+      if(o.pid!==v){o.pid=v;changed=true;}}
+  });
   return changed;
 }
-function cidFact(facts,o){
+function isSole(o){return String(o.level||"")==="Sole";}
+function cidFact(facts,o){idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under.");
+  if(isSole(o)||o.pid)idFact(facts,o,"pid","Person ID","Use the ID on the person’s own record in Aptify — the one the Sole membership is recorded against.");}
+function idFact(facts,o,key,label,help){
   const d=h("div",null);
   const show=()=>{
     d.textContent="";
-    const txt=o.cid?(o.cid+(o.dupId?" (shared with another row)":"")):"Missing — check Aptify";
+    const txt=o[key]?(o[key]+(key==="cid"&&o.dupId?" (shared with another row)":"")):"Missing — check Aptify";
     if(!db||!canWrite){d.appendChild(document.createTextNode(txt));return;}
     const b=h("button",{type:"button",class:"linkbtn",title:"Change the Company ID"},txt);
     b.addEventListener("click",edit);
     d.appendChild(b);
-    if(o.cidWas!==undefined&&o.cidWas!==o.cid)
+    if(key==="cid"&&o.cidWas!==undefined&&o.cidWas!==o.cid)
       d.appendChild(h("div",{class:"hint"},"Corrected by hand · the member list had "+(o.cidWas||"none")));
   };
   const edit=()=>{
     d.textContent="";
-    const inp=h("input",{type:"text",value:o.cid||"",inputmode:"numeric","aria-label":"Company ID",style:"max-width:170px"});
+    const inp=h("input",{type:"text",value:o[key]||"",inputmode:"numeric","aria-label":label,style:"max-width:170px"});
     const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
     const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
     ok.addEventListener("click",()=>{
       const v=String(inp.value||"").trim();
-      if(v&&!/^\d+$/.test(v)){toast("A Company ID is digits only — copy it from the Aptify company record.",true);return;}
-      if(o.cidWas===undefined)o.cidWas=o.cid||"";
-      o.cid=v;saveOv(o.k,{cid:v});rebuildOrgs();show();
-      toast(v?("Company ID set to "+v+". The next Aptify upload joins on it."):"Company ID cleared.");
+      if(v&&!/^\d+$/.test(v)){toast("An ID is digits only — copy it from the record in Aptify.",true);return;}
+      if(key==="cid"&&o.cidWas===undefined)o.cidWas=o.cid||"";
+      o[key]=v;saveOv(o.k,{[key]:v});rebuildOrgs();show();
+      toast(v?(label+" set to "+v+". The next Aptify upload joins on it."):(label+" cleared."));
     });
     no.addEventListener("click",show);
     d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},inp,ok,no));
-    d.appendChild(h("div",{class:"hint"},"Use the Company ID on the company record in Aptify — the one the membership order is under."));
+    d.appendChild(h("div",{class:"hint"},help));
     try{inp.focus();}catch(e){}
   };
   show();
-  facts.appendChild(h("div",{class:"fact"},h("label",null,"Company ID"),d));
+  facts.appendChild(h("div",{class:"fact"},h("label",null,label),d));
 }
 
 /* ---------- profile ---------- */
@@ -4857,6 +4867,7 @@ function applyAptify(){
   if(!APT||!APT.terms){certMatch(R);APTR=R;return;}
   const byCid={},byName={};
   ORGS.forEach(o=>{if(o.cid&&!o.mm)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o);
+    if(o.pid&&!o.mm&&String(o.pid)!==String(o.cid))(byCid[String(o.pid)]=byCid[String(o.pid)]||[]).push(o);
     /* a Sole record can carry a nickname in brackets, "Prabhakar Bhogaraju (PB)" */
     [...new Set([aptN(o.name),aptN(String(o.name||"").replace(/\s*\([^)]*\)\s*/g," "))])].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
   /* two records can share a Company ID (ServiceLink and "Service Link, A Black Knight..."): the current one gets
