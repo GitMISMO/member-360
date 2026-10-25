@@ -1800,6 +1800,9 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="sbody">
         <div class="hint">Special rates MISMO has offered, like TMC, Broker and ACUMA. Each one gets a box on Membership Stats, and staff mark members on their record under Membership Special. A membership level here marks members at that level automatically.</div>
         <div class="staff" id="specials"></div>
+        <div class="formgrid" style="max-width:620px;margin-top:4px">
+          <div class="fld"><label for="sq-to">Who Gets the Set-Up Email</label><input type="email" id="sq-to" placeholder="Leave empty to send it to yourself"><div class="hint">Recording a Square payment emails this address to set the member up in Aptify. Leave it empty while you are testing and it goes to whoever pressed the button.</div></div>
+        </div>
         <div class="formgrid" style="max-width:620px">
           <div class="fld"><label for="sp-name">Special Name</label><input type="text" id="sp-name" placeholder="e.g. ACUMA"></div>
           <div class="fld"><label for="sp-level">Matches Membership Level (Optional)</label><select id="sp-level"><option value="">No Level</option><option>Corporate (TMC)</option><option>Corporate (Broker)</option><option>Corporate</option><option>Sole</option></select></div>
@@ -2519,6 +2522,9 @@ function renderProfile(o,box){
   if(canEmail()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
     se.addEventListener("click",()=>{const nx=nextStep(o);openSend({stId:nx?nx.st.id:"r90",thru:o.thru||"",orgs:[o],pick:true});});
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},se));}
+  if(o.type==="Lender"&&canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
+    sq.addEventListener("click",()=>openSquarePay(o));
+    box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},sq));}
   box.appendChild(h("div",{"data-part":"ctrls"}));
   box.appendChild(h("div",{"data-part":"reasons"}));
   if(renewable(o))box.appendChild(sect("Renewal Timeline","timeline",null));
@@ -3474,7 +3480,10 @@ function renderIIF(){
   const kd=$("iif-dates");kd.textContent="";
   KEYDATES.forEach(([d,l])=>{const days=Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);
     kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,days<0?"Done":days===0?"Today":"In "+n(days)+" days")));});
-  $("iif-right").textContent="Planning starts in October; invoices go out in February";
+  const ir=$("iif-right");ir.textContent="";ir.hidden=false;
+  ir.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"Planning starts in October; invoices go out in February"));
+  if(canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
+    sq.addEventListener("click",()=>openSquarePay(null));ir.appendChild(sq);}
   const chip=$("iif-sel");chip.textContent="";chip.hidden=!IIFSEL;if(IIFSEL){chip.appendChild(h("span",null,"Showing: "+IIFSEL.label));const x=h("button",{type:"button","aria-label":"Show all lenders"},"\u00d7");x.addEventListener("click",()=>iifPick(null,"",""));chip.appendChild(x);}
   {let say;const nxk=KEYDATES.find(x=>x[0]>=TODAY);
     if(inv0){let out=0,bo=0,bn=0;L.forEach(o=>{const yd=iifY(o,Y);const due=Math.max(0,yd.inv-yd.paid);if(yd.cs==="Paid Full Amount"||yd.cs==="Paid")return;out+=due;if(yd.inv>=20000&&due>0){bo+=due;bn++;}});
@@ -4127,6 +4136,83 @@ function openNewProspect(){
   body.scrollTop=0;document.body.classList.add("paneon");$("m360-pane").setAttribute("aria-hidden","false");setTimeout(()=>{try{nm.focus();}catch(e){}},60);
 }
 
+/* ---------- a Square special payment: TMC, Broker and ACUMA members pay $350 or $500 through
+   Square rather than the $1,000 IIF, and that money never reaches the Financial System. Recording it
+   here marks the special so the member counts correctly, and emails the membership team to set them
+   up in Aptify. ---------- */
+function sqTo(){return String(SET.sqTo||"").trim();}
+function openSquarePay(o){
+  if(blocked())return;
+  if(!canEmail()){toast("Recording a Square payment sends an email, which works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}
+  const body=$("m360-pane-body");paneK="__sq";markSel();
+  $("m360-pane-t").textContent="Record a Square Payment";
+  $("m360-pane-sub").textContent="Marks the special here, then emails the membership team to set them up in Aptify.";
+  body.textContent="";
+  const id=f=>"sq-f-"+f;
+  const F=(lab,el,wide,help)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",{for:el.id},lab),el,help?h("div",{class:"hint"},help):null);
+  fillOrgList();
+  const byLabel={};ORGS.forEach(x=>{if(!x.auto)byLabel[orgLabel(x)]=x.k;});
+  const org=h("input",{type:"text",id:id("org"),list:"orgnames",placeholder:"Start typing a lender\u2019s name",value:o?orgLabel(o):""});
+  const sp=select(specialsList().map(x=>({v:x.name,l:x.name+" Special"})),(o&&specialOf(o))||"",{id:id("sp")});
+  const amt=h("input",{type:"number",id:id("amt"),min:"0",step:"0.01",placeholder:"350 or 500"});
+  const dt=h("input",{type:"date",id:id("dt"),value:TODAY});
+  const ref=h("input",{type:"text",id:id("ref"),placeholder:"From the Square receipt"});
+  const cn=h("input",{type:"text",id:id("cn"),placeholder:"Who signed them up"});
+  const ce=h("input",{type:"email",id:id("ce"),placeholder:"name@company.com"});
+  const note=h("textarea",{id:id("note"),rows:"3",placeholder:"Anything the membership team needs to know"});
+  const msg=h("div",{class:"hint"});
+  const go=h("button",{type:"button",class:"btn",style:"min-width:max-content"},"Record It and Tell the Membership Team");
+  const no=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Cancel");
+  no.addEventListener("click",closePane);
+  go.addEventListener("click",async()=>{
+    if(blocked())return;
+    const k=byLabel[org.value]||(o?o.k:"");
+    const rec=BY[k];
+    if(!rec){msg.textContent="Pick a lender from the list.";org.focus();return;}
+    if(!sp.value){msg.textContent="Choose which special they joined through.";return;}
+    const n=Number(amt.value);
+    if(!(n>0)){msg.textContent="Enter what they paid through Square.";amt.focus();return;}
+    const em=ce.value.trim();
+    if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){msg.textContent="That email address doesn\u2019t look complete.";ce.focus();return;}
+    const sender=mySender(),to=sqTo()||sender.email;
+    go.disabled=true;msg.textContent="";
+    try{
+      await saveOv(rec.k,{special:sp.value});
+      rec.special=sp.value;
+      const rows=[["Company",rec.name],["Aptify Company ID",rec.cid||"Not on the record"],
+        ["Special",sp.value],["Paid through Square",money(n)],["Date paid",fmt(dt.value)],
+        ["Square reference",ref.value.trim()||"\u2014"],["Their contact",[cn.value.trim(),em].filter(Boolean).join(" \u00b7 ")||"\u2014"],
+        ["Recorded by",myName()||sender.name]];
+      const tbl='<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:15px;color:#0d314c">'+
+        rows.map(r=>'<tr><td style="padding:7px 12px 7px 0;color:#5b7183;white-space:nowrap;vertical-align:top">'+escH(r[0])+'</td>'+
+        '<td style="padding:7px 0;font-weight:600">'+escH(r[1])+'</td></tr>').join("")+'</table>';
+      const inner='<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#0d314c">'+escH(myName()||sender.name)+
+        ' has taken a Square payment for a membership special. Please set this company up in Aptify as a MISMO member at the Corporate level.</p>'+tbl+
+        (note.value.trim()?'<p style="margin:16px 0 0;font-size:15px;line-height:1.55;color:#0d314c">'+escH(note.value.trim())+'</p>':'')+
+        '<p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#5b7183">This payment was taken through Square, so it will not appear on the IIF invoice list or in the Financial System. Member 360 has already marked them as a '+escH(sp.value)+' member.</p>';
+      const nowId="sq"+Date.now().toString(36)+sender.key.slice(0,2);
+      await db.doc("outbox/"+nowId).set({step:"square",stepName:"Square Special Payment",thru:"",test:false,
+        from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(inner),benefits:{},
+        recipients:[{to:to,name:"",org:rec.k,subject:"Set Up a MISMO Member: "+rec.name+" ("+sp.value+" Special)",
+          fn:"",ln:"",co:escH(rec.name),lvl:"",type:"",ends:"",bk:"none"}],
+        status:"queued",queuedAt:new Date().toISOString(),queuedBy:ME||""});
+      rebuildOrgs();ISGEN++;scheduleRefresh();
+      toast(rec.name+" marked as a "+sp.value+" member. The set-up email is on its way to "+to+".");
+      closePane();
+    }catch(e){go.disabled=false;onWriteErr(e);}
+  });
+  body.appendChild(h("div",{class:"formgrid"},
+    F("Lender",org,true,"They become a "+(specialsList()[0]||{}).name+"-style special member and stop being chased for the $1,000 IIF."),
+    F("Which Special",sp),F("Paid through Square",amt),F("Date Paid",dt),F("Square Reference",ref)));
+  body.appendChild(h("h4",{class:"subh",style:"margin-top:16px"},"Who to Set Up"));
+  body.appendChild(h("div",{class:"formgrid"},F("Their Contact",cn),F("Their Email",ce)));
+  body.appendChild(h("div",{class:"formgrid",style:"margin-top:12px"},F("Note",note,true)));
+  body.appendChild(h("div",{class:"hint",style:"margin-top:10px"},"The email goes to "+(sqTo()||"you, because no address is set in Settings")+"."));
+  body.appendChild(msg);
+  body.appendChild(h("div",{class:"btnrow",style:"margin-top:14px"},go,no));
+  body.scrollTop=0;document.body.classList.add("paneon");$("m360-pane").setAttribute("aria-hidden","false");
+  setTimeout(()=>{try{(o?sp:org).focus();}catch(e){}},60);
+}
 /* ---------- commitments: new memberships, renewals and dues deals the team committed, for AP each month ---------- */
 const DEAL_TYPES=["New Member","Renewal","Upgrade"],DEAL_TERMS=["Standard","Dues Deal"],DEAL_LEVELS=["Chair","Executive","Associate","Corporate","Corporate (TMC)","Corporate (Broker)","Sole"];
 const LIST_PRICE={Chair:55000,Executive:20000,Associate:10000,Corporate:5000,Sole:550};
@@ -4564,6 +4650,10 @@ function renderStats(){
   $("st-pipepanel").hidden=!cur;$("st-sppanel").hidden=!cur;$("st-recon").hidden=!cur;
   if(cur){
     // specials
+    const sqt=$("sq-to");if(sqt&&!sqt.dataset.init){sqt.dataset.init="1";sqt.value=SET.sqTo||"";
+      sqt.addEventListener("change",()=>{const v=sqt.value.trim();
+        if(v&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)){toast("That email address doesn't look complete.",true);return;}
+        saveSet({sqTo:v});toast(v?"Set-up emails go to "+v+" now.":"Set-up emails go to whoever records the payment.");});}
     const sp=$("st-specials");sp.textContent="";
     SPECIALS.forEach(S=>{const L=ORGS.filter(o=>specialOf(o)===S);const act=L.filter(o=>o.life==="Active");
       const got=L.reduce((a,o)=>a+fsItems(o).filter(i=>i.d.slice(0,4)===Y&&(i.c==="IIF"||i.c==="Membership")).reduce((x,i)=>x+i.n,0),0);
