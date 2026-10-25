@@ -2153,8 +2153,12 @@ function rebuildIdx(){
 function blocked(){if(!db||!canWrite){toast("Changes can't be saved in this view.",true);return true;}return false;}
 function saveOv(k,patch){
   if(blocked())return Promise.resolve();
-  const run=async()=>{const body=Object.assign({},OV[k]||{},patch,{updatedAt:new Date().toISOString(),updatedBy:ME||""});
-    OV[k]=body;scheduleRefresh();
+  /* The change lands in OV straight away, not inside the write queue, so code
+     that redraws on the next line already sees it. The queue still carries the
+     write itself, one at a time per record. */
+  const body=Object.assign({},OV[k]||{},patch,{updatedAt:new Date().toISOString(),updatedBy:ME||""});
+  OV[k]=body;
+  const run=async()=>{scheduleRefresh();
     try{await db.doc("orgs/"+k).set(body);}catch(e){onWriteErr(e);}};
   writeChain[k]=(writeChain[k]||Promise.resolve()).then(run);return writeChain[k];
 }
@@ -2303,6 +2307,7 @@ function mergeCtl(it){
   ok.addEventListener("click",()=>{
     if(blocked())return;
     const w=sel.value,losers=os.filter(o=>o.k!==w);
+    if((OV[w]||{}).mergedInto)saveOv(w,{mergedInto:""});
     if(!losers.length)return;
     losers.forEach(o=>saveOv(o.k,{mergedInto:w}));
     rebuildOrgs();
