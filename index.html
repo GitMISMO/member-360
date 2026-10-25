@@ -2252,12 +2252,57 @@ function refreshHeads(){
   if(paneK&&BY[paneK]){paneTitle(BY[paneK]);refreshProfile(BY[paneK],$("m360-pane-body"));}
 }
 
+/* ---------- the Company ID, and correcting it ----------
+   The weekly Aptify upload joins on this number, so a record carrying an old
+   one looks as though its membership is missing. The correction is kept with
+   the record's other staff edits, which means a rebuild never loses it and the
+   record's own key never moves — notes, stages and owners stay where they are. */
+function applyCidOv(){
+  let changed=false;
+  ORGS.forEach(o=>{const c=(OV[o.k]||{}).cid;if(c===undefined)return;
+    const v=String(c||"").trim();
+    if(o.cid!==v){if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=v;changed=true;}});
+  return changed;
+}
+function cidFact(facts,o){
+  const d=h("div",null);
+  const show=()=>{
+    d.textContent="";
+    const txt=o.cid?(o.cid+(o.dupId?" (shared with another row)":"")):"Missing — check Aptify";
+    if(!db||!canWrite){d.appendChild(document.createTextNode(txt));return;}
+    const b=h("button",{type:"button",class:"linkbtn",title:"Change the Company ID"},txt);
+    b.addEventListener("click",edit);
+    d.appendChild(b);
+    if(o.cidWas!==undefined&&o.cidWas!==o.cid)
+      d.appendChild(h("div",{class:"hint"},"Corrected by hand · the member list had "+(o.cidWas||"none")));
+  };
+  const edit=()=>{
+    d.textContent="";
+    const inp=h("input",{type:"text",value:o.cid||"",inputmode:"numeric","aria-label":"Company ID",style:"max-width:170px"});
+    const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
+    const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
+    ok.addEventListener("click",()=>{
+      const v=String(inp.value||"").trim();
+      if(v&&!/^\d+$/.test(v)){toast("A Company ID is digits only — copy it from the Aptify company record.",true);return;}
+      if(o.cidWas===undefined)o.cidWas=o.cid||"";
+      o.cid=v;saveOv(o.k,{cid:v});rebuildOrgs();
+      toast(v?("Company ID set to "+v+". The next Aptify upload joins on it."):"Company ID cleared.");
+    });
+    no.addEventListener("click",show);
+    d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},inp,ok,no));
+    d.appendChild(h("div",{class:"hint"},"Use the Company ID on the company record in Aptify — the one the membership order is under."));
+    try{inp.focus();}catch(e){}
+  };
+  show();
+  facts.appendChild(h("div",{class:"fact"},h("label",null,"Company ID"),d));
+}
+
 /* ---------- profile ---------- */
 function renderProfile(o,box){
   box.textContent="";if(box.id==="m360-pane-body"&&paneK===o.k){const bb=laneBackBtn();if(bb)box.appendChild(bb);}
   const facts=h("div",{class:"facts"});
   const F=(l,v)=>facts.appendChild(h("div",{class:"fact"},h("label",null,l),h("div",null,v||"—")));
-  F("Company ID",o.cid?(o.cid+(o.dupId?" (shared with another row)":"")):"Missing — check Aptify");
+  cidFact(facts,o);
   F("Member Type",o.type);F("Industry Sector",sectorLab(sectorOf(o)));F("Commercial or Residential",o.market);
   F("Credit Union",o.cu?"Yes":"No");{const si=sinceInfo(o);F("Member Since",si.y?(si.y+(si.confirmed?" (confirmed in Aptify)":si.sure?"":" or earlier")):"—");F("Last Joined Date",fmt(joinedOf(o)));}F("Membership Ends",fmt(o.thru));
   if(o.addr)F("Address",o.addr);
@@ -3801,6 +3846,7 @@ function rebuildOrgs(){
   keep.forEach(applyContacts);
   keep.sort((a,b)=>a.name.localeCompare(b.name));
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));for(const k in BY)delete BY[k];ORGS.forEach(o=>BY[o.k]=o);
+  applyCidOv();
   if(MMF)remergeAct();
   if(APT)applyAptify();
   const dl=$("orgnames");if(dl)dl.textContent="";
@@ -5343,7 +5389,9 @@ async function boot(){
   if(paneK&&BY[paneK])renderProfile(BY[paneK],$("m360-pane-body"));
   if(!db)return;
   const err=()=>{};
-  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;scheduleRefresh();},err);
+  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;
+    if(applyCidOv()&&APT)applyAptify();
+    scheduleRefresh();},err);
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
   db.doc("sync/namesync").onSnapshot(s=>{NSYNC=s.exists?s.data():null;scheduleRefresh();},err);
