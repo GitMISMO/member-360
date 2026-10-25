@@ -2272,6 +2272,45 @@ function applyCidOv(){
   return changed;
 }
 function isSole(o){return String(o.level||"")==="Sole";}
+/* ---------- duplicate records folded into one ----------
+   Two rows carrying the same Aptify Company ID are one company as far as
+   Aptify is concerned, so the team can fold them together here rather than
+   waiting on a merge in Aptify. Nothing is deleted: the folded-away record
+   keeps its own notes and comes back whole when the merge is undone, and
+   every lookup by its key answers with the record it was folded into. */
+const MERGED={};
+function applyMerges(){
+  Object.keys(MERGED).forEach(k=>delete MERGED[k]);
+  ORGS.forEach(o=>{delete o.mergedIn;});
+  const keep=[],drop=[];
+  ORGS.forEach(o=>{const w=(OV[o.k]||{}).mergedInto;
+    if(w&&w!==o.k&&BY[w]&&!(OV[w]||{}).mergedInto)drop.push([o,w]);else keep.push(o);});
+  ORGS.length=0;keep.forEach(o=>ORGS.push(o));
+  drop.forEach(([o,w])=>{MERGED[o.k]=w;BY[o.k]=BY[w];
+    (BY[w].mergedIn=BY[w].mergedIn||[]).push({k:o.k,name:o.name,cid:o.cid||""});});
+}
+function unmerge(k){if(blocked())return;saveOv(k,{mergedInto:""});rebuildOrgs();toast("Put back as its own record.");}
+/* the merge offered on a duplicate group, only where Aptify already calls them one company */
+function mergeCtl(it){
+  const os=it.os||[];
+  const ids=[...new Set(os.map(o=>String(o.cid||"")))];
+  if(os.length<2||ids.length!==1||!ids[0])
+    return h("div",{class:"hint",style:"margin-top:8px"},"These rows carry different Aptify Company IDs, so Aptify holds them as separate companies. Either one of them has the wrong Company ID \u2014 open the record and correct it \u2014 or the two really do need merging in Aptify.");
+  const dis=!db||!canWrite;
+  const sel=h("select",{"aria-label":"The record to keep",style:"max-width:280px"});
+  os.forEach(o=>sel.appendChild(h("option",{value:o.k},o.name+" \u00b7 "+o.life)));
+  const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Merge Into One Record");
+  ok.addEventListener("click",()=>{
+    if(blocked())return;
+    const w=sel.value,losers=os.filter(o=>o.k!==w);
+    if(!losers.length)return;
+    losers.forEach(o=>saveOv(o.k,{mergedInto:w}));
+    rebuildOrgs();
+    toast(losers.length===1?(losers[0].name+" folded into "+BY[w].name+"."):(losers.length+" records folded into "+BY[w].name+"."));});
+  return h("div",{class:"ismatch"},
+    h("div",{class:"fld"},h("label",null,"All on Aptify ID "+ids[0]+" \u2014 Keep This Record"),sel),
+    h("div",{class:"btnrow",style:"margin-top:0"},ok));
+}
 /* Aptify belongs to MBA and the team can't edit it, so every field the Issues
    Log used to send them to Aptify for can be set here instead. Each setting is
    kept with the record's other staff edits and survives every rebuild.
@@ -2416,6 +2455,13 @@ function renderProfile(o,box){
   pickFact(facts,o,"cu","Credit Union",[["true","Yes"],["false","No"]],
     "Credit unions are counted separately on Membership Stats.",x=>x.cu?"Yes":"No");{const si=sinceInfo(o);F("Member Since",si.y?(si.y+(si.confirmed?" (confirmed in Aptify)":si.sure?"":" or earlier")):"—");dateFact(facts,o,"joined","Last Joined Date","The day this membership last began.");}F("Membership Ends",fmt(o.thru));
   if(o.addr)F("Address",o.addr);
+  if(o.mergedIn&&o.mergedIn.length){
+    const d=h("div",null);
+    o.mergedIn.forEach(m=>{const line=h("div",null,m.name);
+      if(db&&canWrite){const u=h("button",{type:"button",class:"linkbtn",style:"margin-left:8px"},"Put back");
+        u.addEventListener("click",()=>unmerge(m.k));line.appendChild(u);}
+      d.appendChild(line);});
+    facts.appendChild(h("div",{class:"fact"},h("label",null,"Merged In"),d));}
   if(o.auto)F("Source","Added automatically from a Financial System payment. Add contacts and the Company ID in Aptify.");
   if(renewable(o))facts.appendChild(h("div",{class:"fact"},h("label",null,RY+" Dues"),h("div",{"data-part":"dues"},"\u2014")));
   box.appendChild(facts);
@@ -3957,6 +4003,7 @@ function rebuildOrgs(){
   keep.sort((a,b)=>a.name.localeCompare(b.name));
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));for(const k in BY)delete BY[k];ORGS.forEach(o=>BY[o.k]=o);
   applyCidOv();
+  applyMerges();
   if(MMF)remergeAct();
   if(APT)applyAptify();
   const dl=$("orgnames");if(dl)dl.textContent="";
@@ -4531,9 +4578,10 @@ function isChecks(){
       why:"The Meeting Trackers page lists people from these companies at monthly workgroup meetings, but no Member 360 record matched, so those meetings don't show on any record. Most are non-members, government agencies or consultants. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
       fix:"match",items:()=>((MTG&&MTG.unmatched)||[]).filter(u=>!/^(self-?employed|retired|independent|\(no company\))$/i.test(u.name)).map(u=>({id:"m:"+u.name,name:u.name,note:n(u.records)+" meeting attendance"+(u.records===1?"":"s"),r:{name:u.name}}))},
     {key:"dupes",cat:"Possible Duplicates",title:"Possible Duplicate Records",
-      why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Open both, check Aptify, and mark the pair Not an Issue if they really are different companies. Merging records happens in Aptify.",
+      why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Where the rows already share one Aptify Company ID, Aptify holds them as one company and you can fold them together below \u2014 nothing is deleted and it can be put back. Where the IDs differ, either one of them is wrong (correct it on the record) or the companies really do need merging in Aptify.",
       items:()=>dupPairs()},
     {key:"no-type",cat:"Missing Information",title:"Members with No Member Type",
+      act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"Current members with no Lender or Non-Lender type on record, so they can't be placed in the member counts. Open the record and set Member Type.",
       items:()=>O(A.filter(o=>kindIn(o,Y)==="Type Not Recorded"),lifeTag)},
     {key:"apt-norecord",cat:"Name Matching",title:"Aptify Memberships with No Member 360 Record",
@@ -4543,18 +4591,23 @@ function isChecks(){
       why:"The AMSP and CMSP registers list these people, but their company, email domain and earlier match don't point to exactly one Member 360 record, so they don't show on any record. Most work for non-members or list a personal email. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
       fix:"match",items:()=>(APTR.certNo||[]).map(r=>({id:"cp:"+r.name,name:r.name,note:r.note,r:{name:r.co||r.name}}))},
     {key:"apt-noterm",cat:"Missing Information",title:"Current Members with No Active Aptify Term",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as current Non-Lender members, but the weekly Aptify upload has no active MISMO membership term for them. Check Aptify: the membership may have lapsed, been filed under another company, or (for Sole members) under a slightly different name.",
       items:()=>APT&&APT.uploadedAt?O(APTR.noTerm,o=>(o.level||"No level")+" · ends "+fmt(o.thru)):[]},
     {key:"no-joined",cat:"Missing Information",title:"Members with No Joined Date",
+      act:{label:"Set Joined Date",field:"joined",date:true},
       why:"Current members with no joined date on record. Member Since and any count \"as of\" a past date are estimates for these. Add the Last Joined Date under Membership History and Levels on each record, or ask for the Aptify export with original join dates.",
       items:()=>O(A.filter(o=>!joinedOf(o)),lifeTag)},
     {key:"cu-unflagged",cat:"Member Counts",title:"Credit Unions Not Marked as Credit Unions",
+      act:{label:"Mark as a Credit Union",field:"cu",value:true},
       why:"Current members whose name says they're a credit union, but the Credit Union flag isn't set, so they're missing from the Credit Unions count on Membership Stats. Open the record and set Credit Union to Yes.",
       items:()=>O(A.filter(o=>!o.cu&&/credit union|\bf?cu\b/i.test(o.name)&&!/acuma/i.test(o.name)),noteL)},
     {key:"cu-low",cat:"Member Counts",title:"Credit Union Members That Paid under $1,000 IIF",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as credit union members, but their "+Y+" IIF is under the $1,000 that makes a lender a member. If they aren't a member, open the record and set Membership Status to Prospect.",
       items:()=>O(A.filter(o=>o.cu&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
     {key:"nl-iif",cat:"Member Counts",title:"Recorded as Non-Lender but Paid IIF",
+      act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"These members are recorded as Non-Lender members but paid $1,000 or more IIF in "+Y+", so the IIF Cycle counts them as lenders and Membership Stats doesn't. Open the record and set Member Type to whichever is right.",
       items:()=>O(NL.filter(o=>lendPaid(o,Y)>=1000),noteL)},
     {key:"name-disagree",cat:"Name Matching",title:"Company Names the Pages Disagree On",
@@ -4573,27 +4626,35 @@ function isChecks(){
       why:"These members used more free Boot Camp seats (comp code) in "+TODAY.slice(0,4)+" than their level includes: Chair 10, Executive 5, Associate 3, Corporate 1. Decide whether to allow it or follow up.",
       items:()=>O(ORGS.filter(o=>{const y=TODAY.slice(0,4),u=bootUsed(o,y);if(!u)return false;const lv=benLevel(o,y+"-12-31").lv;return BEN_BOOT[lv]&&u>BEN_BOOT[lv]&&o.life==="Active";}),o=>{const y=TODAY.slice(0,4),lv=benLevel(o,y+"-12-31").lv,u=bootUsed(o,y);return n(u)+(u===1?" free seat":" free seats")+" used in "+y+" · "+lv+" includes "+n(BEN_BOOT[lv]);})},
     {key:"bc-nonmember",cat:"Payments",title:"Free Boot Camp Seats Used without a Current Membership",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"These organizations registered for Boot Camp with the free member comp code but aren't current members, or their level has no Boot Camp seats.",
       items:()=>O(ORGS.filter(o=>bootListed(o,TODAY.slice(0,4))&&(o.life!=="Active"||!BEN_BOOT[benLevel(o,TODAY.slice(0,4)+"-12-31").lv])),o=>n(bootListed(o,TODAY.slice(0,4)))+" free seat"+(bootListed(o,TODAY.slice(0,4))>1?"s":"")+" · "+lifeTag(o))},
     {key:"lender-level",cat:"Missing Information",title:"Lender Levels That Don't Match the IIF Paid",
+      act:{label:"Set Membership Level",field:"level",opts:[["Chair","Chair"],["Executive","Executive"],["Associate","Associate"],["Corporate","Corporate"]]},
       why:"The level on record doesn't match the level these lenders' "+Y+" IIF pays for ($1,000 Corporate, $10,000 Associate, $20,000 Executive, $55,000 Chair). Member 360 always gives benefits by the IIF paid; fix the level in Aptify so the records agree.",
       items:()=>O(Lm.filter(o=>!specialOf(o)&&iifTier(lendPaid(o,Y))&&(o.level||"").replace(/ \(.*\)$/,"")!==iifTier(lendPaid(o,Y))),o=>money(Math.round(lendPaid(o,Y)))+" IIF paid for "+Y+" = "+iifTier(lendPaid(o,Y))+" · records say "+(o.level||"no level"))},
     {key:"x-mem",cat:"Payments",title:"Paid for a Membership but Not Marked a Member",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"The Financial System has a "+Y+" membership payment from these companies, but they aren't marked as current members.",
       items:()=>O(ORGS.filter(o=>o.life!=="Active"&&fsItems(o).some(i=>i.c==="Membership"&&i.n>0&&i.s&&i.s.slice(0,4)===Y)),o=>"Paid "+money(fsItems(o).filter(i=>i.c==="Membership"&&i.s&&i.s.slice(0,4)===Y).reduce((a,i)=>a+i.n,0))+" · "+lifeTag(o))},
     {key:"x-iif",cat:"Payments",title:"Paid $1,000 or More IIF but Not Marked a Member",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"These lenders paid enough IIF in "+Y+" to be members, but aren't marked as current members. This is part of why the IIF Cycle and Membership Stats show different lender counts.",
       items:()=>O(ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=1000),noteL)},
     {key:"l-none",cat:"Payments",title:"Lender Members with No IIF Payment Found",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as lender members, but no "+Y+" IIF payment is on file under their name. They may have paid under another name or on a duplicate record.",
       items:()=>O(Lm.filter(o=>!lendPaid(o,Y)&&!specialOf(o)),noteL)},
     {key:"l-low",cat:"Payments",title:"Lender Members That Paid under $1,000 IIF",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as lender members, but their "+Y+" IIF is under $1,000 and they aren't on a membership special. If they aren't a member, open the record and set Membership Status to Prospect.",
       items:()=>O(Lm.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
     {key:"nl-none",cat:"Payments",title:"Non-Lender Members with No Payments under Their Name",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"No payment of any kind is on file under these names, and Aptify has no active MISMO term covering "+Y+" for them. They probably pay under another name: match it under Payer Names to Match.",
       items:()=>O(NL.filter(o=>!fsItems(o).length&&!aptCovers(o,Y)),o=>(o.level||"Level not recorded")+" · "+lifeTag(o))},
     {key:"nl-last",cat:"Payments",title:"Non-Lender Members Whose Last Payment Is for an Earlier Year",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as current members, but their latest membership payment covers an earlier year, and Aptify has no active MISMO term covering "+Y+" for them.",
       items:()=>O(NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)&&!aptCovers(o,Y)),o=>"Last membership payment is for "+lastMemFor(o)+" · "+(o.level||""))},
     {key:"not-reported",cat:"Payments",title:"Membership Payments Not on the Monthly Report",
@@ -4702,6 +4763,44 @@ function isMatchCtl(r,payer){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(
   const nah=B("No",true,()=>{first.hidden=true;more.hidden=false;try{inp.focus();}catch(e){}});
   const first=h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,lab(sgs[0].sc)),recLine(top)),h("div",{class:"btnrow",style:"margin-top:0"},B("Yes, Same Company",false,()=>save(sgs[0].k)),nah));
   return h("div",null,first,more);}
+/* Every check that can be settled by setting a field on the record carries the
+   fix with it, so the Issues Log is somewhere things get done rather than a
+   list of errands for a system the team can't edit. */
+function setField(o,f,v,said){
+  if(blocked())return;
+  if(o[f+"Was"]===undefined)o[f+"Was"]=o[f];
+  o[f]=v;saveOv(o.k,{[f]:v});rebuildOrgs();
+  toast(o.name+" \u2014 "+said+".");
+}
+function actCtl(a,o){
+  const dis=!db||!canWrite;
+  const wrap=h("div",{class:"ismatch"});
+  if(a.date){
+    const inp=h("input",{type:"date",value:o[a.field]||"","aria-label":a.label,style:"max-width:190px"});
+    const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},a.label);
+    ok.addEventListener("click",()=>{const v=String(inp.value||"").slice(0,10);
+      if(!v){toast("Pick a date first.",true);return;}
+      setField(o,a.field,v,a.label.toLowerCase()+" "+fmt(v));});
+    wrap.appendChild(h("div",{class:"fld"},h("label",null,a.label),inp));
+    wrap.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},ok));
+  }else if(a.opts){
+    const sel=h("select",{"aria-label":a.label,style:"max-width:240px"});
+    sel.appendChild(h("option",{value:""},"Choose\u2026"));
+    a.opts.forEach(x=>sel.appendChild(h("option",{value:String(x[0])},x[1])));
+    const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},a.label);
+    ok.addEventListener("click",()=>{
+      if(!sel.value){toast("Choose one first.",true);return;}
+      const v=sel.value==="true"?true:sel.value==="false"?false:sel.value;
+      setField(o,a.field,v,a.label.toLowerCase()+" "+sel.options[sel.selectedIndex].text);});
+    wrap.appendChild(h("div",{class:"fld"},h("label",null,a.label),sel));
+    wrap.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},ok));
+  }else{
+    const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},a.label);
+    ok.addEventListener("click",()=>setField(o,a.field,a.value,a.label.toLowerCase()));
+    wrap.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},ok));
+  }
+  return wrap;
+}
 const ISALL=new Set();
 function isItems(x,wrap){
   const d=x.doc||{},dis=!db||!canWrite;
@@ -4709,7 +4808,9 @@ function isItems(x,wrap){
   const row=(it,marked)=>{const nm=it.o?h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(it.o.k)},it.o.name):h("b",null,it.name);
     const grp=it.os?h("div",{class:"isgrp"},it.os.map(o=>h("div",null,h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(o.k)},o.name),h("span",{class:"isg-t"},lifeTag(o))))):null;
     const btn=dis?null:h("button",{type:"button",class:"btn ghost sm"},marked?"Put Back":"Not an Issue");if(btn)btn.addEventListener("click",()=>setOk(it.id,!marked));
-    return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r,x.key==="payer-names"):null),btn);};
+    return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r,x.key==="payer-names"):null,
+      x.act&&!marked&&it.o?actCtl(x.act,it.o):null,
+      x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
