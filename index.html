@@ -2158,6 +2158,7 @@ function saveOv(k,patch){
      write itself, one at a time per record. */
   const body=Object.assign({},OV[k]||{},patch,{updatedAt:new Date().toISOString(),updatedBy:ME||""});
   OV[k]=body;
+  leadDirty();
   const run=async()=>{scheduleRefresh();
     try{await db.doc("orgs/"+k).set(body);}catch(e){onWriteErr(e);}};
   writeChain[k]=(writeChain[k]||Promise.resolve()).then(run);return writeChain[k];
@@ -3625,7 +3626,34 @@ function compsUsed(o,code){const R=(REGS[o.k]||[]).filter(r=>r.s===code);if(!R.l
   return Math.max(0,R.length-Math.max(0,paidSeats(o,code)));}
 /* free Boot Camp seats used in a calendar year: the $0 comp-code registrations in the Boot Camp registration lists, plus any
    other seats the team records on the record (ones that aren't in the lists) */
-function leadOf(o){return (LEAD.orgs||{})[o.k]||[];}
+/* Where a workgroup leader actually works. The Leadership Tracker often carries no
+   company for a leader, or a company they left a while ago, so the seat lands on the
+   wrong record and the person's real employer never gets the credit for it. The team
+   sets this once per person in the Issues Log and it holds through every later update,
+   because it lives on the record here, not in the tracker. */
+let LEADAT={},LEADX=null,LEADXD=true;
+function leadDirty(){LEADXD=true;LEADX=null;}
+function leadIndex(){
+  if(!LEADXD&&LEADX)return LEADX;
+  LEADAT={};
+  Object.keys(OV||{}).forEach(k=>{const m=(OV[k]||{}).leadAt;if(!m)return;
+    Object.keys(m).forEach(nm=>{if(m[nm]&&BY[m[nm]])LEADAT[nm]=BY[m[nm]].k;});});
+  const out={};
+  Object.keys((LEAD&&LEAD.orgs)||{}).forEach(k=>{
+    const home=BY[k];                                   /* BY follows a record folded into another */
+    ((LEAD.orgs||{})[k]||[]).forEach(x=>{
+      const to=LEADAT[aptN(x.n)],dest=to&&BY[to]?BY[to]:home;
+      if(!dest)return;
+      (out[dest.k]=out[dest.k]||[]).push(home&&dest.k!==home.k?Object.assign({},x,{was:home.name,wasK:home.k}):x);});});
+  LEADX=out;LEADXD=false;return out;}
+function leadOf(o){return leadIndex()[o.k]||[];}
+/* every seat the team has moved, for the list that can put one back */
+function leadMoved(){leadIndex();const out=[];
+  Object.keys(OV||{}).forEach(k=>{const m=(OV[k]||{}).leadAt||{},src=BY[k];
+    Object.keys(m).forEach(nm=>{const d=m[nm]&&BY[m[nm]];if(!d)return;
+      const seat=(leadIndex()[d.k]||[]).find(x=>aptN(x.n)===nm&&x.wasK===k);
+      out.push({ok:k,nm,name:seat?seat.n:nm,to:d,from:src?src.name:""});});});
+  return out.sort((a,b)=>a.name.localeCompare(b.name));}
 function bcRegs(o,y){return ((BC.orgs||{})[o.k]||[]).filter(x=>!y||(x.b||"").slice(0,4)===y);}
 function bootListed(o,y){return bcRegs(o,y).filter(x=>x.c).length;}
 function bootOther(o,y){return Number((ov(o).bootcamp||{})[y]||0);}
@@ -4041,6 +4069,7 @@ function rebuildOrgs(){
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));for(const k in BY)delete BY[k];ORGS.forEach(o=>BY[o.k]=o);
   applyCidOv();
   applyMerges();
+  leadDirty();
   if(MMF)remergeAct();
   if(APT)applyAptify();
   const dl=$("orgnames");if(dl)dl.textContent="";
@@ -4651,7 +4680,8 @@ function isChecks(){
       why:"Each weekday morning the Member 360 Feeds update shares name matches from the Sponsorship Portal and the CMS into Member 360. These are the ones where two pages say different things (the same name tied to different companies), so the sync changed nothing. Decide which is right and fix it on the page that's wrong."+(NSYNC&&NSYNC.lastRun?" Last run "+fmt(NSYNC.lastRun.slice(0,10))+".":""),
       items:()=>((NSYNC&&NSYNC.conflicts)||[]).map(c=>({id:"c:"+c.name+"|"+c.says,name:c.name,note:c.why}))},
     {key:"lead-nonmember",cat:"Member Counts",title:"Workgroup Leaders from Organizations That Aren't Current Members",
-      why:"Serving as a workgroup leader or official representative is a member benefit, but these leaders' organizations aren't current members (or the leader matched a record that has ended). Check whether they should renew, or whether the leader moved companies.",
+      act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
+      why:"Serving as a workgroup leader or official representative is a member benefit, but these leaders' organizations aren't current members (or the leader matched a record that has ended). Either they should renew \u2014 set the membership status below \u2014 or the leader works somewhere else, in which case move the seat onto their real company and it stays there through every later update.",
       /* a leader who holds a Sole membership in their own name is a member, whatever company the tracker lists (Brian Stucky at Decision X) */
       items:()=>{const soleOn=new Set(ORGS.filter(x=>x.life==="Active"&&/^Sole/.test(x.level||"")).map(x=>aptN(x.name)));
         return O(ORGS.filter(o=>leadOf(o).length&&o.life!=="Active"&&!leadOf(o).every(x=>soleOn.has(aptN(x.n)))),o=>leadOf(o).map(x=>x.n+", "+x.r+" of "+x.g).slice(0,3).join("; ")+(leadOf(o).length>3?" and more":"")+" · "+lifeTag(o))
@@ -4800,6 +4830,40 @@ function isMatchCtl(r,payer){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(
   const nah=B("No",true,()=>{first.hidden=true;more.hidden=false;try{inp.focus();}catch(e){}});
   const first=h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,lab(sgs[0].sc)),recLine(top)),h("div",{class:"btnrow",style:"margin-top:0"},B("Yes, Same Company",false,()=>save(sgs[0].k)),nah));
   return h("div",null,first,more);}
+/* "this leader works somewhere else": moves a workgroup seat onto the company the
+   person actually works for. Saved against the record here, so every later Leadership
+   Tracker update lands the seat in the same place and the issue stays settled. */
+function leadAtCtl(it){
+  const o=it.o;if(!o)return null;
+  const seats=leadOf(o);if(!seats.length)return null;
+  const dis=!db||!canWrite;
+  fillOrgList();
+  const byLabel={};ORGS.forEach(x=>{if(!x.auto)byLabel[orgLabel(x)]=x.k;});
+  const names=[...new Set(seats.map(x=>x.n))].filter(Boolean);
+  if(!names.length)return null;
+  const who=names.length>1?h("select",{"aria-label":"The leader who works somewhere else",style:"max-width:240px"}):null;
+  if(who)names.forEach(nm=>who.appendChild(h("option",{value:nm},nm)));
+  const inp=h("input",{type:"text",list:"orgnames",placeholder:"Start typing a member name","aria-label":"The company this leader works for"});
+  const msg=h("span",{class:"hint"});
+  const go=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Move the Seat There");
+  go.addEventListener("click",()=>{
+    if(blocked())return;
+    const k=byLabel[inp.value];
+    if(!k){msg.textContent="Pick a name from the list.";return;}
+    if(k===o.k){msg.textContent="That's the record the seat is already on.";return;}
+    const nm=who?who.value:names[0];
+    const m=Object.assign({},(OV[o.k]||{}).leadAt||{});m[aptN(nm)]=k;
+    saveOv(o.k,{leadAt:m});
+    ISGEN++;renderIssues();scheduleRefresh();
+    toast(nm+" now counts under "+BY[k].name+".");});
+  const w=h("div",{class:"ismatch"});
+  if(who)w.appendChild(h("div",{class:"fld"},h("label",null,"The Leader"),who));
+  w.appendChild(h("div",{class:"fld"},h("label",null,names.length>1?"Where They Actually Work":names[0]+" Actually Works At"),inp,msg));
+  w.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},go));
+  return w;}
+function leadBack(ok,nm){if(blocked())return;
+  const m=Object.assign({},(OV[ok]||{}).leadAt||{});delete m[nm];
+  saveOv(ok,{leadAt:m});ISGEN++;renderIssues();scheduleRefresh();toast("Put back where the tracker had it.");}
 /* Every check that can be settled by setting a field on the record carries the
    fix with it, so the Issues Log is somewhere things get done rather than a
    list of errands for a system the team can't edit. */
@@ -4847,13 +4911,22 @@ function isItems(x,wrap){
     const btn=dis?null:h("button",{type:"button",class:"btn ghost sm"},marked?"Put Back":"Not an Issue");if(btn)btn.addEventListener("click",()=>setOk(it.id,!marked));
     return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r,x.key==="payer-names"):null,
       x.act&&!marked&&it.o?actCtl(x.act,it.o):null,
-      x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null),btn);};
+      x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
+      x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
   if(!L.length)box.appendChild(h("div",{class:"hint",style:"padding:10px 12px"},"Nothing to look at right now."));
   const out=[box];
   if(L.length>cap){const more=h("button",{type:"button",class:"linkbtn",style:"margin-top:8px"},"Show All "+n(L.length));more.addEventListener("click",e=>{ISALL.add(x.id);e.currentTarget.blur();renderIssues();});out.push(more);}
+  if(x.key==="lead-nonmember"){const mv=leadMoved();
+    if(mv.length){const dd=h("details",{class:"sect",style:"margin-top:10px"},h("summary",null,"Leaders Moved to Their Own Company",h("span",{class:"cnt"},String(mv.length))));
+      const b3=h("div",{class:"isitems"});
+      mv.forEach(m=>{const bk=dis?null:h("button",{type:"button",class:"btn ghost sm"},"Put It Back");
+        if(bk)bk.addEventListener("click",()=>leadBack(m.ok,m.nm));
+        b3.appendChild(h("div",{class:"isitem"},h("div",{class:"isi-a"},h("b",null,m.name),
+          h("small",null,"Counts under ",m.to.name,m.from&&m.from!==m.to.name?" \u00b7 the tracker had it on "+m.from:"")),bk));});
+      dd.appendChild(h("div",{class:"sbody"},b3));out.push(dd);}}
   if(x.okd.length){const dd=h("details",{class:"sect",style:"margin-top:10px"},h("summary",null,"Marked Not an Issue",h("span",{class:"cnt"},String(x.okd.length))));
     const b2=h("div",{class:"isitems"});x.okd.forEach(it=>b2.appendChild(row(it,true)));dd.appendChild(h("div",{class:"sbody"},b2));out.push(dd);}
   return out;}
@@ -5662,7 +5735,7 @@ async function boot(){
   if(paneK&&BY[paneK])renderProfile(BY[paneK],$("m360-pane-body"));
   if(!db)return;
   const err=()=>{};
-  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;
+  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;leadDirty();
     /* a merge saved here or on someone else's screen changes which records
        exist, so the list has to be built again rather than only repainted */
     const sig=Object.keys(m).filter(k=>m[k]&&m[k].mergedInto).sort().map(k=>k+">"+m[k].mergedInto).join(",");
@@ -5672,7 +5745,7 @@ async function boot(){
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
   db.doc("sync/namesync").onSnapshot(s=>{NSYNC=s.exists?s.data():null;scheduleRefresh();},err);
-  db.doc("leaders/main").onSnapshot(s=>{LEAD=s.exists?Object.assign({orgs:{},groups:[]},s.data()):{orgs:{},groups:[]};scheduleRefresh();},err);
+  db.doc("leaders/main").onSnapshot(s=>{LEAD=s.exists?Object.assign({orgs:{},groups:[]},s.data()):{orgs:{},groups:[]};leadDirty();ISGEN++;scheduleRefresh();},err);
   db.doc("bootcamp/main").onSnapshot(s=>{BC=s.exists?Object.assign({orgs:{},camps:[]},s.data()):{orgs:{},camps:[]};scheduleRefresh();},err);
   db.collection("meetings").onSnapshot(s=>{const D={};s.docs.forEach(d=>D[d.id]=d.data()||{});const m=D.main||{},orgs={};(m.buckets||[]).forEach(b=>Object.assign(orgs,(D[b]||{}).orgs||{}));MTG=Object.assign({groups:[],unmatched:[]},m,{orgs});MTGC={};scheduleRefresh();},err);
   db.doc("engage/main").onSnapshot(s=>{ENG=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};if(APT){applyAptify();ISGEN++;}scheduleRefresh();},err);
