@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Member Setup | MISMO</title>
+<meta name="description" content="Confirm a new MISMO member has been set up and invoiced in Aptify.">
+<style>
+:root{
+  --navy:#0d314c; --navy-deep:#06202f; --navy-mid:#14486e; --sky:#74bfeb; --sky-soft:#94c8e9; --sky-wash:#dcedf8;
+  --ground:#f1f6fa; --surface:#ffffff; --surface-2:#f6fafd; --surface-3:#e9f1f8;
+  --border:#d5e2ed; --border-strong:#adc4d6; --rule:#e5eef5;
+  --ink:#0f314c; --ink-2:#456179; --ink-3:#7794aa; --good:#0f7b5c; --bad:#b3372c; --warn:#a2701a;
+  --chip:#eef4f9; --soft:#f4f8fc; --line:#cfdeeb;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0}
+
+/* ---------- application steps: the forms' stage tabs ---------- */
+.stages{display:flex; gap:2px; padding:3px; margin-bottom:22px;
+    background:var(--surface-3); border-radius:8px;}
+.stage{flex:1 1 0; appearance:none; border:none; border-radius:6px; background:none; cursor:pointer;
+    font-family:inherit; font-size:13px; font-weight:500; color:var(--ink-2); padding:9px 14px;
+    text-align:center; min-width:0;}
+.stage.on{background:var(--surface); color:var(--ink); font-weight:600;
+    box-shadow:0 1px 2px rgba(6,32,47,.1);}
+.stage:hover{color:var(--ink);}
+.stage:focus-visible{outline:2px solid var(--sky); outline-offset:2px;}
+.stage .sn{display:block; font-size:10.5px; font-weight:400; color:var(--ink-3); margin-top:2px;}
+.stage.on .sn{color:var(--ink-2);}
+.stage[disabled]{opacity:.5; cursor:not-allowed;}
+.stage .num{font-variant-numeric:tabular-nums}
+.stage.past{color:var(--ink)}
+@media (max-width:600px){.stage{padding:9px 4px}.stage .sn{display:none}.stage:not(.on) .t{display:none}}
+
+/* ---------- a step is a form card: white, 1px #cfdeeb, 12px corners (the forms' .sect) ---------- */
+.panel{border:1px solid var(--mm-line,#cfdeeb);border-radius:12px;background:#ffffff;box-shadow:0 14px 34px -26px rgba(7,29,46,.35);padding:26px 28px}
+@media (max-width:600px){.panel{padding:20px 18px}}
+.panel h2.ph{font-size:24px;font-weight:700;line-height:1.25;color:#0d314c}
+.panel .lead{color:var(--mm-text,#44607a);margin:6px 0 20px;font-size:16px}
+.panel h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--mm-blue,#1a8fe3);margin:28px 0 12px;padding-top:20px;border-top:1px solid var(--rule)}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
+.c6{grid-column:span 6}.c4{grid-column:span 4}.c3{grid-column:span 3}.c2{grid-column:span 2}
+@media (max-width:640px){.c4,.c3,.c2{grid-column:span 6}}
+
+/* ---------- fields: 44px tall, 8px corners, the site's search box (same values as the forms' .in) ---------- */
+.f label,.f .lab{display:block;font-size:14px;font-weight:600;color:#0d314c;margin-bottom:6px}
+.f .optl{font-weight:400;color:var(--mm-text,#44607a)}
+.f input[type=text],.f input[type=email],.f input[type=tel],.f input[type=url],.f select,.f textarea{width:100%;border:1px solid var(--mm-line,#cfdeeb);border-radius:8px;background:#ffffff;color:#0d314c;font-size:15px}
+.f input[type=text],.f input[type=email],.f input[type=tel],.f input[type=url],.f select{height:44px;padding:0 14px}
+.f textarea{min-height:120px;padding:12px 14px;line-height:1.5;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{outline:none;border-color:var(--mm-blue,#1a8fe3);box-shadow:0 0 0 3px rgba(26,143,227,.18)}
+.f .help{font-size:13px;color:var(--mm-text,#44607a);margin-top:6px;line-height:1.45}
+.f .err{display:none;font-size:13px;color:var(--bad);margin-top:6px}
+.f.bad input,.f.bad select,.f.bad textarea{border-color:var(--bad)}
+.f.bad .err{display:block}
+.f.bad .choices{outline:1px solid var(--bad);outline-offset:4px;border-radius:8px}
+
+/* ---------- choices ---------- */
+.choices{display:grid;gap:10px}
+.choices.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.choices.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:640px){.choices.two,.choices.three{grid-template-columns:minmax(0,1fr)}}
+.f label.choice{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--mm-line,#cfdeeb);border-radius:8px;padding:12px 14px;cursor:pointer;background:#ffffff;font-weight:400;font-size:15px;margin:0}
+.f label.choice:hover{background:#f8fbfe}
+.choice input{margin:3px 0 0;accent-color:var(--mm-blue,#1a8fe3);width:17px;height:17px;flex:0 0 auto}
+.choice b{display:block;font-weight:600;color:#0d314c}
+.choice small{display:block;color:var(--mm-text,#44607a);font-size:13.5px;margin-top:2px}
+.f label.choice:has(input:checked){border-color:var(--mm-blue,#1a8fe3);box-shadow:0 0 0 1px var(--mm-blue,#1a8fe3) inset;background:#f2f9fe}
+.choice:has(input:focus-visible){outline:3px solid rgba(26,143,227,.35);outline-offset:2px}
+
+/* ---------- levels ---------- */
+.levels{display:grid;gap:12px}
+.level{border:1px solid var(--mm-line,#cfdeeb);border-radius:12px;background:#ffffff;overflow:hidden}
+.level:has(input:checked){border-color:var(--mm-blue,#1a8fe3);box-shadow:0 0 0 1px var(--mm-blue,#1a8fe3) inset}
+.level label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:baseline;padding:14px 16px;cursor:pointer;margin:0;font-weight:400}
+.level:has(input:checked) label{background:#f2f9fe}
+.level input{accent-color:var(--mm-blue,#1a8fe3);width:17px;height:17px;margin:0;align-self:center}
+.level .lt{font-weight:600;font-size:16px;color:#0d314c}
+.level .lp{font-weight:600;white-space:nowrap;color:var(--mm-blue,#1a8fe3)}
+.level .ls{grid-column:2/-1;color:var(--mm-text,#44607a);font-size:14px}
+.level .lb{margin:0;padding:10px 16px 14px 46px;color:var(--mm-text,#44607a);font-size:14.5px;border-top:1px solid var(--rule)}
+.level .lb li{margin:3px 0}
+.common{margin:0;padding-left:20px;color:var(--mm-text,#44607a);font-size:15px;columns:2;column-gap:28px}
+.common li{margin:3px 0;break-inside:avoid}
+@media (max-width:640px){.common{columns:1}}
+
+.note{border-left:3px solid var(--mm-blue,#1a8fe3);background:#f4f8fc;padding:12px 16px;border-radius:0 8px 8px 0;margin:0 0 22px;line-height:1.6}
+.note b{color:#0d314c}
+.note.warn{border-left-color:var(--warn)}
+.f label.tick{display:flex;gap:10px;align-items:flex-start;font-size:15px;font-weight:400;color:#0d314c;cursor:pointer;margin:0}
+.tick input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--mm-blue,#1a8fe3);flex:0 0 auto}
+.f label.agree{padding:12px 14px;border:1px solid var(--mm-line,#cfdeeb);border-radius:8px;background:#f4f8fc}
+.contact{border:1px solid var(--mm-line,#cfdeeb);border-radius:12px;padding:18px;margin-bottom:14px;background:#f8fbfe}
+.contact .ch{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between;margin-bottom:12px}
+.contact .ch b{font-size:16px;color:#0d314c}
+.contact .ch small{color:var(--mm-text,#44607a);font-size:13.5px;display:block;font-weight:400}
+.contact .ch label.tick{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:400;color:#0d314c;cursor:pointer;margin:0}
+.contact .ch label.tick input{margin:0}
+.contact[data-same="1"] .grid{display:none}
+
+/* ---------- the logo drop (the forms' .att) ---------- */
+.f label.drop{display:flex;align-items:center;justify-content:center;text-align:center;min-height:130px;border:1.5px dashed var(--mm-line,#cfdeeb);border-radius:12px;background:#f8fbfe;cursor:pointer;padding:16px;position:relative;margin:0;font-weight:400}
+.f label.drop:hover,.drop.over{border-color:var(--mm-blue,#1a8fe3);background:#f2f9fe}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.drop:has(input:focus-visible){outline:3px solid rgba(26,143,227,.35);outline-offset:2px}
+.drop-in{display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
+.drop-in b{font-weight:600;color:var(--mm-blue,#1a8fe3);font-size:15px}
+.drop-in small{color:var(--mm-text,#44607a);font-size:13.5px}
+.logo-prev{max-height:56px;max-width:220px;background:#fff;border:1px solid var(--mm-line,#cfdeeb);border-radius:8px;padding:6px;margin-bottom:6px}
+.linkish{color:var(--mm-blue,#1a8fe3);font-weight:600}
+.f.bad label.drop{border-color:var(--bad)}
+
+/* ---------- moving between steps ---------- */
+.navrow{display:flex;gap:12px;justify-content:space-between;align-items:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--rule)}
+.navrow .aside{font-size:13.5px;color:var(--mm-text,#44607a)}
+.btn{cursor:pointer}
+.btn[disabled]{opacity:.6;cursor:progress}
+/* ---------- the saved / progress bar (the certification forms' .bar) ---------- */
+.bar{position:sticky; top:var(--mast-h,62px); z-index:30;
+  display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:11px 15px; margin-bottom:20px;}
+.bar .prog{flex:1 1 230px; min-width:180px;}
+.bar .ptxt{font-size:12px; color:var(--ink-3); margin-bottom:6px;
+  display:flex; align-items:baseline; gap:8px; white-space:nowrap;}
+.bar .ptxt b{color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums;}
+.bar .pct{margin-left:auto; font-weight:700; color:var(--navy); font-size:12.5px;
+  font-variant-numeric:tabular-nums;}
+:root[data-theme="dark"] .bar .pct{color:var(--sky);}
+.ptrack{height:8px; border-radius:99px; background:var(--track,#e3f1fc); overflow:hidden;}
+.pfill{height:100%; background:var(--sky); border-radius:99px; transition:width .25s ease;}
+.saved{font-size:12px; color:var(--ink-3); white-space:nowrap;}
+.saved b{color:var(--good); font-weight:600;}
+.bar-acts{display:flex; gap:8px; flex-wrap:wrap;}
+.miss-list{font-size:12.5px; color:var(--ink-2); line-height:1.7; margin:10px 0 0; padding-left:20px;}
+.miss-list a{cursor:pointer; color:var(--mm-blue,#1a8fe3); text-decoration:underline;}
+.toast{position:fixed; top:16px; left:50%; z-index:70; width:min(440px, calc(100vw - 32px));
+  background:var(--surface); color:var(--ink); border:1px solid var(--border);
+  border-left:3px solid var(--good); border-radius:7px; padding:11px 14px; font-size:13px;
+  box-shadow:0 10px 28px rgba(6,32,47,.22); opacity:0; transform:translate(-50%,-8px);
+  transition:opacity .16s ease, transform .16s ease; pointer-events:none;}
+.toast.on{opacity:1; transform:translate(-50%,0);}
+
+/* ---------- review ---------- */
+.rev{border:1px solid var(--mm-line,#cfdeeb);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.rev .rh{display:flex;justify-content:space-between;align-items:center;background:#f4f8fc;padding:10px 16px;font-weight:600;font-size:15px;color:#0d314c}
+.rev .rh button{background:none;border:0;color:var(--mm-blue,#1a8fe3);cursor:pointer;font-weight:600;font-size:14px}
+.rev dl{margin:0;display:grid;grid-template-columns:minmax(120px,210px) minmax(0,1fr)}
+.rev dt,.rev dd{margin:0;padding:8px 16px;border-top:1px solid var(--rule);font-size:14.5px}
+.rev dt{color:var(--mm-text,#44607a)}
+.rev dd{overflow-wrap:anywhere;color:#0d314c}
+@media (max-width:560px){.rev dl{grid-template-columns:minmax(0,1fr)}.rev dd{border-top:0;padding-top:0}}
+.problem{background:#fdf2f1;border:1px solid var(--bad);border-radius:8px;padding:12px 14px;color:#0d314c;margin-top:16px;font-size:15px}
+.done-ref{font-size:24px;font-weight:700;letter-spacing:.02em;background:#e3f1fc;color:#0d314c;border-radius:8px;padding:10px 16px;display:inline-block;margin:6px 0 4px}
+.next{margin:6px 0 0;padding-left:22px;color:var(--mm-text,#44607a)}
+.next li{margin:6px 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.printcopy{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  .mm-header,.mm-footer,.wrap,.hero{display:none!important}
+  .printcopy{display:block;font-size:11pt}
+  .printcopy h1{font-size:16pt;margin-bottom:4pt}
+  .printcopy .rev{break-inside:avoid;border-color:#bbb}
+}
+</style>
+<style>
+/* ===================================================================
+   MISMO website skin, applied over an application form.
+   Values from MISMO-Website-Style-Guide.md, measured from the live
+   Home page on 21 October 2026. Appended last so it wins on source
+   order; the dark-mode selectors are repeated here at their own
+   specificity so a stored "dark" preference cannot reach the page.
+   No web font is imported - the site names IBM Plex Sans and does not
+   load it, so importing it would make these forms look unlike the site.
+   =================================================================== */
+:root,
+:root:not([data-theme="light"]),
+:root[data-theme="dark"]{
+  --mm-font:"IBM Plex Sans","Segoe UI",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+  --mm-hero:#071d2e; --mm-pill:#0f314c; --mm-blue:#1a8fe3; --mm-blue-top:#2e9dee;
+  --mm-sky:#74bfeb; --mm-sky-2:#56b4f2; --mm-sub:#a9d8f3;
+  --mm-text:#44607a; --mm-line:#cfdeeb; --mm-tag-bg:#e3f1fc; --mm-tag-ink:#1a74b8;
+
+  /* the form's own tokens, remapped to the website palette */
+  --navy:#071d2e; --navy-deep:#0d314c; --navy-mid:#1a8fe3;
+  --sky:#1a8fe3; --sky-soft:#74bfeb; --sky-wash:#e3f1fc;
+  --ground:#ffffff; --surface:#ffffff; --surface-2:#ffffff; --surface-3:#f4f8fc;
+  --border:#cfdeeb; --border-strong:#cfdeeb; --rule:#e5eef5;
+  --ink:#0d314c; --ink-2:#44607a; --ink-3:#44607a;
+  --good:#0f7b5c; --bad:#b3372c; --warn:#a2701a;
+  --chip:#e3f1fc; --track:#e3f1fc; --tab-active:#ffffff;
+  /* --soft and --line are used by the form but were never declared, so the
+     notes and the attestation box drew with no background and no border. */
+  --soft:#f4f8fc; --line:#cfdeeb;
+}
+body{font-family:var(--mm-font); font-size:16px; line-height:1.6;
+  background:#ffffff; color:var(--mm-ink,#0d314c);}
+a{color:var(--mm-blue);}
+
+/* ---------- Header bar (70px, dark navy, logo left, nav, Log in pill right) ---------- */
+.mm-header{position:relative;z-index:5;height:70px;background:var(--mm-hero);box-shadow:0 2px 4px 0 rgba(0,0,0,.1),0 0 2px 0 rgba(153,153,153,.25);display:flex;align-items:center;padding:0 50px;gap:56px}
+.mm-logo img{display:block;width:194px;height:36px;max-width:100%;object-fit:contain;object-position:left center} /* the logo file is 684x108; "contain" keeps its shape, as the live site does (it shows about 194x31). Never let it stretch to fill 194x36. */
+.mm-logo{flex:0 1 194px;min-width:0}
+.mm-nav{display:flex;align-items:stretch;height:70px;margin:0;padding:0;list-style:none;flex:1 1 auto}
+.mm-nav>li{position:relative;display:flex;align-items:center;list-style:none}
+.mm-nav-link{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;font-family:var(--mm-font);font-size:15px;font-weight:500;line-height:21px;color:#ffffff;text-decoration:none;white-space:nowrap}
+.mm-nav>li:hover>.mm-nav-link,.mm-nav-link:focus-visible{color:var(--mm-sky)}
+.mm-chev{width:11px;height:8px}
+/* Dropdown menus: measured from the live site (opens on hover or keyboard focus) */
+.mm-dd{display:none;position:absolute;left:0;top:100%;z-index:20;min-width:250px;margin:0;padding:8px 0;list-style:none;background:#0b2740;border-top:2px solid var(--mm-blue);border-radius:0 0 8px 8px;box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+.mm-nav>li:hover>.mm-dd,.mm-nav>li:focus-within>.mm-dd{display:block}
+.mm-dd a{display:block;padding:10px 18px 10px 16px;border-left:2px solid transparent;font-family:var(--mm-font);font-size:15px;font-weight:500;line-height:19.5px;color:#e6eef5;text-decoration:none;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.mm-dd a:hover,.mm-dd a:focus-visible{outline:none;background:rgba(116,191,235,.1);border-left-color:var(--mm-sky);color:var(--mm-sky)}
+.mm-login{margin-left:auto;display:inline-block;padding:10px 20px;border-radius:50px;background:var(--mm-pill);color:#ffffff;font-family:var(--mm-font);font-size:16px;font-weight:600;line-height:16px;text-decoration:none;white-space:nowrap;min-width:max-content}
+.mm-burger{display:none;width:40px;height:40px;margin-left:auto;padding:9px 8px;border:0;border-radius:6px;background:transparent;cursor:pointer}
+.mm-burger span{display:block;height:2px;margin:4px 0;border-radius:2px;background:#ffffff;transition:transform .2s,opacity .2s}
+/* Phones and tablets: hamburger shows the same menu as a panel under the bar, sub-pages listed under each heading */
+@media (max-width:1100px){
+  .mm-header{padding:0 20px;gap:12px}
+  .mm-burger{display:block}
+  .mm-nav{display:none}
+  .mm-header.is-open .mm-nav{display:block;position:absolute;top:70px;left:0;right:0;height:auto;max-height:calc(100vh - 70px);overflow-y:auto;padding:8px 0 16px;background:#0b2740;border-top:2px solid var(--mm-blue);box-shadow:0 18px 40px -14px rgba(0,0,0,.6)}
+  .mm-header.is-open .mm-nav>li{display:block}
+  .mm-header.is-open .mm-nav-link{display:flex;padding:12px 20px 6px;font-weight:600}
+  .mm-header.is-open .mm-chev{display:none}
+  .mm-header.is-open .mm-dd{display:block;position:static;min-width:0;padding:0 0 6px;background:transparent;border:0;border-radius:0;box-shadow:none}
+  .mm-header.is-open .mm-dd a{padding:9px 20px 9px 34px;white-space:normal}
+  .mm-header.is-open .mm-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  .mm-header.is-open .mm-burger span:nth-child(2){opacity:0}
+  .mm-header.is-open .mm-burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+}
+
+/* ---------- footer: the live site's, measured 21 Oct 2026 at 1440px ----------
+   One 68px bar in #f4f7f9 - light, not dark - logo left, address in the middle,
+   policy links then the two social circles on the right. */
+.mm-footer{background:#f4f7f9;}
+.mm-footer-bar{background:#f4f7f9; display:flex; flex-wrap:wrap; align-items:center;
+  justify-content:space-between; gap:10px 28px; padding:18px 50px;
+  font-family:var(--mm-font);}
+.mm-f-logo{flex:0 0 auto; line-height:0;
+  /* the two colors the shared MISMO symbol reads */
+  --logo-body:#0d314c; --logo-s:#50a4db;}
+.mm-f-mark{display:block; width:197px; height:30px;}
+.mm-f-addr{flex:1 1 300px; text-align:center; font-size:12.5px; line-height:20px;
+  color:#5b7183;}
+.mm-f-addr a{color:#0d314c; text-decoration:none;}
+.mm-f-addr a:hover{text-decoration:underline;}
+.mm-f-env{width:15px; height:12px; margin:0 7px 0 14px; color:#5b7183;
+  vertical-align:-1px;}
+.mm-f-links{flex:0 0 auto; display:flex; gap:16px;}
+.mm-f-links a{font-size:13px; font-weight:600; color:#0d314c; text-decoration:none;
+  white-space:nowrap;}
+.mm-f-links a:hover{text-decoration:underline;}
+.mm-f-social{flex:0 0 auto; display:flex; gap:13px;}
+.mm-f-soc{width:32px; height:32px; border-radius:50px; background:#50a4db;
+  color:#0d314c; display:flex; align-items:center; justify-content:center;}
+.mm-f-soc svg{width:17px; height:17px; display:block;}
+.mm-f-soc:hover{background:#74bfeb;}
+
+/* ---------- the page column ---------- */
+.wrap{max-width:960px; margin:0 auto; padding:46px clamp(20px,5vw,48px) 110px;}
+/* The hero carries the title and the lede now, so the page does not say it twice. */
+h1.doc, .docsub{display:none;}
+.sect-head{margin:0 0 22px;}
+.sect-head .mm-eyebrow{margin:0 0 10px; font-size:12px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.14em; color:var(--mm-blue);}
+.sect-head h2{margin:0 0 12px; font-size:38px; font-weight:700; line-height:1.2;
+  color:var(--mm-ink,#0d314c);}
+.sect-head p{margin:0; font-size:16px; line-height:1.6; color:var(--mm-text); max-width:none;}
+@media (max-width:600px){ .sect-head h2{font-size:30px;} }
+
+/* ---------- stage tabs ---------- */
+.stages{border-radius:10px;}
+.stage{font-size:14px;}
+.stage.on{box-shadow:0 1px 2px rgba(7,29,46,.12);}
+
+/* ---------- the sticky progress bar ---------- */
+/* The website header does not stick, so this sits at the top of the viewport
+   rather than under a masthead that is no longer there. */
+.bar{top:0; border-radius:12px; border:1px solid var(--mm-line); background:#ffffff;
+  box-shadow:0 8px 22px -18px rgba(7,29,46,.45); padding:12px 16px;}
+.ptrack{background:#e3f1fc;}
+.pfill{background:var(--mm-blue);}
+.bar .pct{color:var(--mm-blue);}
+
+/* ---------- buttons: never wrap ---------- */
+.btn{border-radius:8px; font-family:var(--mm-font); font-size:15px; font-weight:600;
+  line-height:1.2; white-space:nowrap; min-width:max-content; padding:14px 22px;
+  border:1.5px solid var(--mm-blue); color:#ffffff;
+  background:linear-gradient(180deg,var(--mm-blue-top) 0%, var(--mm-blue) 100%);
+  box-shadow:0 5px 16px -4px rgba(26,143,227,.55);}
+.btn:hover{background:linear-gradient(180deg,var(--mm-blue) 0%, #1580cc 100%);}
+.btn.ghost{background:#ffffff; color:var(--mm-blue); border:1.5px solid var(--mm-blue);
+  box-shadow:none;}
+.btn.ghost:hover{background:#f2f9fe; color:var(--mm-blue);}
+.btn:focus-visible{outline:3px solid rgba(26,143,227,.35); outline-offset:2px;}
+/* The bar sits above the form and holds three of them, so they take the smaller size. */
+.bar-acts .btn{padding:9px 16px; font-size:14px;}
+.rep-add{border-radius:8px; border:1.5px dashed var(--mm-line); color:var(--mm-text);
+  font-size:14px; padding:11px 16px;}
+.rep-add:hover{border-color:var(--mm-blue); color:var(--mm-blue);}
+
+/* ---------- a section is a form card: white, 1px #cfdeeb, 12px corners ---------- */
+.sect{border:1px solid var(--mm-line); border-radius:12px; background:#ffffff;
+  margin-bottom:14px; box-shadow:0 14px 34px -26px rgba(7,29,46,.35);}
+.sect-btn{padding:17px 24px; gap:14px;}
+.sect-btn .st{font-size:17px; font-weight:600; color:var(--mm-ink,#0d314c);}
+.sect-btn .sc{font-size:12px; padding:3px 11px; border-radius:4px; font-weight:600;
+  letter-spacing:.04em; background:var(--mm-tag-bg); color:var(--mm-tag-ink);}
+.sect-btn .sc.done{background:rgba(15,123,92,.13); color:var(--good);}
+.sect-btn[aria-expanded="true"]{background:#f4f8fc;}
+.sect-body{padding:6px 24px 24px;}
+@media (max-width:600px){ .sect-btn{padding:15px 20px} .sect-body{padding:4px 20px 20px} }
+
+/* ---------- questions ---------- */
+.q-txt{font-size:15px; font-weight:600; color:var(--mm-ink,#0d314c);}
+.q-no{font-size:12px; color:var(--mm-text);}
+.q-guide, .sect-intro{font-size:13px; color:var(--mm-text);}
+
+/* ---------- fields: 44px tall, 8px corners, the site's search box ---------- */
+.fld label{font-size:14px; font-weight:600; color:var(--mm-ink,#0d314c);
+  text-transform:none; letter-spacing:0; margin-bottom:6px;}
+.in{border:1px solid var(--mm-line); border-radius:8px; background:#ffffff;
+  color:var(--mm-ink,#0d314c); font-family:var(--mm-font); font-size:15px;}
+input.in, select.in{height:44px; padding:0 14px;}
+select.in{padding-right:34px;}
+textarea.in{min-height:120px; padding:12px 14px; line-height:1.5;}
+.flds .na-wide textarea.in{min-height:150px;}
+.in:focus{outline:none; border-color:var(--mm-blue);
+  box-shadow:0 0 0 3px rgba(26,143,227,.18);}
+.opt{font-size:15px; color:var(--mm-ink,#0d314c);}
+.fld .opt, .fld label.opt{font-size:15px;}
+.opt input{accent-color:var(--mm-blue);}
+.mx input{accent-color:var(--mm-blue);}
+.mx th{color:var(--mm-text);}
+
+/* ---------- notes, attestation, totals, attachments ---------- */
+.note, .stage-note, .intro-card{border-radius:8px; border-left:3px solid var(--mm-blue);
+  font-size:15px; color:var(--mm-text);}
+.intro-card p{font-size:15px; color:var(--mm-text);}
+.attest{border-left:3px solid var(--mm-blue); border-radius:0 8px 8px 0; font-size:15px;}
+.attest-tick{border-radius:8px; font-size:15px;}
+.att{border:1.5px dashed var(--mm-line); border-radius:12px; background:#f8fbfe;}
+.att-list li{border-radius:8px; border-color:var(--mm-line);}
+.tally{border-radius:12px; background:#f8fbfe;}
+.done{border-radius:12px; border:1px solid var(--mm-line); border-left:3px solid var(--good);}
+.done h3{font-size:19px;}
+.done p{font-size:15px; color:var(--mm-text);}
+.rep{border-radius:10px; border-color:var(--mm-line); background:#f8fbfe;}
+.toast{border-radius:8px; font-size:15px;}
+.foot{font-size:13px; color:var(--mm-text); margin-top:34px;}
+
+/* ---------- phones ---------- */
+@media (max-width:600px){
+  .two-acts .btn{flex:1 1 100%}
+  .mm-footer-bar{padding:18px 20px; justify-content:center; gap:14px 20px}
+  .mm-f-addr{flex:1 1 100%}
+  .mm-f-mark{width:170px; height:26px}
+}
+
+/* ---------- the hero rules the live site applies, lifted from the template ---------- */
+/* Desktop rules the live site applies to every hero (from the shared stylesheet):
+   the hero is 502px tall with 40px top and bottom padding, and hero buttons are only as wide as their text. */
+div[style*="min-height: clamp(380px"]{min-height:502px !important;padding-top:40px !important;padding-bottom:40px !important}
+div[style*="max-width: 560px"] > a{flex:0 0 auto !important}
+/* Phone rules the live site applies to every hero (from the shared stylesheet) */
+@media (max-width:600px){
+  div[style*="min-height: clamp(380px"]{min-height:0 !important;padding:30px 20px !important}
+  div[style*="flex: 0 1 200px"]{display:flex !important;flex-wrap:wrap;gap:4px 16px;border-left:0 !important;padding-left:0 !important;min-width:0 !important}
+  div[style*="flex: 0 1 200px"] > div:nth-child(n+5){display:none !important}
+  div[style*="max-width: 560px"] > a{flex:0 0 100% !important}
+}
+</style>
+</head><body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
+0 -101 4 -132 25 -197 57 -172 168 -280 335 -323 84 -22 723 -22 808 0 222 58
+355 253 355 520 0 270 -132 459 -361 520 -74 20 -730 20 -802 0z m692 -320
+c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
+-297 0 -307 2 -346 83 -30 61 -31 198 -2 262 41 93 68 100 368 97 219 -2 243
+-4 274 -22z M0 545 l0 -515 225 0 225 0 2 296 3 296 116 -294 116 -293 197 0 198
+0 119 295 118 295 1 -297 0 -298 225 0 225 0 0 515 0 515 -337 -2 -338 -3
+-104 -264 c-80 -204 -107 -260 -113 -245 -5 10 -52 129 -106 264 l-98 245
+-337 3 -337 2 0 -515z M1892 1044 l-22 -15 0 -483 c0 -455 1 -484 18 -499 16 -15 48 -17
+246 -17 128 0 235 4 246 10 32 17 34 57 4 95 -33 44 -64 143 -64 206 l0 49
+203 0 c191 0 205 -1 222 -20 10 -11 34 -24 54 -30 49 -13 586 -13 612 0 22 12
+26 62 7 78 -8 6 -174 15 -413 21 -502 15 -549 23 -628 110 -43 48 -57 93 -57
+187 0 82 19 156 55 208 30 44 32 77 7 99 -27 25 -456 25 -490 1z M3716 1044 c-23 -22 -20 -31 19 -77 43 -49 78 -155 73 -218 l-3 -44
+-204 -3 c-194 -2 -205 -1 -218 17 -24 35 -78 41 -355 41 -255 0 -269 -1 -288
+-20 -27 -27 -26 -58 3 -70 12 -5 202 -14 422 -19 421 -12 476 -18 555 -62 92
+-51 132 -159 111 -299 -12 -77 -34 -129 -77 -179 -23 -28 -25 -36 -16 -57 l12
+-24 215 0 215 0 2 306 3 306 120 -303 120 -304 197 -3 196 -2 118 296 119 297
+3 -296 2 -297 225 0 225 0 0 515 0 515 -338 0 -337 0 -104 -265 c-58 -146
+-106 -263 -108 -261 -2 2 -50 120 -107 262 l-104 259 -340 3 c-300 2 -342 0
+-356 -14z"/></g><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-s, #50a4db)"><path d="M2485 1046 c-44 -20 -111 -94 -136 -151 -27 -60 -37 -198 -20 -263
+13 -48 68 -115 114 -138 64 -34 162 -43 562 -55 239 -6 405 -15 413 -21 19
+-16 15 -66 -7 -78 -26 -13 -563 -13 -612 0 -20 6 -44 19 -54 30 -17 19 -31 20
+-222 20 l-203 0 0 -49 c0 -81 34 -172 86 -230 78 -87 31 -81 672 -81 l568 0
+46 29 c79 50 122 121 139 231 21 140 -19 248 -111 299 -79 44 -134 50 -555 62
+-220 5 -410 14 -422 19 -29 12 -30 43 -3 70 19 19 33 20 288 20 277 0 331 -6
+355 -41 13 -18 24 -19 218 -17 l204 3 3 44 c4 60 -31 168 -70 215 -17 21 -52
+52 -77 67 l-45 29 -550 0 c-440 -1 -557 -3 -581 -14z"/></g></symbol><symbol id="mismo-hat" viewBox="0 0 100 100">
+  <path d="M17,73 C9,44 20,17 42,9 C59,3 72,10 80,22 C85,30 86,38 81,41
+           C76,44 70,40 65,32 C60,46 57,60 57,73 Z" fill="#c0392f"/>
+  <path d="M17,73 C9,44 20,17 42,9 C48,7 53,6 58,7 C41,19 30,45 30,73 Z"
+        fill="#0f314c" opacity=".17"/>
+  <rect x="10" y="65" width="56" height="20" rx="10" fill="#ffffff"/>
+  <rect x="10" y="75" width="56" height="10" rx="5" fill="#0f314c" opacity=".07"/>
+  <circle cx="86" cy="45" r="11.5" fill="#ffffff"/>
+</symbol></defs></svg>
+
+<header class="mm-header">
+  <a class="mm-logo" href="https://collaborate.mismo.org/mismowebsite/home"><img src="https://higherlogicdownload.s3.amazonaws.com/MISMO/LogoImages/6e07790a-6fc9-43dc-b9d6-9178e00c3342_mismo-reverse-nav-logo.png" alt="MISMO logo. This will take you to the homepage"></a>
+  <nav aria-label="Main">
+  <ul class="mm-nav" id="mm-nav">
+    <li><a class="mm-nav-link" href="https://collaborate.mismo.org/mismowebsite/membership" aria-haspopup="true">Membership <svg class="mm-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <ul class="mm-dd">
+        <li><a href="https://collaborate.mismo.org/mismowebsite/membership/member-directory">MISMO Members</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/membership/lender-champions">Our Lender Champions</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/membership/industry-champions">Our Industry Champions</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/membership/iif">Innovation Investment Fund</a></li>
+      </ul>
+    </li>
+    <li><a class="mm-nav-link" href="https://collaborate.mismo.org/mismowebsite/standards-resources" aria-haspopup="true">Standards &amp; Resources <svg class="mm-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <ul class="mm-dd">
+        <li><a href="https://collaborate.mismo.org/mismowebsite/standards-resources/business-glossary">Business Glossary</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/standards-resources/certification">Certifications</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/standards-resources/mismo-link">MISMO Link</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/standards-resources/digital-mortgage-resource-center">Digital Mortgage Resource Center</a></li>
+      </ul>
+    </li>
+    <li><a class="mm-nav-link" href="https://collaborate.mismo.org/mismowebsite/get-involved" aria-haspopup="true">Get Involved <svg class="mm-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <ul class="mm-dd">
+        <li><a href="https://collaborate.mismo.org/mismowebsite/get-involved/workgroups">Communities &amp; Workgroups</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/get-involved/communities">Collaborate (Members Only)</a></li>
+      </ul>
+    </li>
+    <li><a class="mm-nav-link" href="https://collaborate.mismo.org/mismowebsite/events" aria-haspopup="true">Events <svg class="mm-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <ul class="mm-dd">
+        <li><a href="https://collaborate.mismo.org/mismowebsite/events/summit">MISMO Summit</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/events/education">Education</a></li>
+      </ul>
+    </li>
+    <li><a class="mm-nav-link" href="https://collaborate.mismo.org/mismowebsite/about-mismo" aria-haspopup="true">About MISMO <svg class="mm-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+      <ul class="mm-dd">
+        <li><a href="https://collaborate.mismo.org/mismowebsite/about-mismo/news">News</a></li>
+        <li><a href="https://collaborate.mismo.org/mismowebsite/about-mismo/contributor-awards">Contributor Awards</a></li>
+      </ul>
+    </li>
+  </ul>
+  </nav>
+  <button type="button" class="mm-burger" aria-label="Open menu" aria-expanded="false" aria-controls="mm-nav"><span></span><span></span><span></span></button>
+</header>
+<div class="wrap" id="page">
+  <div class="sect-head">
+    <p class="mm-eyebrow">New MISMO Member</p>
+    <h2>Confirm the Member Is Set Up</h2>
+    <p>MISMO invoices once the member exists in Aptify, so this tells the MISMO membership team the handover is done. Fill in the three boxes and press the button. Nothing is sent to the applicant.</p>
+  </div>
+
+  <section class="panel" id="formCard">
+    <h2 class="ph" id="coName">Membership Application</h2>
+    <p class="lead">Reference <b id="refShow">&mdash;</b></p>
+
+    <div class="grid" style="margin-top:20px">
+      <div class="f c6" data-need="by">
+        <label for="by">Your Name</label>
+        <input type="text" id="by" autocomplete="name" maxlength="120">
+        <div class="help">So MISMO knows who to ask if there is a question.</div>
+        <div class="err">This is needed.</div>
+      </div>
+      <div class="f c3" data-need="aptifyId">
+        <label for="aptifyId">Aptify Company ID</label>
+        <input type="text" id="aptifyId" maxlength="40">
+        <div class="help">The company record you created or used in Aptify.</div>
+        <div class="err">This is needed.</div>
+      </div>
+      <div class="f c3" data-need="orderNo">
+        <label for="orderNo">Aptify Invoice Number</label>
+        <input type="text" id="orderNo" maxlength="40">
+        <div class="help">The order number of the dues invoice.</div>
+        <div class="err">This is needed.</div>
+      </div>
+    </div>
+
+    <div id="problem" class="problem" hidden></div>
+
+    <div class="navrow" style="justify-content:flex-start">
+      <button type="button" class="btn" id="go">Member Set Up and Invoiced</button>
+    </div>
+  </section>
+
+  <section class="panel" id="doneCard" hidden>
+    <h2 class="ph">Thank You. MISMO Has It.</h2>
+    <p class="lead">This application is marked as set up and invoiced.</p>
+    <div class="done-ref" id="doneRef"></div>
+    <dl class="rev-dl" id="doneRows" style="margin-top:14px"></dl>
+    <p style="color:var(--ink-3);font-size:13px;margin:16px 0 0">Questions? Email <a href="mailto:membership@mismo.org">membership@mismo.org</a>.</p>
+  </section>
+
+  <section class="panel" id="noRef" hidden>
+    <h2 class="ph">No Application Named</h2>
+    <p class="lead">Open this page from the link in the MISMO application email, so it knows which application you mean. If you reached it another way, email <a href="mailto:membership@mismo.org">membership@mismo.org</a> with the reference number.</p>
+  </section>
+</div>
+<footer class="mm-footer">
+  <div class="mm-footer-bar">
+    <a class="mm-f-logo" href="https://collaborate.mismo.org/mismowebsite/home"><svg class="mm-f-mark" role="img" aria-label="MISMO" viewBox="0 0 708 108"><use href="#mismo-logo"/></svg></a>
+    <div class="mm-f-addr">1919 M Street NW, 5th Floor, Washington, DC 20036<svg class="mm-f-env" viewBox="0 0 20 16" aria-hidden="true"><rect x="1" y="1.5" width="18" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M1.8 3l8.2 6 8.2-6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><a href="mailto:info@mismo.org">info@mismo.org</a></div>
+    <div class="mm-f-links"><a href="https://collaborate.mismo.org/mismowebsite/privacy-policy">Privacy Policy</a><a href="https://collaborate.mismo.org/mismowebsite/terms-of-use">Terms of Use</a></div>
+    <div class="mm-f-social"><a class="mm-f-soc" href="https://www.linkedin.com/company/mismo-mortgage-industry-standards-maintenance-organization" aria-label="MISMO on LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="9.5" width="3" height="11" rx="1" fill="currentColor"/><circle cx="5" cy="5.6" r="1.9" fill="currentColor"/><path d="M10 20.5v-11h3v1.5a3.7 3.7 0 0 1 3.2-1.7c2.4 0 3.8 1.6 3.8 4.4v6.8h-3v-6.3c0-1.6-.6-2.5-2-2.5s-2 .9-2 2.5v6.3z" fill="currentColor"/></svg></a><a class="mm-f-soc" href="https://www.youtube.com/channel/UCuKIkeqACTIU7j0eL_igPHA" aria-label="MISMO on YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="3.6" fill="currentColor"/><path d="M10.2 9.4l5.4 2.6-5.4 2.6z" fill="#f4f7f9"/></svg></a></div>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+/* ============================================================================
+   MISMO member setup confirmation (Jonna, Oct 24, 2026)
+
+   The MBA membership team creates the member in Aptify and raises the dues
+   invoice. MISMO cannot see that happen, so this page is how they say it is
+   done: it writes setupAt, who confirmed, the Aptify company id and the
+   invoice number back onto the application in Member 360.
+
+   The email's button only opens this page. A person still has to press the
+   button here, so a mail scanner following the link records nothing.
+   ========================================================================== */
+var FLOW_URL = "https://default867e5d11bde4499fb45e61572f9f33.7c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/14/workflows/583e3a84889549dab947729efec1e285/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=VL2Lkzs9yHWvqWPQFAUJ22HsopKIwSbx_SOaGff2FHk";
+
+var $ = function(id){return document.getElementById(id);};
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+function val(id){var e=$(id);return e?String(e.value||"").trim():"";}
+function qs(k){try{return new URLSearchParams(location.search).get(k)||"";}catch(e){return "";}}
+
+var REF=qs("ref").trim(), CO=qs("co").trim(), sending=false, toastTimer=null;
+
+function toast(msg){var t=$("toast");if(!t)return;t.textContent=msg;t.classList.add("on");
+  if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove("on");},2600);}
+
+function post(payload,ms){
+  var ctl=window.AbortController?new AbortController():null,t=setTimeout(function(){if(ctl)ctl.abort();},ms||45000);
+  return fetch(FLOW_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=UTF-8"},
+    body:JSON.stringify(payload),signal:ctl?ctl.signal:undefined}).then(function(r){clearTimeout(t);
+      if(!r.ok)throw new Error("HTTP "+r.status);return r.json().catch(function(){return {};});},
+      function(e){clearTimeout(t);throw e;});
+}
+
+/* every box is needed: MISMO reconciles the application to Aptify on these two numbers */
+var NEED=["by","aptifyId","orderNo"];
+function check(){
+  var bad=[];
+  NEED.forEach(function(k){
+    var f=document.querySelector('[data-need="'+k+'"]'),ok=!!val(k);
+    if(f)f.classList.toggle("bad",!ok);
+    if(!ok)bad.push(f);
+  });
+  if(bad.length&&bad[0]){var i=bad[0].querySelector("input");try{(i||bad[0]).focus({preventScroll:true});}catch(e){}
+    bad[0].scrollIntoView({block:"center",behavior:"smooth"});}
+  return !bad.length;
+}
+document.addEventListener("input",function(e){var f=e.target.closest&&e.target.closest(".f");if(f)f.classList.remove("bad");});
+
+function finish(d){
+  $("formCard").hidden=true;
+  $("doneCard").hidden=false;
+  $("doneRef").textContent=REF;
+  $("doneRows").innerHTML=
+    '<p style="margin:0 0 6px"><b>Confirmed by</b> '+esc(d.by)+'</p>'+
+    '<p style="margin:0 0 6px"><b>Aptify Company ID</b> '+esc(d.aptifyId)+'</p>'+
+    '<p style="margin:0"><b>Aptify Invoice Number</b> '+esc(d.orderNo)+'</p>';
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("go").addEventListener("click",function(){
+  if(sending)return;
+  if(!check())return;
+  var btn=$("go"),prob=$("problem");
+  var d={by:val("by"),aptifyId:val("aptifyId"),orderNo:val("orderNo")};
+  sending=true;btn.disabled=true;btn.textContent="Sending…";prob.hidden=true;
+  post({action:"setup",id:REF,by:d.by,aptifyId:d.aptifyId,orderNo:d.orderNo,
+        confirmedAt:new Date().toISOString(),source:"resources.mismo.org/member-360/applied/"},45000)
+   .then(function(res){
+     if(res&&res.ok===false)throw new Error(res.message||"refused");
+     finish(d);
+   })
+   .catch(function(){
+     sending=false;btn.disabled=false;btn.textContent="Member Set Up and Invoiced";
+     prob.hidden=false;
+     prob.innerHTML="That couldn’t be recorded just now. Nothing was lost: press the button again in a minute. If it still doesn’t go through, email <a href=\"mailto:membership@mismo.org\">membership@mismo.org</a>.";
+   });
+});
+
+/* ---------- start ---------- */
+if(!REF){
+  $("formCard").hidden=true;
+  $("noRef").hidden=false;
+}else{
+  $("refShow").textContent=REF;
+  if(CO)$("coName").textContent=CO;
+}
+
+/* Phone and tablet menu: the hamburger opens the same menu as a panel under the header bar. */
+(function(){var h=document.querySelector(".mm-header"),b=h.querySelector(".mm-burger");
+  b.addEventListener("click",function(){var o=h.classList.toggle("is-open");
+    b.setAttribute("aria-expanded",o?"true":"false");b.setAttribute("aria-label",o?"Close menu":"Open menu");});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&h.classList.contains("is-open")){
+    h.classList.remove("is-open");b.setAttribute("aria-expanded","false");b.focus();}});})();
+})();
+</script>
+</body>
+</html>
