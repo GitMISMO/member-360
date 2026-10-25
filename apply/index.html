@@ -514,8 +514,26 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
         <div class="f c2" data-need="city"><label for="city">City</label><input type="text" id="city" autocomplete="address-level2" maxlength="80"><div class="err">This is needed.</div></div>
         <div class="f c2" data-need="state"><label for="state">State or Province</label><input type="text" id="state" autocomplete="address-level1" maxlength="60"><div class="err">This is needed.</div></div>
         <div class="f c2" data-need="zip"><label for="zip">ZIP or Postal Code</label><input type="text" id="zip" autocomplete="postal-code" maxlength="20"><div class="err">This is needed.</div></div>
-        <div class="f c3" data-need="country"><label for="country">Country</label><input type="text" id="country" autocomplete="country-name" value="United States" maxlength="60"><div class="err">This is needed.</div></div>
-        <div class="f c3"><label for="website">Website <span class="optl">(optional)</span></label><input type="url" id="website" autocomplete="url" placeholder="example.com" maxlength="200"></div>
+        <div class="f c2" data-need="country"><label for="country">Country</label><input type="text" id="country" autocomplete="country-name" value="United States" maxlength="60"><div class="err">This is needed.</div></div>
+        <div class="f c2" data-need="mainPhone"><label for="mainPhone">Company Main Phone</label><input type="tel" id="mainPhone" autocomplete="tel" maxlength="40"><div class="err">This is needed.</div></div>
+        <div class="f c2"><label for="website">Website <span class="optl">(optional)</span></label><input type="url" id="website" autocomplete="url" placeholder="example.com" maxlength="200"></div>
+      </div>
+
+      <h3>Billing Address</h3>
+      <div class="contact" id="c-billaddr" data-same="1">
+        <div class="ch">
+          <div><b>Where to Send the Invoice</b><small>Only if it is not the address above.</small></div>
+          <label class="tick"><input type="checkbox" data-same="billaddr" checked><span>Same as the Address Above</span></label>
+        </div>
+        <div class="grid">
+          <div class="f c4" data-need="bill-street"><label for="bill-street">Street Address</label><input type="text" id="bill-street" maxlength="150"><div class="err">This is needed.</div></div>
+          <div class="f c2" data-opt="1" data-need="bill-suite"><label for="bill-suite">Suite or Floor <span class="optl">(optional)</span></label><input type="text" id="bill-suite" maxlength="60"></div>
+          <div class="f c2" data-need="bill-city"><label for="bill-city">City</label><input type="text" id="bill-city" maxlength="80"><div class="err">This is needed.</div></div>
+          <div class="f c2" data-need="bill-state"><label for="bill-state">State or Province</label><input type="text" id="bill-state" maxlength="60"><div class="err">This is needed.</div></div>
+          <div class="f c2" data-need="bill-zip"><label for="bill-zip">ZIP or Postal Code</label><input type="text" id="bill-zip" maxlength="20"><div class="err">This is needed.</div></div>
+          <div class="f c3" data-need="bill-country"><label for="bill-country">Country</label><input type="text" id="bill-country" value="United States" maxlength="60"><div class="err">This is needed.</div></div>
+          <div class="f c3" data-opt="1" data-need="bill-attn"><label for="bill-attn">Attention or Department <span class="optl">(optional)</span></label><input type="text" id="bill-attn" maxlength="120"><div class="help">Such as Accounts Payable.</div></div>
+        </div>
       </div>
 
       <h3>What Your Organization Does</h3>
@@ -561,6 +579,11 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="f" data-need="level">
         <div class="levels" id="levels" role="radiogroup" aria-label="Membership level"><div class="saved">Loading membership levels&hellip;</div></div>
         <div class="err">Choose a membership level.</div>
+      </div>
+      <div id="subsBox" hidden>
+        <h3>Wholly Owned Subsidiaries</h3>
+        <p class="lead" id="subsLead" style="margin-top:0"></p>
+        <div id="subs"></div>
       </div>
       <div id="commonBox" hidden>
         <h3>Every Level Includes</h3>
@@ -691,6 +714,7 @@ function drawLevels(){
     box.appendChild(d);});
   if(was){var r=box.querySelector('input[value="'+was.replace(/"/g,"")+'"]');if(r)r.checked=true;}
   $("common").innerHTML=COMMON.map(function(x){return "<li>"+esc(x)+"</li>";}).join("");$("commonBox").hidden=!COMMON.length;
+  adaptLevel();
 }
 function loadLevels(){
   if(FLOW_URL.indexOf("http")!==0){drawLevels();return;}
@@ -718,6 +742,49 @@ function loadLevels(){
   form.querySelectorAll("input[data-same]").forEach(function(x){x.addEventListener("change",function(){$("c-"+x.dataset.same).dataset.same=x.checked?"1":"";});});
   $("signDate").textContent=today();
 })();
+
+/* ---------- wholly owned subsidiaries ----------
+   The higher levels include complimentary corporate membership for one or
+   more wholly owned subsidiaries. How many is read from the level's own
+   benefit wording, which the team edits in Member 360, so renaming a level
+   or changing the count here needs no change to this page. The slots are
+   built once, up front, so a saved draft can always put its answers back. */
+var MAXSUBS = 5;
+(function(){
+  function fld(id,lab,cls,ac,type,opt){
+    return '<div class="f '+cls+'" data-need="'+id+'" data-opt="1"><label for="'+id+'">'+lab+(opt?' <span class="optl">(optional)</span>':'')+'</label>'+
+      '<input type="'+(type||"text")+'" id="'+id+'" autocomplete="'+ac+'" maxlength="'+(type==="email"?200:150)+'">'+
+      '<div class="err">'+(type==="email"?"Enter a valid email address.":"This is needed.")+'</div></div>';
+  }
+  var box=$("subs");
+  for(var i=1;i<=MAXSUBS;i++){
+    var d=document.createElement("div");d.className="contact";d.id="sub"+i;d.hidden=true;
+    d.innerHTML='<div class="ch"><div><b>Subsidiary '+i+' <span style="font-weight:400;color:var(--ink-3)">(optional)</span></b></div></div><div class="grid">'+
+      fld("sub"+i+"-name","Legal Company Name","c3","organization")+
+      fld("sub"+i+"-city","City","c3","address-level2")+
+      fld("sub"+i+"-state","State or Province","c2","address-level1")+
+      fld("sub"+i+"-contact","Contact Name","c2","name")+
+      fld("sub"+i+"-email","Contact Email","c2","email","email")+'</div>';
+    box.appendChild(d);
+  }
+})();
+/* How many subsidiaries this level covers, read from its own benefit text. */
+function subsAllowed(L){
+  if(!L||!L.benefits)return 0;
+  for(var i=0;i<L.benefits.length;i++){
+    var b=String(L.benefits[i]);
+    if(/subsidiar/i.test(b)){var m=b.match(/\d+/);return Math.min(MAXSUBS,m?Number(m[0]):1);}
+  }
+  return 0;
+}
+function adaptLevel(){
+  var L=chosenLevel(),n=subsAllowed(L);
+  $("subsBox").hidden=!n;
+  for(var i=1;i<=MAXSUBS;i++){var c=$("sub"+i);if(c)c.hidden=i>n;}
+  if(n)$("subsLead").textContent=(L?L.l:"This level")+" includes complimentary corporate membership for "+
+    (n===1?"1 wholly owned subsidiary":"up to "+n+" wholly owned subsidiaries")+
+    ". Name "+(n===1?"it":"them")+" here if you know "+(n===1?"it":"them")+" now, or leave this blank and tell MISMO later.";
+}
 
 /* ---------- the logo ---------- */
 var LOGO_EXT=/\.(png|jpe?g|svg|eps|ai|pdf)$/i;
@@ -748,8 +815,9 @@ function adapt(){
   var s=radio("sector");
   $("sectorOtherBox").hidden=s!=="Other";
   $("lenderStop").hidden=s!=="Lender";
+  adaptLevel();
 }
-form.addEventListener("change",function(e){if(e.target.name==="sector")adapt();var f=e.target.closest(".f");if(f&&e.target.id!=="logo")f.classList.remove("bad");});
+form.addEventListener("change",function(e){if(e.target.name==="sector")adapt();if(e.target.name==="level")adaptLevel();var f=e.target.closest(".f");if(f&&e.target.id!=="logo")f.classList.remove("bad");});
 form.addEventListener("input",function(e){var f=e.target.closest(".f");if(f)f.classList.remove("bad");});
 
 /* ---------- checking a step ----------
@@ -827,25 +895,51 @@ function person(k){
   o.name=(o.first+" "+o.last).trim();return o;
 }
 function chosenLevel(){var v=radio("level");return LEVELS.filter(function(x){return x.v===v;})[0]||null;}
+/* The billing address: the organization's own unless they say otherwise. */
+function billAddr(){
+  var s=form.querySelector('input[data-same="billaddr"]');
+  if(!s||s.checked)return {sameAsCompany:true};
+  return {sameAsCompany:false,attn:val("bill-attn"),street:val("bill-street"),suite:val("bill-suite"),
+    city:val("bill-city"),state:val("bill-state"),zip:val("bill-zip"),country:val("bill-country")};
+}
+/* Only the slots this level covers, and only the ones that were filled in. */
+function subsList(){
+  var n=subsAllowed(chosenLevel()),out=[];
+  for(var i=1;i<=n;i++){
+    var o={name:val("sub"+i+"-name"),city:val("sub"+i+"-city"),state:val("sub"+i+"-state"),
+      contact:val("sub"+i+"-contact"),email:val("sub"+i+"-email").toLowerCase()};
+    if(o.name||o.email)out.push(o);
+  }
+  return out;
+}
 function collect(){
   var contacts={};CONTACTS.forEach(function(C){var p=person(C.k);if(p.name||p.email)contacts[C.k]=p;});
   var w=val("website");if(w&&!/^https?:\/\//i.test(w))w="https://"+w;
   var L=chosenLevel();
-  return {company:val("company"),dba:val("dba"),website:w,po:val("po"),
+  return {company:val("company"),dba:val("dba"),website:w,po:val("po"),mainPhone:val("mainPhone"),
     addr:{street:val("street"),suite:val("suite"),city:val("city"),state:val("state"),zip:val("zip"),country:val("country")},
+    billAddr:billAddr(),subsAllowed:subsAllowed(L),subsidiaries:subsList(),
     sector:radio("sector"),sectorOther:radio("sector")==="Other"?val("sectorOther"):"",focus:radio("focus"),
     level:L?L.v:"",levelLabel:L?L.l:"",levelPrice:L?L.price:0,levelsFrom:levelsFrom,
     contacts:contacts,signer:person("signer"),signature:val("signature"),signedOn:new Date().toISOString().slice(0,10),agreedPolicies:$("agree").checked,notes:val("notes")};
 }
-function addrLine(a){return [a.street,a.suite,[a.city,[a.state,a.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),a.country].filter(Boolean).join(", ");}
+function addrLine(a){return [a.attn,a.street,a.suite,[a.city,[a.state,a.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),a.country].filter(Boolean).join(", ");}
+function subLine(x){return [x.name,[x.city,x.state].filter(Boolean).join(", "),x.contact,x.email].filter(Boolean).join(" \u00b7 ");}
 function pLine(p){if(!p)return "";return [p.name,p.title,p.email,p.phone].filter(Boolean).join(" · ")+(p.sameAsPrimary?" (same as Primary Contact)":"");}
 /* the same sections show on the review, the printed copy and membership@'s email */
 function sections(a){
   var cr=[];CONTACTS.forEach(function(C){if(a.contacts[C.k])cr.push([C.l.replace(/^MISMO /,""),pLine(a.contacts[C.k])]);});
   return [
-    {t:"Organization",step:0,rows:[["Company Name",a.company],["Also Known As",a.dba],["Address",addrLine(a.addr)],["Website",a.website],
+    {t:"Organization",step:0,rows:[["Company Name",a.company],["Also Known As",a.dba],["Address",addrLine(a.addr)],
+      ["Billing Address",a.billAddr.sameAsCompany?"Same as the address above":addrLine(a.billAddr)],
+      ["Company Main Phone",a.mainPhone],["Website",a.website],
       ["Industry Sector",a.sector==="Other"?"Other: "+a.sectorOther:a.sector],["Commercial or Residential",a.focus],["Company Logo",LOGO?LOGO.name:""],["Purchase Order",a.po]]},
-    {t:"Membership Level",step:1,rows:[["Level",a.levelLabel+(a.levelPrice?" ("+usd(a.levelPrice)+" a year)":"")]]},
+    {t:"Membership Level",step:1,rows:[["Level",a.levelLabel+(a.levelPrice?" ("+usd(a.levelPrice)+" a year)":"")]].concat(
+      a.subsAllowed
+        ? (a.subsidiaries.length
+            ? a.subsidiaries.map(function(x,i){return ["Subsidiary "+(i+1),subLine(x)];})
+            : [["Wholly Owned Subsidiaries","None named yet \u2014 this level covers "+a.subsAllowed+", to be confirmed with MISMO"]])
+        : [])},
     {t:"Contacts",step:2,rows:cr},
     {t:"Authorization",step:3,rows:[["Authorized Signer",pLine(a.signer)],["MISMO's Policies",a.agreedPolicies?"Agreed":""],["Signed As",a.signature],["Signed On",today()],["Notes",a.notes]]}
   ];
