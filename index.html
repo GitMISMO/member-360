@@ -2272,7 +2272,103 @@ function applyCidOv(){
   return changed;
 }
 function isSole(o){return String(o.level||"")==="Sole";}
-function cidFact(facts,o){idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under.");
+/* Aptify belongs to MBA and the team can't edit it, so every field the Issues
+   Log used to send them to Aptify for can be set here instead. Each setting is
+   kept with the record's other staff edits and survives every rebuild.
+   Where Aptify genuinely has something to say — a live membership term —
+   Aptify still wins; APT_WINS lists those fields. */
+const APT_WINS={life:1,level:1};
+function pickFact(facts,o,key,label,opts,help,asText){
+  const d=h("div",null);
+  const lab=v=>{const m=opts.filter(x=>String(x[0])===String(v))[0];return m?m[1]:(v===""||v===undefined?"":String(v));};
+  const show=()=>{
+    d.textContent="";
+    const txt=asText?asText(o):lab(o[key]);
+    if(!db||!canWrite){d.appendChild(document.createTextNode(txt||"\u2014"));return;}
+    const b=h("button",{type:"button",class:"linkbtn",title:"Change "+label.toLowerCase()},txt||"Not set");
+    b.addEventListener("click",edit); d.appendChild(b);
+    const was=o[key+"Was"];
+    if(was!==undefined&&was!==o[key])d.appendChild(h("div",{class:"hint"},"Set by hand \u00b7 the member list had "+(lab(was)||"nothing")));
+  };
+  const edit=()=>{
+    d.textContent="";
+    const sel=h("select",{"aria-label":label,style:"max-width:230px"});
+    opts.forEach(x=>{const op=h("option",{value:x[0]},x[1]);if(String(x[0])===String(o[key]))op.selected=true;sel.appendChild(op);});
+    const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
+    const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
+    ok.addEventListener("click",()=>{
+      const v=sel.value==="true"?true:sel.value==="false"?false:sel.value;
+      if(o[key+"Was"]===undefined)o[key+"Was"]=o[key];
+      o[key]=v;saveOv(o.k,{[key]:v});rebuildOrgs();show();
+      toast(label+" set to "+lab(v)+".");});
+    no.addEventListener("click",show);
+    d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},sel,ok,no));
+    if(help)d.appendChild(h("div",{class:"hint"},help));
+    try{sel.focus();}catch(e){}
+  };
+  show();
+  facts.appendChild(h("div",{class:"fact"},h("label",null,label),d));
+}
+function dateFact(facts,o,key,label,help){
+  const d=h("div",null);
+  const show=()=>{
+    d.textContent="";
+    const txt=o[key]?fmt(o[key]):"";
+    if(!db||!canWrite){d.appendChild(document.createTextNode(txt||"\u2014"));return;}
+    const b=h("button",{type:"button",class:"linkbtn",title:"Change "+label.toLowerCase()},txt||"Not set");
+    b.addEventListener("click",edit); d.appendChild(b);
+    if(o[key+"Was"]!==undefined&&o[key+"Was"]!==o[key])
+      d.appendChild(h("div",{class:"hint"},"Set by hand \u00b7 the member list had "+(o[key+"Was"]?fmt(o[key+"Was"]):"nothing")));
+  };
+  const edit=()=>{
+    d.textContent="";
+    const inp=h("input",{type:"date",value:o[key]||"","aria-label":label,style:"max-width:190px"});
+    const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
+    const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
+    ok.addEventListener("click",()=>{const v=String(inp.value||"").slice(0,10);
+      if(o[key+"Was"]===undefined)o[key+"Was"]=o[key]||"";
+      o[key]=v;saveOv(o.k,{[key]:v});rebuildOrgs();show();
+      toast(v?(label+" set to "+fmt(v)+"."):(label+" cleared."));});
+    no.addEventListener("click",show);
+    d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},inp,ok,no));
+    if(help)d.appendChild(h("div",{class:"hint"},help));
+    try{inp.focus();}catch(e){}
+  };
+  show();
+  facts.appendChild(h("div",{class:"fact"},h("label",null,label),d));
+}
+function lifeFact(facts,o){
+  const d=h("div",null);
+  const show=()=>{
+    d.textContent="";
+    if(!db||!canWrite){d.appendChild(document.createTextNode(o.life||"\u2014"));return;}
+    const b=h("button",{type:"button",class:"linkbtn",title:"Change whether this is a current member"},o.life||"\u2014");
+    b.addEventListener("click",edit); d.appendChild(b);
+    if(o.lifeWas!==undefined&&o.lifeWas!==o.life)
+      d.appendChild(h("div",{class:"hint"},"Set by hand \u00b7 the member list had "+o.lifeWas));
+  };
+  const edit=()=>{
+    d.textContent="";
+    const sel=h("select",{"aria-label":"Membership status",style:"max-width:190px"});
+    ["Active","Prospect","Former","Lost"].forEach(v=>{const op=h("option",{value:v},v==="Active"?"Active \u2014 a current member":v==="Prospect"?"Prospect \u2014 not a member":v);if(v===o.life)op.selected=true;sel.appendChild(op);});
+    const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
+    const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
+    ok.addEventListener("click",()=>{
+      const v=sel.value;
+      if(o.lifeWas===undefined)o.lifeWas=o.life;
+      o.life=v;saveOv(o.k,{life:v});rebuildOrgs();show();
+      toast("Marked "+v+". Member counts and the Issues Log follow it from now on.");});
+    no.addEventListener("click",show);
+    d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},sel,ok,no));
+    d.appendChild(h("div",{class:"hint"},o.type==="Lender"
+      ?"A lender is a member by paying $1,000 or more Innovation Investment Fund for the year."
+      :"An active Aptify membership term always wins over this."));
+    try{sel.focus();}catch(e){}
+  };
+  show();
+  facts.appendChild(h("div",{class:"fact"},h("label",null,"Membership Status"),d));
+}
+function cidFact(facts,o){lifeFact(facts,o);idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under.");
   if(isSole(o)||o.pid)idFact(facts,o,"pid","Person ID","Use the ID on the person’s own record in Aptify — the one the Sole membership is recorded against.");}
 function idFact(facts,o,key,label,help){
   const d=h("div",null);
@@ -2313,8 +2409,12 @@ function renderProfile(o,box){
   const facts=h("div",{class:"facts"});
   const F=(l,v)=>facts.appendChild(h("div",{class:"fact"},h("label",null,l),h("div",null,v||"—")));
   cidFact(facts,o);
-  F("Member Type",o.type);F("Industry Sector",sectorLab(sectorOf(o)));F("Commercial or Residential",o.market);
-  F("Credit Union",o.cu?"Yes":"No");{const si=sinceInfo(o);F("Member Since",si.y?(si.y+(si.confirmed?" (confirmed in Aptify)":si.sure?"":" or earlier")):"—");F("Last Joined Date",fmt(joinedOf(o)));}F("Membership Ends",fmt(o.thru));
+  pickFact(facts,o,"type","Member Type",[["Lender","Lender"],["Non-Lender","Non-Lender"]],
+    "Lenders are members by paying the Innovation Investment Fund; everyone else by a membership term.");
+  F("Industry Sector",sectorLab(sectorOf(o)));
+  pickFact(facts,o,"market","Commercial or Residential",[["Residential","Residential"],["Commercial","Commercial"],["Both","Both"]]);
+  pickFact(facts,o,"cu","Credit Union",[["true","Yes"],["false","No"]],
+    "Credit unions are counted separately on Membership Stats.",x=>x.cu?"Yes":"No");{const si=sinceInfo(o);F("Member Since",si.y?(si.y+(si.confirmed?" (confirmed in Aptify)":si.sure?"":" or earlier")):"—");dateFact(facts,o,"joined","Last Joined Date","The day this membership last began.");}F("Membership Ends",fmt(o.thru));
   if(o.addr)F("Address",o.addr);
   if(o.auto)F("Source","Added automatically from a Financial System payment. Add contacts and the Company ID in Aptify.");
   if(renewable(o))facts.appendChild(h("div",{class:"fact"},h("label",null,RY+" Dues"),h("div",{"data-part":"dues"},"\u2014")));
@@ -4434,7 +4534,7 @@ function isChecks(){
       why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Open both, check Aptify, and mark the pair Not an Issue if they really are different companies. Merging records happens in Aptify.",
       items:()=>dupPairs()},
     {key:"no-type",cat:"Missing Information",title:"Members with No Member Type",
-      why:"Current members with no Lender or Non-Lender type on record, so they can't be placed in the member counts. Set the type in Aptify.",
+      why:"Current members with no Lender or Non-Lender type on record, so they can't be placed in the member counts. Open the record and set Member Type.",
       items:()=>O(A.filter(o=>kindIn(o,Y)==="Type Not Recorded"),lifeTag)},
     {key:"apt-norecord",cat:"Name Matching",title:"Aptify Memberships with No Member 360 Record",
       why:"The weekly Aptify upload has an active MISMO membership term for these companies or people, but no Member 360 record has their Company ID (or, for a Sole membership, their name). Their membership doesn't show anywhere in Member 360. Tell Claude which record each belongs to, or mark it Not an Issue.",
@@ -4449,13 +4549,13 @@ function isChecks(){
       why:"Current members with no joined date on record. Member Since and any count \"as of\" a past date are estimates for these. Add the Last Joined Date under Membership History and Levels on each record, or ask for the Aptify export with original join dates.",
       items:()=>O(A.filter(o=>!joinedOf(o)),lifeTag)},
     {key:"cu-unflagged",cat:"Member Counts",title:"Credit Unions Not Marked as Credit Unions",
-      why:"Current members whose name says they're a credit union, but the Credit Union flag isn't set, so they're missing from the Credit Unions count on Membership Stats. Set the flag in Aptify.",
+      why:"Current members whose name says they're a credit union, but the Credit Union flag isn't set, so they're missing from the Credit Unions count on Membership Stats. Open the record and set Credit Union to Yes.",
       items:()=>O(A.filter(o=>!o.cu&&/credit union|\bf?cu\b/i.test(o.name)&&!/acuma/i.test(o.name)),noteL)},
     {key:"cu-low",cat:"Member Counts",title:"Credit Union Members That Paid under $1,000 IIF",
-      why:"Marked as credit union members, but their "+Y+" IIF is under the $1,000 that makes a lender a member.",
+      why:"Marked as credit union members, but their "+Y+" IIF is under the $1,000 that makes a lender a member. If they aren't a member, open the record and set Membership Status to Prospect.",
       items:()=>O(A.filter(o=>o.cu&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
     {key:"nl-iif",cat:"Member Counts",title:"Recorded as Non-Lender but Paid IIF",
-      why:"These members are recorded as Non-Lender members but paid $1,000 or more IIF in "+Y+", so the IIF Cycle counts them as lenders and Membership Stats doesn't. Check which type is right in Aptify.",
+      why:"These members are recorded as Non-Lender members but paid $1,000 or more IIF in "+Y+", so the IIF Cycle counts them as lenders and Membership Stats doesn't. Open the record and set Member Type to whichever is right.",
       items:()=>O(NL.filter(o=>lendPaid(o,Y)>=1000),noteL)},
     {key:"name-disagree",cat:"Name Matching",title:"Company Names the Pages Disagree On",
       why:"Each weekday morning the Member 360 Feeds update shares name matches from the Sponsorship Portal and the CMS into Member 360. These are the ones where two pages say different things (the same name tied to different companies), so the sync changed nothing. Decide which is right and fix it on the page that's wrong."+(NSYNC&&NSYNC.lastRun?" Last run "+fmt(NSYNC.lastRun.slice(0,10))+".":""),
@@ -4487,7 +4587,7 @@ function isChecks(){
       why:"Marked as lender members, but no "+Y+" IIF payment is on file under their name. They may have paid under another name or on a duplicate record.",
       items:()=>O(Lm.filter(o=>!lendPaid(o,Y)&&!specialOf(o)),noteL)},
     {key:"l-low",cat:"Payments",title:"Lender Members That Paid under $1,000 IIF",
-      why:"Marked as lender members, but their "+Y+" IIF is under $1,000 and they aren't on a membership special.",
+      why:"Marked as lender members, but their "+Y+" IIF is under $1,000 and they aren't on a membership special. If they aren't a member, open the record and set Membership Status to Prospect.",
       items:()=>O(Lm.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
     {key:"nl-none",cat:"Payments",title:"Non-Lender Members with No Payments under Their Name",
       why:"No payment of any kind is on file under these names, and Aptify has no active MISMO term covering "+Y+" for them. They probably pay under another name: match it under Payer Names to Match.",
@@ -4894,9 +4994,25 @@ function applyAptify(){
   Object.keys(APT.companies||{}).forEach(cid=>{const c=APT.companies[cid],o=orgFor(cid);if(!o)return;
     if(/credit union/i.test(c.ct||"")&&!o.cu)set(o,"cu",true);
     if(!o.addr&&(c.city||c.st))set(o,"addr",[c.city,c.st].filter(Boolean).join(", "));});
+  applyLifeOv();
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
   certMatch(R);
   APTR=R;
+}
+/* A lender is a member by paying the Innovation Investment Fund, not by an
+   Aptify membership term, so a wrong "Active" from the old tracker can't be
+   put right in Aptify. Staff can set the status on the record instead. It is
+   applied after the Aptify join and never where Aptify has a live term, so
+   Aptify always wins where Aptify actually says something. */
+const STAFF_FIELDS=["life","level","cu","type","market","joined"];
+function applyLifeOv(){
+  ORGS.forEach(o=>{const d=OV[o.k]||{};
+    STAFF_FIELDS.forEach(f=>{
+      if(d[f]===undefined||d[f]==="")return;
+      if(APT_WINS[f]&&o.aptTerm)return;          /* a live Aptify term wins */
+      if(o[f]===d[f])return;
+      if(o[f+"Was"]===undefined)o[f+"Was"]=o[f];
+      o[f]=d[f];});});
 }
 /* the certified people in the registers, matched to records: company name (or a confirmed name match), then the
    email domain when only one record uses it, then the record the same person was matched to before (mismo.org list).
