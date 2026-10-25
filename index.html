@@ -2240,7 +2240,7 @@ function renderRows(list,items,box){
   if(items.length>lim)box.appendChild(h("button",{type:"button",class:"more",onclick:()=>{shown[list]+=PAGE;renderList(list);}},"Show "+n(Math.min(PAGE,items.length-lim))+" More of "+n(items.length-lim)));
 }
 function markSel(){document.querySelectorAll(".rowbtn[data-k]").forEach(b=>{const on=b.dataset.k===paneK;b.classList.toggle("sel",on);b.setAttribute("aria-pressed",on?"true":"false");});}
-function paneTitle(o){$("m360-pane-t").textContent=o.name;
+function paneTitle(o){$("m360-pane-t").textContent=isSole(o)?soleLabel(o):o.name;
   const s=renewable(o)?stageOf(o):"";$("m360-pane-sub").textContent=[o.level||"",o.type==="Lender"?"Lender":"",o.life,s?RY+": "+s:"",o.cid?"ID "+o.cid:""].filter(Boolean).join(" \u00b7 ");}
 function openPane(k){const o=BY[k];if(!o)return;const body=$("m360-pane-body");
   laneBack=paneK&&paneK.indexOf("lane:")===0&&document.body.classList.contains("paneon")?paneK.slice(5):(paneK===k?laneBack:null);
@@ -2277,6 +2277,16 @@ function applyCidOv(){
   return changed;
 }
 function isSole(o){return String(o.level||"")==="Sole";}
+/* A Sole membership is one membership that MISMO keeps in two places: the company
+   record, which is how accounting usually bills it, and the person record, which is
+   where Aptify files the term. Pairing them folds the two into one record that carries
+   both names and both Aptify IDs, so it counts once, is found under either name, and
+   the Aptify term reaches it. */
+function pairName(o){return (ov(o).pairName||"").trim();}
+function soleNames(o){const out=[o.name];const p=pairName(o);if(p&&p!==o.name)out.push(p);
+  (o.mergedIn||[]).forEach(x=>{if(x.name&&out.indexOf(x.name)<0)out.push(x.name);});return out;}
+function soleLabel(o){const n=soleNames(o);return n.length>1?n[0]+" "+MDOT+" "+n.slice(1).join(" "+MDOT+" "):n[0];}
+const MDOT="·";
 /* ---------- duplicate records folded into one ----------
    Two rows carrying the same Aptify Company ID are one company as far as
    Aptify is concerned, so the team can fold them together here rather than
@@ -4866,6 +4876,32 @@ function cidFixCtl(o){
   clr.addEventListener("click",()=>{if(blocked())return;put("");});
   return h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,"The Aptify Company ID"),inp,msg),
     h("div",{class:"btnrow",style:"margin-top:0"},ok,clr));}
+/* Pair a Sole membership's company record with the person record Aptify files it under */
+function solePairCtl(o){
+  const dis=!db||!canWrite;
+  fillOrgList();
+  const byLabel={};ORGS.forEach(x=>{if(x.k!==o.k)byLabel[orgLabel(x)]=x.k;});
+  const inp=h("input",{type:"text",list:"orgnames",placeholder:"Start typing the person\u2019s name","aria-label":"The person this Sole membership is recorded under"});
+  const msg=h("span",{class:"hint"});
+  const go=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Pair as One Sole Membership");
+  go.addEventListener("click",()=>{
+    if(blocked())return;
+    const k=byLabel[inp.value];
+    if(!k||!BY[k]){msg.textContent="Pick a name from the list.";return;}
+    if(k===o.k){msg.textContent="That\u2019s this record.";return;}
+    const other=BY[k];
+    const pid=String(other.cid||"").trim();
+    const patch={pairName:other.name};
+    if(pid&&String(pid)!==String(o.cid||""))patch.pid=pid;
+    if(patch.pid){if(o.pidWas===undefined)o.pidWas=o.pid||"";o.pid=patch.pid;}
+    saveOv(o.k,patch);
+    saveOv(other.k,{mergedInto:o.k});
+    rebuildOrgs();ISGEN++;renderIssues();scheduleRefresh();
+    toast(o.name+" and "+other.name+" are one Sole membership now"+(patch.pid?", carrying Person ID "+patch.pid:"")+".");});
+  return h("div",{class:"ismatch"},
+    h("div",{class:"fld"},h("label",null,"The Person This Sole Membership Is Recorded Under"),inp,msg,
+      h("div",{class:"hint"},"They become one record carrying both names and both Aptify IDs, counted as one Sole membership.")),
+    h("div",{class:"btnrow",style:"margin-top:0"},go));}
 /* "this leader works somewhere else": moves a workgroup seat onto the company the
    person actually works for. Saved against the record here, so every later Leadership
    Tracker update lands the seat in the same place and the issue stays settled. */
@@ -4949,7 +4985,8 @@ function isItems(x,wrap){
       x.act&&!marked&&it.o?actCtl(x.act,it.o):null,
       x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
       x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null,
-      x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null),btn);};
+      x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null,
+      x.key==="apt-noterm"&&!marked&&it.o&&isSole(it.o)?solePairCtl(it.o):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
@@ -5161,7 +5198,7 @@ function show(tab){
 function openOrg(k){openPane(k);}
 window.__m360={find(t){const out=[],seen=new Set();
   for(const o of ORGS){if(out.length>40)break;
-    if(norm(o.name).includes(t)||o.cid===t)out.push({group:"Organizations",name:o.name,where:(o.life)+(inCohort(o)?" · "+RY+": "+stageOf(o):"")+(o.cid?" · ID "+o.cid:""),go:()=>openOrg(o.k)});
+    if(soleNames(o).some(nm=>norm(nm).includes(t))||o.cid===t||String(o.pid||"")===t)out.push({group:"Organizations",name:isSole(o)?soleLabel(o):o.name,where:(o.life)+(inCohort(o)?" · "+RY+": "+stageOf(o):"")+(o.cid?" · ID "+o.cid:""),go:()=>openOrg(o.k)});
     else{const p=o.people.find(p=>norm(p.email).includes(t)||norm(p.name).includes(t));
       if(p){out.push({group:"Contacts",name:p.name||p.email,where:(p.name?p.email+" · ":"")+o.name,go:()=>openOrg(o.k)});seen.add("p|"+o.k+"|"+norm(p.name||p.email));}}}
   /* A certified professional and a workgroup leader each sit on a record without being a
