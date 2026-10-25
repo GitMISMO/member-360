@@ -838,7 +838,7 @@ body.railmini .hq .mast-right .theme-btn span{display:none}
 .railsum{padding:11px 12px 10px;flex:0 0 auto;border-top:1px solid rgba(80,164,219,.16);margin-top:4px;font-size:11.5px;color:rgba(255,255,255,.62);line-height:1.45}
 .railsum b{color:#fff;font-weight:600}
 .railsum b.late{color:#f0b94a}
-.railsum .payby{color:rgba(255,255,255,.62)}
+.railsum .payby{display:block;color:rgba(255,255,255,.62)}
 .railsum .payby.lateby{color:#f0b94a}
 body.railmini .railsum{display:none}
 .hq .mast-right{margin-top:auto;display:flex;flex-direction:column;align-items:stretch;gap:1px;padding:8px 8px 10px;border-top:1px solid rgba(80,164,219,.2);flex:0 0 auto}
@@ -4930,7 +4930,7 @@ function paintDataDates(){
     const late=d!==null&&d>PAY_LATE_AFTER;
     c.classList.toggle("late",late);
     const sib=c.nextSibling;if(sib&&sib.nodeType===1&&sib.className&&sib.className.indexOf("payby")===0)sib.remove();
-    if(d)c.after(h("span",{class:"payby"+(late?" lateby":"")}," \u00b7 "+d+(d===1?" day":" days")+" behind"));}
+    if(d)c.after(h("span",{class:"payby"+(late?" lateby":"")},d+(d===1?" day":" days")+" behind"));}
 }
 function renderApt(){
   const box=$("aptinfo");if(!box)return;const ae=document.activeElement;if(box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;box.textContent="";
