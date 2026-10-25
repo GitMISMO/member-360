@@ -5266,8 +5266,13 @@ function applyAptify(){
   const byCid={},byName={};
   ORGS.forEach(o=>{if(o.cid&&!o.mm)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o);
     if(o.pid&&!o.mm&&String(o.pid)!==String(o.cid))(byCid[String(o.pid)]=byCid[String(o.pid)]||[]).push(o);
-    /* a Sole record can carry a nickname in brackets, "Prabhakar Bhogaraju (PB)" */
-    [...new Set([aptN(o.name),aptN(String(o.name||"").replace(/\s*\([^)]*\)\s*/g," "))])].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
+    /* a Sole record can carry a nickname in brackets, "Prabhakar Bhogaraju (PB)".
+       A record also answers to the name of anything folded into it, and to the other
+       half of a paired Sole membership: Aptify files a Sole term under the person, so
+       once the person and the company are one record it still has to be reachable by
+       the person's name. */
+    const nms=[o.name,String(o.name||"").replace(/\s*\([^)]*\)\s*/g," "),ov(o).pairName||""].concat((o.mergedIn||[]).map(x=>x.name));
+    [...new Set(nms.map(aptN))].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
   /* two records can share a Company ID (ServiceLink and "Service Link, A Black Knight..."): the current one gets
      the term, so a lapsed duplicate isn't revived and the real member isn't listed as having no term */
   const orgFor=cid=>{const l=(byCid[cid]||[]).slice(),c=BY["c"+cid];if(c&&!c.mm&&!l.includes(c))l.push(c);if(!l.length)return null;
