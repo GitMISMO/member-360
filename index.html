@@ -5271,7 +5271,8 @@ function applyAptify(){
        half of a paired Sole membership: Aptify files a Sole term under the person, so
        once the person and the company are one record it still has to be reachable by
        the person's name. */
-    const nms=[o.name,String(o.name||"").replace(/\s*\([^)]*\)\s*/g," "),ov(o).pairName||""].concat((o.mergedIn||[]).map(x=>x.name));
+    const raw=[o.name,ov(o).pairName||""].concat((o.mergedIn||[]).map(x=>x.name)),nms=[];
+    raw.forEach(n=>{if(!n)return;nms.push(n);nms.push(String(n).replace(/\s*\([^)]*\)\s*/g," "));});
     [...new Set(nms.map(aptN))].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
   /* two records can share a Company ID (ServiceLink and "Service Link, A Black Knight..."): the current one gets
      the term, so a lapsed duplicate isn't revived and the real member isn't listed as having no term */
