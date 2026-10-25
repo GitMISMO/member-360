@@ -1617,7 +1617,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   <section class="view" id="v-iif" hidden>
     <div class="vhead">
       <div><h1>IIF Cycle</h1>
-      <div class="vsub">Every lender invoiced for the Innovation Investment Fee. Lenders who pay $1,000 or more become members.</div></div>
+      <div class="vsub">Every lender invoiced for the Innovation Investment Fund. Lenders who pay $1,000 or more become members.</div></div>
       <div class="vright" id="iif-right" hidden></div>
     </div>
     <div class="rngrow" style="margin:-4px 0 18px"><div class="fld"><label>IIF Year</label><div class="chipset" id="iif-year"></div></div><div class="hint" id="iif-ynote" style="align-self:end;padding-bottom:8px"></div></div>
@@ -2270,7 +2270,7 @@ function renderProfile(o,box){
   box.appendChild(h("div",{"data-part":"ctrls"}));
   box.appendChild(h("div",{"data-part":"reasons"}));
   if(renewable(o))box.appendChild(sect("Renewal Timeline","timeline",null));
-  if(o.iif)box.appendChild(sect("Innovation Investment Fee","iifs",null));
+  if(o.iif)box.appendChild(sect("Innovation Investment Fund","iifs",null));
   box.appendChild(sect("Payments and Activity","act",0));
   box.appendChild(sect("Summit Participation","regs",0));
   box.appendChild(sect("Workgroup Meetings","mtg",0));
@@ -2603,7 +2603,7 @@ const SNAP_CATS=[
   {c:"Certification",l:"Certifications",col:"#1baf7a"},
   {c:"Sponsorship",l:"Sponsorships",col:"#eda100"},
   {c:"Membership",l:"Membership",col:"#e87ba4"},
-  {c:"IIF",l:"Innovation Investment Fee",col:"#008300"},
+  {c:"IIF",l:"Innovation Investment Fund",col:"#008300"},
   {c:"Other",l:"Other Purchases",col:"#7794aa"}];
 const SC={};SNAP_CATS.forEach(x=>SC[x.c]=x);
 const SNAP_INK="#0d314c",SNAP_INK2="#456179",SNAP_INK3="#6d879c",SNAP_SKY="#74bfeb",SNAP_RULE="#e5eef5",SNAP_WASH="#f1f6fa";
@@ -2697,7 +2697,7 @@ function drawSnapshot(canvas,o,opt){
     if(liveC.length)add("prod",liveC.length,"Certified Product","Certified Products",true);
     if(EG.people.length)add("pros",EG.people.length,"Certified Professional","Certified Professionals",true);
     if(leadOf(o).length)add("lead",leadOf(o).length,"Workgroup Leadership Role","Workgroup Leadership Roles",true);
-    if(c_.IIF)opt.amounts?add("iif",Math.round(a_.IIF),"Innovation Investment Fee","Innovation Investment Fee",false,money(Math.round(a_.IIF))):add("iify",Object.keys((ACT[o.k]||{}).iif||{}).length,"Year Supporting Innovation (IIF)","Years Supporting Innovation (IIF)",true);
+    if(c_.IIF)opt.amounts?add("iif",Math.round(a_.IIF),"Innovation Investment Fund","Innovation Investment Fund",false,money(Math.round(a_.IIF))):add("iify",Object.keys((ACT[o.k]||{}).iif||{}).length,"Year Supporting Innovation (IIF)","Years Supporting Innovation (IIF)",true);
     return T;};
   const tiles=tileSet(R_);
   if(CR){const T2=tileSet(CR),m2={};T2.forEach(t=>m2[t.k]=t);
@@ -3332,7 +3332,7 @@ const LANES=[
   {id:"renew",name:"Renewals That Need a Person",sub:"Up for "+RY+" and flagged for a personal touch instead of the automated email.",c:"var(--c2)"},
   {id:"quiet",name:"Members Gone Quiet",sub:"No activity of any kind in six months: no staff touch, payment, Summit, workgroup or sponsorship. Champions and higher levels first.",c:"var(--c1)"},
   {id:"prospect",name:"Prospects to Turn Into Members",sub:"Organizations on the prospect list that haven't joined yet.",c:"var(--c5)"},
-  {id:"iif",name:"IIF Lenders Close to Membership",sub:"Lenders who have paid some of the Innovation Investment Fee but not the $1,000 that makes them a member.",c:"var(--lane-iif)"},
+  {id:"iif",name:"IIF Lenders Close to Membership",sub:"Lenders who have paid some of the Innovation Investment Fund but not the $1,000 that makes them a member.",c:"var(--lane-iif)"},
   {id:"winback",name:"Win Back Former Members",sub:"Memberships that ended in the last two years.",c:"var(--c4)"},
   {id:"benefits",name:"Unused Member Benefits",sub:"Members with free Summit registrations or Boot Camp seats still unused as the next one gets close. A quick, friendly reason to reach out.",c:"var(--c6)"}];
 const LANE={};LANES.forEach(l=>LANE[l.id]=l);
