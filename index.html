@@ -4986,7 +4986,7 @@ function isItems(x,wrap){
       x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
       x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null,
       x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null,
-      x.key==="apt-noterm"&&!marked&&it.o&&isSole(it.o)?solePairCtl(it.o):null),btn);};
+      x.key==="apt-noterm"&&!marked&&it.o&&it.o.type!=="Lender"?solePairCtl(it.o):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
