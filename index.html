@@ -4014,10 +4014,10 @@ function renderSync(){
       h("div",{class:"fact"},h("label",null,"New Members Added"),h("div",{class:"num"},n(MMINFO.added))),
       h("div",{class:"fact"},h("label",null,"New Names to Match"),h("div",{class:"num"},n(MMINFO.review)))));
     const behind=payBehind();
-    if(behind!==null&&behind>PAY_LATE_AFTER)
-      box.appendChild(h("div",{class:"banner"},h("b",null,"These payments are "+behind+" days behind."),
-        " The newest payment here is from "+fmt(MMINFO.through)+". Member 360 can only be as current as MISMO Money: export the Aptify payments, load them into MISMO Money, and this page picks them up within half an hour."));
-    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"This page reads MISMO Money's payment file every half hour, but the file itself only changes when the Aptify payment exports are loaded into MISMO Money \u2014 it does not refresh on its own. From "+fmt(MMINFO.from)+" on, its payments replace what the old daily sync copied; anything earlier is unchanged. A payment for a "+RY+" membership marks the member Renewed. IIF payments show in each lender's history. Payments Aptify records as an MBA ACH Payment or by credit memo aren't in MISMO Money's file, so those orders won't show here even when paid."));}
+    if(behind>PAY_LATE_AFTER)
+      box.appendChild(h("div",{class:"banner"},h("b",null,"These payments are "+behind+" weekdays behind."),
+        " The newest payment here is from "+fmt(MMINFO.through)+". Anyone with Edit access can bring them up to date by opening MISMO Money \u2014 that rewrites the payment file, and this page picks it up within half an hour. No Aptify export is needed."));
+    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify emails MISMO its payments on weekdays. MISMO Money rewrites its payment file whenever someone with Edit access opens it, and this page reads that file every half hour. From "+fmt(MMINFO.from)+" on, its payments replace what the old daily sync copied; anything earlier is unchanged. A payment for a "+RY+" membership marks the member Renewed. IIF payments show in each lender's history. Payments Aptify records as an MBA ACH Payment or by credit memo aren't in MISMO Money's file, so those orders won't show here even when paid."));}
   if(!SYNC&&!MMINFO){box.appendChild(h("div",{class:"hint"},"The first sync hasn't run yet."));return;}
   if(!MMINFO){box.appendChild(h("div",{class:"facts"},
     h("div",{class:"fact"},h("label",null,"Last Sync"),h("div",null,new Date(SYNC.lastRun).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))),
@@ -4914,13 +4914,19 @@ async function aptRead(files){
    organization list itself is rebuilt separately and sets META.asOf. Showing only
    the second one as "member data" read as though Aptify were a month stale. */
 function aptAsOf(){return APT&&APT.uploadedAt?APT.uploadedAt.slice(0,10):"";}
-/* How far behind today the newest payment is. MISMO Money's file is written
-   when the Aptify payment exports are loaded into it, not on a schedule, so
-   this is the one number that says whether the payments can be trusted. */
-const PAY_LATE_AFTER=4;
+/* How far behind the newest payment is. Aptify sends its payments on weekdays
+   and MISMO Money rewrites the file when someone with Edit opens it, so the
+   gap is counted in weekdays: a Monday morning after a Friday payment is one
+   working day behind, not three. */
+const PAY_LATE_AFTER=2;
 function payThrough(){return MMINFO&&MMINFO.through?MMINFO.through:"";}
-function payBehind(){const t=payThrough();if(!t)return null;
-  return Math.max(0,Math.round((Date.parse(TODAY)-Date.parse(t))/864e5));}
+function weekdaysBetween(a,b){
+  let n=0;const d=new Date(a+"T12:00:00"),end=Date.parse(b+"T12:00:00");
+  for(d.setDate(d.getDate()+1);d.getTime()<=end;d.setDate(d.getDate()+1)){
+    const w=d.getDay();if(w!==0&&w!==6)n++;}
+  return n;}
+function payBehind(){const t=payThrough();if(!t||t>=TODAY)return 0;
+  return weekdaysBetween(t,TODAY);}
 function paintDataDates(){
   const a=$("asof"),b=$("asofbuilt"),c=$("asofpay");
   if(a)a.textContent=aptAsOf()?fmt(aptAsOf()):"not uploaded yet";
@@ -4930,7 +4936,7 @@ function paintDataDates(){
     const late=d!==null&&d>PAY_LATE_AFTER;
     c.classList.toggle("late",late);
     const sib=c.nextSibling;if(sib&&sib.nodeType===1&&sib.className&&sib.className.indexOf("payby")===0)sib.remove();
-    if(d)c.after(h("span",{class:"payby"+(late?" lateby":"")},d+(d===1?" day":" days")+" behind"));}
+    if(d)c.after(h("span",{class:"payby"+(late?" lateby":"")},d+(d===1?" weekday":" weekdays")+" behind"));}
 }
 function renderApt(){
   const box=$("aptinfo");if(!box)return;const ae=document.activeElement;if(box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;box.textContent="";
