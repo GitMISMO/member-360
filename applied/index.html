@@ -451,6 +451,11 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
         <div class="help">The order number of the dues invoice.</div>
         <div class="err">This is needed.</div>
       </div>
+      <div class="f c3" data-opt="1">
+        <label for="personId">Aptify Person ID <span class="optl">(only for a Sole membership)</span></label>
+        <input type="text" id="personId" maxlength="40">
+        <div class="help">When the membership is recorded against a person rather than the company, give that person&rsquo;s ID as well.</div>
+      </div>
     </div>
 
     <div id="problem" class="problem" hidden></div>
@@ -537,7 +542,8 @@ function finish(d){
   $("doneRows").innerHTML=
     '<p style="margin:0 0 6px"><b>Confirmed by</b> '+esc(d.by)+'</p>'+
     '<p style="margin:0 0 6px"><b>Aptify Company ID</b> '+esc(d.aptifyId)+'</p>'+
-    '<p style="margin:0"><b>Aptify Invoice Number</b> '+esc(d.orderNo)+'</p>';
+    '<p style="margin:0'+(d.personId?" 0 6px":"")+'"><b>Aptify Invoice Number</b> '+esc(d.orderNo)+'</p>'+
+    (d.personId?'<p style="margin:0"><b>Aptify Person ID</b> '+esc(d.personId)+'</p>':'');
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -545,9 +551,9 @@ $("go").addEventListener("click",function(){
   if(sending)return;
   if(!check())return;
   var btn=$("go"),prob=$("problem");
-  var d={by:val("by"),aptifyId:val("aptifyId"),orderNo:val("orderNo")};
+  var d={by:val("by"),aptifyId:val("aptifyId"),orderNo:val("orderNo"),personId:val("personId")};
   sending=true;btn.disabled=true;btn.textContent="Sending…";prob.hidden=true;
-  post({action:"setup",id:REF,by:d.by,aptifyId:d.aptifyId,orderNo:d.orderNo,
+  post({action:"setup",id:REF,by:d.by,aptifyId:d.aptifyId,orderNo:d.orderNo,personId:d.personId,
         confirmedAt:new Date().toISOString(),source:"resources.mismo.org/member-360/applied/"},45000)
    .then(function(res){
      if(res&&res.ok===false)throw new Error(res.message||"refused");
