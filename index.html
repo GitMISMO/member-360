@@ -2298,9 +2298,28 @@ function unmerge(k){if(blocked())return;saveOv(k,{mergedInto:""});rebuildOrgs();
 function mergeCtl(it){
   const os=it.os||[];
   const ids=[...new Set(os.map(o=>String(o.cid||"")))];
-  if(os.length<2||ids.length!==1||!ids[0])
-    return h("div",{class:"hint",style:"margin-top:8px"},"These rows carry different Aptify Company IDs, so Aptify holds them as separate companies. Either one of them has the wrong Company ID \u2014 open the record and correct it \u2014 or the two really do need merging in Aptify.");
   const dis=!db||!canWrite;
+  if(os.length<2||ids.length!==1||!ids[0]){
+    /* Different numbers: either one of them is wrong, or Aptify really does
+       hold two companies. Putting them all on one number is the fix for the
+       first case and makes the group mergeable; the second case is left alone. */
+    const real=ids.filter(Boolean);
+    const d=h("div",null,h("div",{class:"hint"},"These rows carry different Aptify Company IDs, so Aptify holds them as separate companies. If one of the numbers is simply wrong, put them all on the right one below and they can then be merged. If Aptify really does hold two companies, leave this for MBA and mark it Not an Issue."));
+    if(real.length>1){
+      const sel=h("select",{"aria-label":"The Aptify Company ID to use",style:"max-width:240px"});
+      real.forEach(id=>{const who=os.filter(o=>String(o.cid||"")===id).map(o=>o.name).join(", ");
+        sel.appendChild(h("option",{value:id},id+" \u2014 "+who));});
+      const go=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Use This ID for All");
+      go.addEventListener("click",()=>{
+        if(blocked())return;
+        const id=sel.value;
+        os.forEach(o=>{if(String(o.cid||"")!==id){if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=id;saveOv(o.k,{cid:id});}});
+        rebuildOrgs();toast("All "+os.length+" rows now on Aptify ID "+id+". They can be merged now.");});
+      d.appendChild(h("div",{class:"ismatch"},
+        h("div",{class:"fld"},h("label",null,"The Right Aptify Company ID"),sel),
+        h("div",{class:"btnrow",style:"margin-top:0"},go)));
+    }
+    return d;}
   const sel=h("select",{"aria-label":"The record to keep",style:"max-width:280px"});
   os.forEach(o=>sel.appendChild(h("option",{value:o.k},o.name+" \u00b7 "+o.life)));
   const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Merge Into One Record");
