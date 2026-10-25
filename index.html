@@ -3325,7 +3325,8 @@ const LANES=[
   {id:"welcome",name:"Welcome New Members",sub:"Joined in the last four months and not welcomed yet.",c:"var(--c3)"},
   {id:"renew",name:"Renewals That Need a Person",sub:"Up for "+RY+" and flagged for a personal touch instead of the automated email.",c:"var(--c2)"},
   {id:"quiet",name:"Members Gone Quiet",sub:"No activity of any kind in six months: no staff touch, payment, Summit, workgroup or sponsorship. Champions and higher levels first.",c:"var(--c1)"},
-  {id:"prospect",name:"Prospects to Turn Into Members",sub:"Open prospects, and lenders who paid some IIF but not enough to be members.",c:"var(--c5)"},
+  {id:"prospect",name:"Prospects to Turn Into Members",sub:"Organizations on the prospect list that haven't joined yet.",c:"var(--c5)"},
+  {id:"iif",name:"IIF Lenders Close to Membership",sub:"Lenders who have paid some of the Innovation Investment Fee but not the $1,000 that makes them a member.",c:"var(--accent)"},
   {id:"winback",name:"Win Back Former Members",sub:"Memberships that ended in the last two years.",c:"var(--c4)"},
   {id:"benefits",name:"Unused Member Benefits",sub:"Members with free Summit registrations or Boot Camp seats still unused as the next one gets close. A quick, friendly reason to reach out.",c:"var(--c6)"}];
 const LANE={};LANES.forEach(l=>LANE[l.id]=l);
@@ -3417,7 +3418,7 @@ function laneOf(o){
   if(touchedSince(o,recent))return null;
   if(o.life==="Prospect"){const ps=ov(o).pstage||"";if(ps==="Not Interested"||ps==="Joined")return null;const lt=lastTouch(o);
     return {lane:"prospect",score:(PORDER[ps]||0)*100+(lt>=String(RY-2)?20:0),why:(ps?ps+" · ":"")+(lt?"Last touch "+monthYr(lt):"No touches yet")};}
-  if(o.iif&&o.life!=="Active"){const p=iifPaid(o);if(p>0&&p<1000)return {lane:"prospect",score:900+p/10,why:"Paid "+money(Math.round(p))+" in IIF · "+money(Math.round(1000-p))+" more makes them a member"};return null;}
+  if(o.iif&&o.life!=="Active"){const p=iifPaid(o);if(p>0&&p<1000)return {lane:"iif",score:900+p/10,why:"Paid "+money(Math.round(p))+" in IIF · "+money(Math.round(1000-p))+" more makes them a member"};return null;}
   if((o.life==="Former"||o.life==="Lost")&&o.thru&&o.thru>=addDays(TODAY,-730)&&!/business|merger/i.test(o.lossReason||""))
     return {lane:"winback",score:Number(o.thru.replace(/-/g,""))/1e4,why:"Membership ended "+monthYr(o.thru)+(o.lossReason?" · "+o.lossReason:"")};
   return null;
