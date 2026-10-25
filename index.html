@@ -2445,13 +2445,14 @@ function lifeFact(facts,o){
   show();
   facts.appendChild(h("div",{class:"fact"},h("label",null,"Membership Status"),d));
 }
-function cidFact(facts,o){lifeFact(facts,o);idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under.");
+function cidFact(facts,o){lifeFact(facts,o);idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under. Never a MERS Org ID: those are the IIF’s and sit under Innovation Investment Fund.");
   if(isSole(o)||o.pid)idFact(facts,o,"pid","Person ID","Use the ID on the person’s own record in Aptify — the one the Sole membership is recorded against.");}
 function idFact(facts,o,key,label,help){
   const d=h("div",null);
   const show=()=>{
     d.textContent="";
-    const txt=o[key]?(o[key]+(key==="cid"&&o.dupId?" (shared with another row)":"")):"Missing — check Aptify";
+    const mo=key==="cid"?mersOwner(o[key]):null;
+    const txt=o[key]?(o[key]+(key==="cid"&&o.dupId?" (shared with another row)":"")+(mo?" (a MERS ID, not an Aptify ID)":"")):"Missing — check Aptify";
     if(!db||!canWrite){d.appendChild(document.createTextNode(txt));return;}
     const b=h("button",{type:"button",class:"linkbtn",title:"Change the Company ID"},txt);
     b.addEventListener("click",edit);
@@ -2467,6 +2468,8 @@ function idFact(facts,o,key,label,help){
     ok.addEventListener("click",()=>{
       const v=String(inp.value||"").trim();
       if(v&&!/^\d+$/.test(v)){toast("An ID is digits only — copy it from the record in Aptify.",true);return;}
+      const mo=v?mersOwner(v):null;
+      if(mo){toast("That's a MERS ID"+(mo===o?"":" — "+mo.name+"'s")+", not an Aptify Company ID. MERS numbers are the IIF's and live under Innovation Investment Fund; copy the ID from the company's record in Aptify.",true);return;}
       if(key==="cid"&&o.cidWas===undefined)o.cidWas=o.cid||"";
       o[key]=v;saveOv(o.k,{[key]:v});rebuildOrgs();show();
       toast(v?(label+" set to "+v+". The next Aptify upload joins on it."):(label+" cleared."));
@@ -4660,6 +4663,11 @@ function isChecks(){
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as current Non-Lender members, but the weekly Aptify upload has no active MISMO membership term for them. Check Aptify: the membership may have lapsed, been filed under another company, or (for Sole members) under a slightly different name.",
       items:()=>APT&&APT.uploadedAt?O(APTR.noTerm,o=>(o.level||"No level")+" · ends "+fmt(o.thru)):[]},
+    {key:"cid-mers",cat:"Missing Information",title:"Company IDs That Are Really MERS IDs",
+      why:"Company ID has to be the Aptify ID — it's what every weekly Aptify upload joins on. These records carry a MERS Org ID instead. A MERS ID is a lender's IIF number only; it already has its own line under Innovation Investment Fund on the record, so taking it out of Company ID loses nothing. Open the company in Aptify, copy the ID from its record and put it in below.",
+      items:()=>{const M=mersMap();
+        return O(ORGS.filter(o=>o.cid&&M.has(String(o.cid))),o=>{const m=M.get(String(o.cid));
+          return "Company ID "+o.cid+" is "+(m===o?"this record's own":m.name+"'s")+" MERS ID · "+lifeTag(o);});}},
     {key:"no-joined",cat:"Missing Information",title:"Members with No Joined Date",
       act:{label:"Set Joined Date",field:"joined",date:true},
       why:"Current members with no joined date on record. Member Since and any count \"as of\" a past date are estimates for these. Add the Last Joined Date under Membership History and Levels on each record, or ask for the Aptify export with original join dates.",
@@ -4830,6 +4838,34 @@ function isMatchCtl(r,payer){fillOrgList();const byLabel={};ORGS.forEach(o=>{if(
   const nah=B("No",true,()=>{first.hidden=true;more.hidden=false;try{inp.focus();}catch(e){}});
   const first=h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,lab(sgs[0].sc)),recLine(top)),h("div",{class:"btnrow",style:"margin-top:0"},B("Yes, Same Company",false,()=>save(sgs[0].k)),nah));
   return h("div",null,first,more);}
+/* A MERS Org ID and an Aptify Company ID are both plain numbers, so the two get mixed up
+   when one is copied from the wrong place. A MERS ID is a lender's IIF number and nothing
+   else: it already has its own line under Innovation Investment Fund, and it never belongs
+   in Company ID, which is the number every weekly Aptify upload joins on. */
+function mersMap(){const M=new Map();
+  ORGS.forEach(o=>{const m=o.iif&&String(o.iif.mers||"").trim();if(m&&!M.has(m))M.set(m,o);});
+  return M;}
+function mersOwner(v){v=String(v||"").trim();if(!v)return null;return mersMap().get(v)||null;}
+/* put the right Aptify Company ID on a record, or take a wrong number off it */
+function cidFixCtl(o){
+  const dis=!db||!canWrite;
+  const inp=h("input",{type:"text",inputmode:"numeric",placeholder:"Aptify Company ID","aria-label":"The Aptify Company ID for "+o.name,style:"max-width:180px"});
+  const msg=h("span",{class:"hint"});
+  const ok=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Set the Company ID");
+  const clr=h("button",{type:"button",class:"btn ghost",disabled:dis,style:"min-width:max-content"},"Take This Number Off");
+  const put=v=>{if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=v;saveOv(o.k,{cid:v});
+    rebuildOrgs();ISGEN++;renderIssues();scheduleRefresh();
+    toast(v?(o.name+" is now on Aptify Company ID "+v+"."):(o.name+" has no Company ID now — its MERS number is safe under the IIF."));};
+  ok.addEventListener("click",()=>{if(blocked())return;
+    const v=String(inp.value||"").trim();
+    if(!/^\d+$/.test(v)){msg.textContent="Digits only — copy it from the company's record in Aptify.";return;}
+    if(v===String(o.cid||"")){msg.textContent="That's the number already on the record.";return;}
+    const m=mersOwner(v);
+    if(m){msg.textContent="That's a MERS ID"+(m===o?"":" — "+m.name+"'s")+", not an Aptify Company ID.";return;}
+    put(v);});
+  clr.addEventListener("click",()=>{if(blocked())return;put("");});
+  return h("div",{class:"ismatch"},h("div",{class:"fld"},h("label",null,"The Aptify Company ID"),inp,msg),
+    h("div",{class:"btnrow",style:"margin-top:0"},ok,clr));}
 /* "this leader works somewhere else": moves a workgroup seat onto the company the
    person actually works for. Saved against the record here, so every later Leadership
    Tracker update lands the seat in the same place and the issue stays settled. */
@@ -4912,7 +4948,8 @@ function isItems(x,wrap){
     return h("div",{class:"isitem"+(marked?" okd":"")},h("div",{class:"isi-a"},grp||nm,h("small",null,it.note),x.fix==="match"&&!marked&&it.r?isMatchCtl(it.r,x.key==="payer-names"):null,
       x.act&&!marked&&it.o?actCtl(x.act,it.o):null,
       x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
-      x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null),btn);};
+      x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null,
+      x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
