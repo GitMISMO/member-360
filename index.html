@@ -730,6 +730,7 @@
   --good-soft:#e1f2ec; --bad-soft:#fbe9e7; --warn-soft:#f7efe0;
   --accent:#14486e; --accent-soft:#dcedf8; --chip:#eef4f9;
   --c1:#2477b8; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300;
+  --lane-iif:#0d314c;
   --display:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --ui:var(--display);
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -745,6 +746,7 @@
     --good-soft:#0c3128; --bad-soft:#3a1c19; --warn-soft:#3a2e13;
     --accent:#50a4db; --accent-soft:#123143; --chip:#173c52; --navy-mid:#7fc0ea;
     --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#2f9e2f;
+    --lane-iif:#a6c5d9;
     color-scheme:dark;
   }
 }
@@ -756,6 +758,7 @@
   --good-soft:#0c3128; --bad-soft:#3a1c19; --warn-soft:#3a2e13;
   --accent:#50a4db; --accent-soft:#123143; --chip:#173c52; --navy-mid:#7fc0ea;
   --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#2f9e2f;
+  --lane-iif:#a6c5d9;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -3326,7 +3329,7 @@ const LANES=[
   {id:"renew",name:"Renewals That Need a Person",sub:"Up for "+RY+" and flagged for a personal touch instead of the automated email.",c:"var(--c2)"},
   {id:"quiet",name:"Members Gone Quiet",sub:"No activity of any kind in six months: no staff touch, payment, Summit, workgroup or sponsorship. Champions and higher levels first.",c:"var(--c1)"},
   {id:"prospect",name:"Prospects to Turn Into Members",sub:"Organizations on the prospect list that haven't joined yet.",c:"var(--c5)"},
-  {id:"iif",name:"IIF Lenders Close to Membership",sub:"Lenders who have paid some of the Innovation Investment Fee but not the $1,000 that makes them a member.",c:"var(--accent)"},
+  {id:"iif",name:"IIF Lenders Close to Membership",sub:"Lenders who have paid some of the Innovation Investment Fee but not the $1,000 that makes them a member.",c:"var(--lane-iif)"},
   {id:"winback",name:"Win Back Former Members",sub:"Memberships that ended in the last two years.",c:"var(--c4)"},
   {id:"benefits",name:"Unused Member Benefits",sub:"Members with free Summit registrations or Boot Camp seats still unused as the next one gets close. A quick, friendly reason to reach out.",c:"var(--c6)"}];
 const LANE={};LANES.forEach(l=>LANE[l.id]=l);
