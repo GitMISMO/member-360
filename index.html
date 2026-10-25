@@ -4983,7 +4983,7 @@ function applyAptify(){
     if(cur.lv&&o.level!==cur.lv&&String(o.level||"").replace(/\s*\(.*\)\s*$/,"")!==cur.lv)set(o,"level",cur.lv);
     if(cur.e&&o.thru!==cur.e)set(o,"thru",cur.e);
     if(cur.e>=TODAY&&o.life!=="Active")set(o,"life","Active");
-    if(!o.joined&&first.s)set(o,"joined",first.s);};
+    if(first.s&&o.joined!==first.s)set(o,"joined",first.s);};
   Object.keys(APT.terms).forEach(cid=>{const ts=APT.terms[cid].filter(t=>t.lv!=="Sole");if(!ts.length)return;
     const am=(ALIAS.map||{})[ts[0].co];const o=orgFor(cid)||(am&&BY[am]&&!BY[am].mm?BY[am]:null);if(o)take(o,ts);else R.noRecord.push({name:ts[0].co||("Company ID "+cid),note:"Company ID "+cid+" · "+ts[ts.length-1].lv+" · ends "+fmt(ts[ts.length-1].e)});});
   const sole={};Object.keys(APT.terms).forEach(cid=>APT.terms[cid].filter(t=>t.lv==="Sole").forEach(t=>(sole[aptN(t.who)]=sole[aptN(t.who)]||[]).push(t)));
@@ -4992,7 +4992,9 @@ function applyAptify(){
   Object.keys(sole).forEach(n=>{const l=byName[n]||[];const ts=sole[n];
     if(l.length===1)take(l[0],ts);else R.noRecord.push({name:ts[0].who,note:"Sole membership · ends "+fmt(ts[ts.length-1].e)+(l.length>1?" · more than one record has this name":"")});});
   Object.keys(APT.companies||{}).forEach(cid=>{const c=APT.companies[cid],o=orgFor(cid);if(!o)return;
-    if(/credit union/i.test(c.ct||"")&&!o.cu)set(o,"cu",true);
+    /* where Aptify states a company type it decides the flag both ways; a blank
+       type is Aptify saying nothing, so the flag is left alone */
+    if(c.ct){const isCU=/credit union/i.test(c.ct);if(o.cu!==isCU)set(o,"cu",isCU);}
     if(!o.addr&&(c.city||c.st))set(o,"addr",[c.city,c.st].filter(Boolean).join(", "));});
   applyLifeOv();
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
@@ -5124,7 +5126,7 @@ function renderApt(){
       h("div",{class:"fact"},h("label",null,"Joined Dates Filled"),h("div",{class:"num"},n(c.joined||0))),
       APT.orders?h("div",{class:"fact"},h("label",null,"Orders Through"),h("div",{style:"white-space:nowrap"},fmt(APT.orders.asOf))):null,
       APT.certified?h("div",{class:"fact"},h("label",null,"Certified People"),h("div",{class:"num"},n(APT.certified.people.length)+" ("+n(APT.certified.people.length-(APTR.certNo||[]).length)+" matched)")):null));
-    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify is the record for levels and membership dates, so these replace what the member list had. "+n(APTR.noRecord.length)+" Aptify membership"+(APTR.noRecord.length===1?" has":"s have")+" no Member 360 record and "+n(APTR.noTerm.length)+" current Non-Lender member"+(APTR.noTerm.length===1?" has":"s have")+" no active Aptify term. Both lists are in the Issues Log for someone to look at."));}
+    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify is the record. Where the weekly upload disagrees with the member list \u2014 level, membership dates, the joined date, the credit union flag \u2014 Aptify replaces what the member list had; anything a person has set by hand on a record stays. "+n(APTR.noRecord.length)+" Aptify membership"+(APTR.noRecord.length===1?" has":"s have")+" no Member 360 record and "+n(APTR.noTerm.length)+" current Non-Lender member"+(APTR.noTerm.length===1?" has":"s have")+" no active Aptify term. Both lists are in the Issues Log for someone to look at."));}
   else box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"No Aptify files have been uploaded yet."));
   const inp=h("input",{type:"file",id:"apt-files",multiple:true,accept:".xlsx,.xls,.csv",style:"position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"});
   const pick=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Choose the Files");const picked=h("span",{class:"hint",style:"margin:0"},"No files chosen");
