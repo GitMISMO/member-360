@@ -1914,7 +1914,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
 
     const best={};
     out.forEach(h=>{ best[h.group]=Math.max(best[h.group]||0, h.s); });
-    const ORDER=['Organizations','Contacts'];
+    const ORDER=['Organizations','Contacts','Certified Professionals','Workgroup Leaders'];
     out.sort((a,b)=>
       (best[b.group]-best[a.group])
       || (ORDER.indexOf(a.group)-ORDER.indexOf(b.group))
@@ -5159,11 +5159,23 @@ function show(tab){
   window.scrollTo(0,0);
 }
 function openOrg(k){openPane(k);}
-window.__m360={find(t){const out=[];
+window.__m360={find(t){const out=[],seen=new Set();
   for(const o of ORGS){if(out.length>40)break;
     if(norm(o.name).includes(t)||o.cid===t)out.push({group:"Organizations",name:o.name,where:(o.life)+(inCohort(o)?" · "+RY+": "+stageOf(o):"")+(o.cid?" · ID "+o.cid:""),go:()=>openOrg(o.k)});
     else{const p=o.people.find(p=>norm(p.email).includes(t)||norm(p.name).includes(t));
-      if(p)out.push({group:"Contacts",name:p.name||p.email,where:(p.name?p.email+" · ":"")+o.name,go:()=>openOrg(o.k)});}}
+      if(p){out.push({group:"Contacts",name:p.name||p.email,where:(p.name?p.email+" · ":"")+o.name,go:()=>openOrg(o.k)});seen.add("p|"+o.k+"|"+norm(p.name||p.email));}}}
+  /* A certified professional and a workgroup leader each sit on a record without being a
+     contact on it, so looking either of them up by name found nothing at all until the
+     search read those two lists as well. Searching the name is how anyone checks a match
+     landed, so it has to find every person the record shows. */
+  const add=(group,k,nm,where)=>{if(out.length>=40||!nm)return;
+    const id=group[0]+"|"+k+"|"+norm(nm);if(seen.has(id)||seen.has("p|"+k+"|"+norm(nm)))return;
+    seen.add(id);out.push({group,name:nm,where,go:()=>openOrg(k)});};
+  if(CERTP)Object.keys(CERTP).forEach(k=>{const o=BY[k];if(!o)return;
+    (CERTP[k]||[]).forEach(x=>{if(norm(x.name).includes(t)||norm(x.email).includes(t))
+      add("Certified Professionals",k,x.name||x.email,[x.cert,o.name].filter(Boolean).join(" · "));});});
+  ORGS.forEach(o=>{leadOf(o).forEach(x=>{if(norm(x.n).includes(t))
+    add("Workgroup Leaders",o.k,x.n,[x.r,x.g,o.name].filter(Boolean).join(" · "));});});
   return out;}};
 
 /* ---------- refresh ---------- */
