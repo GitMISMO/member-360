@@ -2240,7 +2240,7 @@ function renderRows(list,items,box){
   if(items.length>lim)box.appendChild(h("button",{type:"button",class:"more",onclick:()=>{shown[list]+=PAGE;renderList(list);}},"Show "+n(Math.min(PAGE,items.length-lim))+" More of "+n(items.length-lim)));
 }
 function markSel(){document.querySelectorAll(".rowbtn[data-k]").forEach(b=>{const on=b.dataset.k===paneK;b.classList.toggle("sel",on);b.setAttribute("aria-pressed",on?"true":"false");});}
-function paneTitle(o){$("m360-pane-t").textContent=isSole(o)?soleLabel(o):o.name;
+function paneTitle(o){$("m360-pane-t").textContent=soleLabel(o);
   const s=renewable(o)?stageOf(o):"";$("m360-pane-sub").textContent=[o.level||"",o.type==="Lender"?"Lender":"",o.life,s?RY+": "+s:"",o.cid?"ID "+o.cid:""].filter(Boolean).join(" \u00b7 ");}
 function openPane(k){const o=BY[k];if(!o)return;const body=$("m360-pane-body");
   laneBack=paneK&&paneK.indexOf("lane:")===0&&document.body.classList.contains("paneon")?paneK.slice(5):(paneK===k?laneBack:null);
@@ -5198,7 +5198,7 @@ function show(tab){
 function openOrg(k){openPane(k);}
 window.__m360={find(t){const out=[],seen=new Set();
   for(const o of ORGS){if(out.length>40)break;
-    if(soleNames(o).some(nm=>norm(nm).includes(t))||o.cid===t||String(o.pid||"")===t)out.push({group:"Organizations",name:isSole(o)?soleLabel(o):o.name,where:(o.life)+(inCohort(o)?" · "+RY+": "+stageOf(o):"")+(o.cid?" · ID "+o.cid:""),go:()=>openOrg(o.k)});
+    if(soleNames(o).some(nm=>norm(nm).includes(t))||o.cid===t||String(o.pid||"")===t)out.push({group:"Organizations",name:soleLabel(o),where:(o.life)+(inCohort(o)?" · "+RY+": "+stageOf(o):"")+(o.cid?" · ID "+o.cid:""),go:()=>openOrg(o.k)});
     else{const p=o.people.find(p=>norm(p.email).includes(t)||norm(p.name).includes(t));
       if(p){out.push({group:"Contacts",name:p.name||p.email,where:(p.name?p.email+" · ":"")+o.name,go:()=>openOrg(o.k)});seen.add("p|"+o.k+"|"+norm(p.name||p.email));}}}
   /* A certified professional and a workgroup leader each sit on a record without being a
