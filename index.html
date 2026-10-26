@@ -1733,6 +1733,8 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <select id="mem-review" aria-label="Data review">
         <option value="">All Records</option><option value="dup">Shared Company ID</option><option value="noid">No Company ID</option>
       </select>
+      <select id="mem-pstage" aria-label="Sales stage"><option value="">All Sales Stages</option></select>
+      <select id="mem-owner" aria-label="Owner"><option value="">All Owners</option></select>
       <span class="count" id="mem-count"></span>
     </div>
     <div class="rows" id="mem-rows"></div>
@@ -2020,7 +2022,11 @@ const STAGES=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in P
 const STAGE_CLS={"Not Renewed Yet":"s-nry","Contacted":"s-con","Invoiced":"s-inv","Committed":"s-com","Payment in Process":"s-pip","Renewed":"s-ren","Lost":"s-lost"};
 const STAGE_COLOR={"Not Renewed Yet":"var(--ink-3)","Contacted":"var(--c1)","Invoiced":"var(--c4)","Committed":"var(--c3)","Payment in Process":"var(--c5)","Renewed":"var(--good)","Lost":"var(--bad)"};
 const LOSS=["Doesn't Wish to Renew","No Longer in Business","Merger/Purchased","Budget","Not Getting Enough Value","No Response","Other"];
-const PSTAGES=["Identified","Contacted","Engaged","Proposal Sent","Joined","Not Interested"];
+/* the sales pipeline (Jonna, Oct 26, 2026): the stages Strategic Growth used in the Smartsheet Sales Pipeline,
+   now kept on each record so there is no separate sheet to maintain */
+const PSTAGES=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid","Hold","Closed Won","Closed Lost"];
+const PCLOSED={"8 - Paid":1,"Closed Won":1,"Closed Lost":1};
+const PIPE_F=[["lead","Lead Source","text"],["ctype","Company Type","text"],["forecast","Forecast Amount","money"],["prob","Probability","pct"],["first","First Point of Contact","date"],["last","Last Touchpoint","date"],["won","Won Date","date"],["bv","BV's Action","text"],["next","Next Step","area","The Relationship Owner owns the next step."]];
 const TYPES=["Note","Call","Email","Meeting","Event Conversation","Other"];
 const TOPICS=["Renewal","Invoice or Payment","Upgrade","Sponsorship","Certification","Workgroup","Summit","Education","Other"];
 const SENTS=["Positive","Neutral","Concern"];
@@ -2109,7 +2115,12 @@ function joinedOf(o){return ov(o).joined||o.joined||"";}
 function sov(o,key){const v=ov(o);return (v.stageYr||DATA_RY)===RY?v[key]:undefined;}
 /* saving a season field: last season's stage, loss reason and replied are cleared so they never carry over */
 function seasonPatch(o,p){const v=ov(o);const base=(v.stageYr||DATA_RY)===RY?{}:{stage:"",lossReason:"",replied:false};return Object.assign(base,p,{stageYr:RY});}
-function inCohort(o){if(RY===DATA_RY)return !!o.stage;return o.life==="Active"&&!!o.thru&&o.thru<=END;}
+/* who renews: every current Non-Lender member (Jonna, Oct 26, 2026), not only the ones the Sept 26 tracker listed,
+   plus anyone marked Lost this season. Lenders renew through the IIF and keep their own cycle. */
+function inCohort(o){if(o.type!=="Lender")return o.life==="Active"||sov(o,"stage")==="Lost";if(RY===DATA_RY)return !!o.stage;return o.life==="Active"&&!!o.thru&&o.thru<=END;}
+/* already covered for the season: Aptify's term runs through it (a two-year deal, or a member who joined late in the year),
+   with no payment for the season and no stage set by hand. Counted apart from Renewed. */
+function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&!!o.aptTerm&&o.thru>=RY+"-12-31"&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
 function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:null;}
 function iifPaid(o){if(!o.iif)return 0;const a=ACT[o.k];const fs=a&&a.iif?(a.iif[IY]||0):0;return Math.max(o.iif.y26.paid||0,fs);}
@@ -2118,7 +2129,31 @@ function iifOut(o){return ov(o).iifOutreach||(o.iif&&o.iif.y26.st)||"Not Contact
 function iifTier(x){return x>=55000?"Chair Champion":x>=20000?"Executive Champion":x>=10000?"Associate Champion":x>=1000?"Corporate":"";}
 function sizeOf(v){return v<=1000?"s1":v<10000?"s2":v<20000?"s3":v<55000?"s4":"s5";}
 const SIZELAB={s1:"$1,000 or Less",s2:"$1,001 to $9,999",s3:"$10,000 to $19,999",s4:"$20,000 to $54,999",s5:"$55,000 or More"};
-function baseStage(o){return RY===DATA_RY?o.stage:"Not Renewed Yet";}
+function baseStage(o){return RY===DATA_RY&&o.stage?o.stage:"Not Renewed Yet";}
+/* the sales pipeline on a record: shown on every prospect, and on any record that has a sales stage or pipeline details */
+function pipeOn(o){const v=ov(o);return o.life==="Prospect"||!!v.pstage||!!v.pipe;}
+function pipeMatch(o,v){if(!v)return true;const s=ov(o).pstage||"";if(v==="__none")return !s;if(v==="__open")return !!s&&!PCLOSED[s]&&s!=="Hold";return s===v;}
+function pipeCtrls(o,c,dis){
+  const v=ov(o),p=v.pipe||{};
+  const F=(label,el,hint,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",null,label),el,hint?h("div",{class:"hint"},hint):null);
+  if(renewable(o)||(o.type==="Lender"&&o.life!=="Prospect")){
+    const ps=select([{v:"",l:"None"}].concat(PSTAGES),v.pstage||"",{disabled:dis,"aria-label":"Sales Stage"});
+    ps.addEventListener("change",()=>{saveOv(o.k,{pstage:ps.value});toast("Sales stage set to "+(ps.value||"none")+".");});
+    c.appendChild(F("Sales Stage",ps));}
+  const put=(k,val)=>{const cur=Object.assign({},ov(o).pipe||{});if(val===""||val===null||val===undefined)delete cur[k];else cur[k]=val;saveOv(o.k,{pipe:cur});};
+  PIPE_F.forEach(([k,label,t,hint])=>{
+    const val=p[k]!==undefined?p[k]:(k==="lead"?(o.source||""):"");
+    const shown=t==="money"&&val!==""?money(val):(t==="pct"&&val!==""?val+"%":String(val||""));
+    let el;
+    if(t==="area"){el=h("textarea",{rows:"2","aria-label":label});el.value=shown;}
+    else{const a={type:t==="date"?"date":"text",value:shown,"aria-label":label};if(t==="money"||t==="pct")a.inputmode="decimal";el=h("input",a);}
+    if(dis)el.disabled=true;
+    el.addEventListener("change",()=>{let x=String(el.value||"").trim();
+      if(t==="money"||t==="pct"){x=x.replace(/[$,%\s]/g,"");if(x!==""&&isNaN(Number(x))){toast(label+" needs a number.",true);return;}x=x===""?"":Number(x);
+        if(t==="pct"&&x!==""&&(x<0||x>100)){toast("Probability is a number from 0 to 100.",true);return;}}
+      put(k,x);if(t==="money"&&x!=="")el.value=money(x);if(t==="pct"&&x!=="")el.value=x+"%";});
+    c.appendChild(F(label,el,hint,t==="area"));});
+}
 function stageOf(o){if(!inCohort(o))return "";const s=sov(o,"stage");if(s==="Lost")return s;if(paid(o)||(o.aptTerm&&o.thru>=RY+"-12-31"))return "Renewed";return s||baseStage(o);}
 function sendId(thru,step){return (thru||END)+"_"+step;}
 function stepDate(o,st){return addDays(o.thru||END,st.off);}
@@ -2128,6 +2163,8 @@ function handReasons(o){
   o.hand.forEach(x=>{if(/^VIP/.test(x))return;const k=/level$/.test(x)?"level":/^Two-year/.test(x)?"deal":"sensitive";if(ruleOn(k))r.push(x);});
   if(ruleOn("vip")){const w=[...new Set(o.people.flatMap(p=>p.roles.filter(x=>x==="VIP"||x==="Senior Advisor")))];if(w.length)r.push(w.join(" and ")+" on file");}
   const v=ov(o);
+  /* a complimentary membership is set up by the membership team, never invoiced by an automated email */
+  if(/^free/i.test(curStatus(o)||""))r.push("Complimentary membership: ask the membership team to set up the free "+RY+" membership");
   if(ruleOn("sole")&&o.level==="Sole")r.push("Sole membership: confirm they're still one individual, not an LLC or partnership");
   if(v.personal)r.push("Marked for personal outreach"+(v.personalWhy?": "+v.personalWhy:""));
   if(sov(o,"replied"))r.push("Member replied to an automated email");
@@ -2201,7 +2238,7 @@ function fillHead(b,o,list){
     const L=o.life;b.appendChild(h("span",{class:"c-stage"},h("span",{class:"pill l-"+L.toLowerCase()},L)));
     const s=stageOf(o);b.appendChild(h("span",{class:"hide-sm"},s?h("span",{class:"pill "+STAGE_CLS[s]},s):(ov(o).pstage?h("span",{class:"muted"},ov(o).pstage):h("span",{class:"muted"},"—"))));
     b.appendChild(h("span",{class:"hide-sm"},owner(o)||h("span",{class:"muted"},"Unassigned")));
-    b.appendChild(h("span",{class:"hide-sm num"},fmt(o.thru)));
+    {const fc=(ov(o).pipe||{}).forecast;b.appendChild(h("span",{class:"hide-sm num"},memLife==="Prospect"?(fc?money(fc):h("span",{class:"muted"},"\u2014")):fmt(o.thru)));}
   }else{
     const s=stageOf(o);b.appendChild(h("span",{class:"c-stage"},h("span",{class:"pill "+STAGE_CLS[s]},s)));
     const hd=handling(o);b.appendChild(h("span",{class:"hide-sm auto "+HCLS[hd]},HLAB[hd]));
@@ -2212,7 +2249,7 @@ function fillHead(b,o,list){
   b.appendChild(h("span",{class:"caret","aria-hidden":"true"},"▶"));
 }
 function headerRow(list){
-  const cols=list==="stats"?["Organization","Level","Member Type","Industry Sector",STSEL&&STSEL.note?"Financial System":STY()+" Status","Owner",""]:list==="iif"?["Lender",IIFY()+" Invoice","Collection","Outreach","Owner","Paid",""]:list==="members"?["Organization","Level","Status",RY+" Stage","Owner","Membership Ends",""]:["Organization","Level","Stage","Handling","Owner","Next Email",""];
+  const cols=list==="stats"?["Organization","Level","Member Type","Industry Sector",STSEL&&STSEL.note?"Financial System":STY()+" Status","Owner",""]:list==="iif"?["Lender",IIFY()+" Invoice","Collection","Outreach","Owner","Paid",""]:list==="members"?(memLife==="Prospect"?["Organization","Level","Status","Sales Stage","Owner","Forecast",""]:["Organization","Level","Status",RY+" Stage","Owner","Membership Ends",""]):["Organization","Level","Stage","Handling","Owner","Next Email",""];
   return h("div",{class:"rhead","aria-hidden":"true"},cols.map(c=>h("span",null,c)));
 }
 
@@ -2620,9 +2657,10 @@ function fillCtrls(o,c){
       ls.addEventListener("change",()=>saveOv(o.k,seasonPatch(o,{lossReason:ls.value})));c.appendChild(fld("Loss Reason",ls));}
   }else if(o.type!=="Lender"||o.life==="Prospect"){
     const ps=select([{v:"",l:o.life==="Prospect"?"Not Started":"None"}].concat(PSTAGES),v.pstage||"",{disabled:dis});
-    ps.addEventListener("change",()=>{saveOv(o.k,{pstage:ps.value});if(ps.value==="Joined")autoCommit(o,"New Member");else autoUncommit(o,"New Member");});
-    c.appendChild(fld(o.life==="Prospect"?"Prospect Stage":"Outreach Stage",ps));
+    ps.addEventListener("change",()=>{saveOv(o.k,{pstage:ps.value});if(ps.value==="Closed Won")autoCommit(o,"New Member");else autoUncommit(o,"New Member");});
+    c.appendChild(fld("Sales Stage",ps));
   }
+  if(pipeOn(o))pipeCtrls(o,c,dis);
   const sc=select([{v:"",l:"Not Set"}].concat(SECTORS.map(x=>({v:x,l:sectorLab(x)}))),sectorOf(o),{disabled:dis,"aria-label":"Industry Sector"});
   sc.addEventListener("change",()=>{const val=sc.value;const auto=o.sector5||sectorFromAptify(o);saveOv(o.k,val&&val!==auto?{sector5:val,sector5By:myName()||""}:{sector5:"",sector5By:""});toast(val?"Industry sector set to "+sectorLab(val)+".":"Industry sector cleared.");});
   c.appendChild(fld("Industry Sector",sc,sectorSrc(o)+"."));
@@ -3380,8 +3418,10 @@ function renderTiles(){
   const C=renewalGroup();const cnt={};STAGES.forEach(s=>cnt[s]=0);const hc={auto:0,person:0,hold:0,stop:0,iif:0};
   C.forEach(o=>{cnt[stageOf(o)]++;hc[handling(o)]++;});
   const open_=C.length-cnt.Renewed-cnt.Lost;
-  const T=[["Up for Renewal",C.length,"Non-Lender memberships ending in "+(RY-1),"var(--sky)",{}],
-    ["Renewed",cnt.Renewed,Math.round(100*cnt.Renewed/Math.max(1,C.length))+"% \u00b7 "+C.filter(o=>paid(o)).length+" from payments","var(--good)",{stage:"Renewed"}],
+  const cov=C.filter(covered).length,ren_=cnt.Renewed-cov;
+  const T=[["Up for Renewal",C.length,"Current Non-Lender members","var(--sky)",{}],
+    ["Renewed",ren_,Math.round(100*ren_/Math.max(1,C.length))+"% \u00b7 "+C.filter(o=>paid(o)).length+" from payments","var(--good)",{stage:"Renewed"}],
+    ["Already Covered",cov,"Membership already runs through "+RY,"var(--c3)",{stage:"covered"}],
     ["Still Open",open_,"Not renewed or lost yet","var(--c1)",{stage:"open"}],
     ["Personal Outreach",hc.person,"Routed to a person","var(--warn)",{auto:"person"}],
     ["On Hold",hc.hold,"Automated emails paused","var(--ink-3)",{auto:"hold"}],
@@ -3423,9 +3463,10 @@ function mix(box,segs,onPick,selKey){
 }
 function fillSelect(id,opts,keep){const s=$(id);const v=keep?s.value:"";s.textContent="";opts.forEach(o=>s.appendChild(h("option",{value:o.v},o.l)));s.value=v;if(s.value!==v)s.value="";}
 function filterOpts(){
-  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"open",l:"Still Open"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
+  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"open",l:"Still Open"},{v:"covered",l:"Already Covered"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
   const ownersAll=[{v:"",l:"All Owners"},{v:"__none",l:"Unassigned"}].concat((SET.staff||[]).map(s=>({v:s,l:s})));
-  fillSelect("ren-owner",ownersAll,true);fillSelect("fu-owner",ownersAll,true);
+  fillSelect("ren-owner",ownersAll,true);fillSelect("fu-owner",ownersAll,true);fillSelect("mem-owner",ownersAll,true);
+  fillSelect("mem-pstage",[{v:"",l:"All Sales Stages"},{v:"__open",l:"Open Pipeline"},{v:"__none",l:"No Sales Stage"}].concat(PSTAGES.map(s=>({v:s,l:s}))),true);
   const lv=[...new Set(renewalGroup().map(o=>o.level).filter(Boolean))].sort();
   fillSelect("ren-level",[{v:"",l:"All Levels"}].concat(lv.map(x=>({v:x,l:x}))),true);
 }
@@ -3434,14 +3475,15 @@ function ownerMatch(o,v){if(!v)return true;if(v==="__none")return !owner(o);retu
 function renewalItems(){
   const q=norm($("ren-q").value),st=$("ren-stage").value,au=$("ren-auto").value,ow=$("ren-owner").value,lv=$("ren-level").value;
   return (au==="iif"?lenderGroup():renewalGroup()).filter(o=>{const s=stageOf(o);
-    if(st==="open"&&(s==="Renewed"||s==="Lost"))return false;if(st&&st!=="open"&&s!==st)return false;
+    if(st==="open"&&(s==="Renewed"||s==="Lost"))return false;
+    if(st==="covered"){if(!covered(o))return false;}else if(st==="Renewed"){if(s!=="Renewed"||covered(o))return false;}else if(st&&st!=="open"&&s!==st)return false;
     if(au&&handling(o)!==au)return false;if(!ownerMatch(o,ow))return false;if(lv&&o.level!==lv)return false;return matchQ(o,q);})
   .sort((a,b)=>{const na=nextStep(a),nb=nextStep(b);return ((na?na.d:"9")+a.name).localeCompare((nb?nb.d:"9")+b.name);});
 }
 let memLife="Active";
 function memberItems(){
   const q=norm($("mem-q").value),rv=$("mem-review").value,sv=$("mem-sector").value;
-  return ORGS.filter(o=>(memLife==="All"||o.life===memLife||(memLife==="Former"&&o.life==="Other"))&&(!rv||(rv==="dup"?o.dupId:o.noId))&&(!sv||(sv==="__none"?!sectorOf(o):sectorOf(o)===sv))&&matchQ(o,q)).sort((a,b)=>a.name.localeCompare(b.name));
+  return ORGS.filter(o=>(memLife==="All"||o.life===memLife||(memLife==="Former"&&o.life==="Other"))&&(!rv||(rv==="dup"?o.dupId:o.noId))&&(!sv||(sv==="__none"?!sectorOf(o):sectorOf(o)===sv))&&pipeMatch(o,$("mem-pstage").value)&&ownerMatch(o,$("mem-owner").value)&&matchQ(o,q)).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function weekItems(){
   const ow=$("week-owner").value;
@@ -3539,9 +3581,12 @@ function renderMemHl(){const box=$("mem-tiles");if(!box)return;box.textContent="
   ORGS.forEach(o=>{const L=o.life==="Other"?"Former":o.life;if(L in c)c[L]++;});
   [["Active","Current Members","paid or free","var(--sky)"],["Prospect","Prospects","not members yet","var(--c5)"],["IIF Invoiced","IIF Invoiced","lenders under $1,000 paid","var(--c2)"],["Former","Former Members","membership ended","var(--ink-3)"],["Lost","Lost","chose not to renew","var(--bad)"]].forEach(([L,l,sub,col])=>{
     const on=memLife===L;box.appendChild(h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+col,"aria-pressed":String(on),onclick:()=>{memLife=L;shown.members=PAGE;renderMemChips();renderList("members");goList("mem-rows");}},h("span",{class:"lab"},l),h("span",{class:"val"},n(c[L])),h("span",{class:"sub"},sub)));});
-  const P=ORGS.filter(o=>o.life==="Prospect"&&(ov(o).pstage||"")!=="Not Interested"&&(ov(o).pstage||"")!=="Joined"),never=P.filter(o=>!lastTouch(o)&&!ov(o).pstage).length;
+  const P=ORGS.filter(o=>o.life==="Prospect"&&!PCLOSED[ov(o).pstage||""]),never=P.filter(o=>!lastTouch(o)&&!ov(o).pstage).length;
   const noid=ORGS.filter(o=>o.noId&&o.life==="Active").length,dup=ORGS.filter(o=>o.dupId&&o.life==="Active").length;
   let say=em(plural(P.length,"open prospect","open prospects"))+(never?", and "+em(n(never))+" of them "+(never===1?"has":"have")+" never been contacted":"")+". ";
+  {const PL=ORGS.filter(o=>{const s=ov(o).pstage||"";return s&&!PCLOSED[s]&&s!=="Hold";});
+   const fc=PL.reduce((a,o)=>a+(Number((ov(o).pipe||{}).forecast)||0),0),wt=PL.reduce((a,o)=>{const p=ov(o).pipe||{};return a+(Number(p.forecast)||0)*(Number(p.prob)||0)/100;},0);
+   if(PL.length)say+="The sales pipeline has "+em(plural(PL.length,"open opportunity","open opportunities"))+(fc?" with "+em(money(fc))+" forecast ("+money(Math.round(wt))+" weighted by probability)":"")+". ";}
   say+=noid||dup?"Among current members, "+(noid?em(plural(noid,"record has","records have"),true)+" no Company ID":"")+(noid&&dup?" and ":"")+(dup?em(plural(dup,"record shares","records share"),true)+" one with another record":"")+", so fix "+(noid+dup===1?"it":"those")+" in Aptify.":"Every current member has its own Company ID.";
   hl("mem",aptAsOf()?"Aptify Data as of "+fmt(aptAsOf()):"Aptify Data Not Uploaded Yet",say);}
 function renderMemChips(){renderMemHl();
@@ -3634,7 +3679,7 @@ const LANES=[
   {id:"benefits",name:"Unused Member Benefits",sub:"Members with free Summit registrations or Boot Camp seats still unused as the next one gets close. A quick, friendly reason to reach out.",c:"var(--c6)"}];
 const LANE={};LANES.forEach(l=>LANE[l.id]=l);
 const LVR={"Chair":5,"Executive":4,"Associate":3,"Corporate":2,"Corporate (TMC)":2,"Corporate (Broker)":2,"Sole":1};
-const PORDER={"Proposal Sent":4,"Engaged":3,"Contacted":2,"Identified":1};
+const PORDER={"7 - Application Submitted":6,"5 - Proposal with Prospect":5,"4 - Meeting Scheduled":4,"3 - Scheduling Call":3,"2 - Contacted":2,"1 - Lead":1};
 const laneShown={};
 function weekStart(off){const d=new Date(TODAY+"T12:00:00");const wd=d.getDay();const toMon=wd===0?1:wd===6?2:1-wd;return addDays(TODAY,toMon+7*(off||0));}
 function myName(){return (ME&&NAMES[ME])||"";}
@@ -3746,7 +3791,7 @@ function laneOf(o){
     return {lane:"quiet",score:(LVR[o.level]||0)*100+(le.d?0:50),why:(le.d?"No activity since "+monthYr(le.d)+" ("+le.w+")":"No activity on record")+(lt&&le.w!=="staff touch"?" · last staff touch "+monthYr(lt):"")};
   }
   if(touchedSince(o,recent))return null;
-  if(o.life==="Prospect"){const ps=ov(o).pstage||"";if(ps==="Not Interested"||ps==="Joined")return null;const lt=lastTouch(o);
+  if(o.life==="Prospect"){const ps=ov(o).pstage||"";if(PCLOSED[ps]||ps==="Hold")return null;const lt=lastTouch(o);
     return {lane:"prospect",score:(PORDER[ps]||0)*100+(lt>=String(RY-2)?20:0),why:(ps?ps+" · ":"")+(lt?"Last touch "+monthYr(lt):"No touches yet")};}
   if(o.iif&&o.life!=="Active"){const p=iifPaid(o);if(p>0&&p<1000)return {lane:"iif",score:900+p/10,why:"Paid "+money(Math.round(p))+" in IIF · "+money(Math.round(1000-p))+" more makes them a member"};return null;}
   if((o.life==="Former"||o.life==="Lost")&&o.thru&&o.thru>=addDays(TODAY,-730)&&!/business|merger/i.test(o.lossReason||""))
@@ -6009,7 +6054,7 @@ async function boot(){
   $("foot").textContent="Aptify stays the record for membership and payments; Member 360 keeps MISMO's stages, owners, conversations and follow-ups.";
   filterOpts();renderTiles();renderMemChips();renderList("renewals");renderList("members");renderWeek();renderFollow();renderThisWeek();
   ["ren-q","ren-stage","ren-auto","ren-owner","ren-level"].forEach(id=>$(id).addEventListener(id==="ren-q"?"input":"change",()=>{shown.renewals=PAGE;renderList("renewals");renderTiles();}));
-  ["mem-q","mem-review","mem-sector"].forEach(id=>$(id).addEventListener(id==="mem-q"?"input":"change",()=>{shown.members=PAGE;renderList("members");}));
+  ["mem-q","mem-review","mem-sector","mem-pstage","mem-owner"].forEach(id=>$(id).addEventListener(id==="mem-q"?"input":"change",()=>{shown.members=PAGE;renderList("members");}));
   $("wk-when").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{wkOff=b.dataset.v==="due"?"due":Number(b.dataset.v);renderThisWeek();}));
   $("wk-undo").addEventListener("click",undoLast);
   ["iif-q","iif-cs","iif-os","iif-size","iif-ch"].forEach(id=>$(id).addEventListener(id==="iif-q"?"input":"change",()=>{if(id!=="iif-q")IIFSEL=null;shown.iif=PAGE;renderList("iif");renderIIF();}));
