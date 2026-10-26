@@ -2120,9 +2120,10 @@ function seasonPatch(o,p){const v=ov(o);const base=(v.stageYr||DATA_RY)===RY?{}:
 function inCohort(o){if(o.type!=="Lender")return o.life==="Active"||sov(o,"stage")==="Lost";if(RY===DATA_RY)return !!o.stage;return o.life==="Active"&&!!o.thru&&o.thru<=END;}
 /* already covered for the season: Aptify's term runs through it (a two-year deal, or a member who joined late in the year),
    with no payment for the season and no stage set by hand. Counted apart from Renewed. */
-function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&!!o.aptTerm&&o.thru>=RY+"-12-31"&&sov(o,"stage")!=="Renewed";}
+function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
 function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:null;}
+function prepaid(o){const a=ACT[o.k];return a&&a.prepaid?a.prepaid:null;}
 function iifPaid(o){if(!o.iif)return 0;const a=ACT[o.k];const fs=a&&a.iif?(a.iif[IY]||0):0;return Math.max(o.iif.y26.paid||0,fs);}
 function iifColl(o){if(!o.iif)return "";const p=iifPaid(o),inv=o.iif.y26.inv||0;if(o.iif.y26.cs==="Paid Full Amount"||(inv>0&&p>=inv))return "Paid Full Amount";if(p>0)return "Partial Payment Received";return "Not Paid";}
 function iifOut(o){return ov(o).iifOutreach||(o.iif&&o.iif.y26.st)||"Not Contacted";}
@@ -2154,7 +2155,7 @@ function pipeCtrls(o,c,dis){
       put(k,x);if(t==="money"&&x!=="")el.value=money(x);if(t==="pct"&&x!=="")el.value=x+"%";});
     c.appendChild(F(label,el,hint,t==="area"));});
 }
-function stageOf(o){if(!inCohort(o))return "";const s=sov(o,"stage");if(s==="Lost")return s;if(paid(o)||(o.aptTerm&&o.thru>=RY+"-12-31"))return "Renewed";return s||baseStage(o);}
+function stageOf(o){if(!inCohort(o))return "";const s=sov(o,"stage");if(s==="Lost")return s;if(paid(o)||prepaid(o)||(o.aptTerm&&o.thru>=RY+"-12-31"))return "Renewed";return s||baseStage(o);}
 function sendId(thru,step){return (thru||END)+"_"+step;}
 function stepDate(o,st){return addDays(o.thru||END,st.off);}
 function ruleOn(k){return !(SET.rules&&SET.rules[k]===false);}
@@ -6028,6 +6029,15 @@ function remergeAct(){
       let pd=null;its.forEach(i=>{if(i.c==="Membership"&&(i.s||"")>=RY+"-01-01"&&i.n>0&&(!pd||i.d<pd.d))pd={d:i.d,o:i.o||"",p:i.p||"",n:i.n,how:"Named membership"};});
       out[k]=Object.assign({},a,{items:its,iif,paid:pd});});
   }
+  /* a season line on an order that also holds earlier membership lines is part of a multi-year order (a dues deal for a
+     member who joined mid-year, or a two-year renewal) paid before the season: the member is already covered, not
+     renewed (Jonna, Oct 26, 2026, from the Non-Lender Deferral sheet). Only a season line on an order of its own is a renewal. */
+  {const RYS=RY+"-01-01";Object.keys(out).forEach(k=>{const a=out[k];if(!a)return;const its=a.items||[];
+    const multi=o_=>!!o_&&its.some(j=>j.c==="Membership"&&String(j.o||"")===String(o_)&&(j.s||"")<RYS);
+    let pd=null,pre=null;
+    its.forEach(i=>{if(i.c==="Membership"&&(i.s||"")>=RYS&&i.n>0){const x={d:i.d,o:i.o||"",p:i.p||"",n:i.n,how:"Named membership"};if(multi(i.o)){if(!pre||i.d<pre.d)pre=x;}else if(!pd||i.d<pd.d)pd=x;}});
+    if(!pd&&a.paid){if(multi(a.paid.o)){if(!pre)pre=a.paid;}else pd=a.paid;}
+    if(pd!==a.paid||pre)out[k]=Object.assign({},a,{paid:pd,prepaid:pre});});}
   ACT=out;
   /* the lender check in the Aptify join needs the payments: run it again the first time they arrive */
   if(APT&&APT.terms&&Object.keys(out).length&&!applyAptify._act){applyAptify._act=true;applyAptify();scheduleRefresh();}
