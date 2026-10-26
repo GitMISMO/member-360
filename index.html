@@ -5529,7 +5529,9 @@ function applyAptify(){
   const set=(o,f,v)=>{if(o[f]===v)return;if(!o._apt0)o._apt0={level:o.level,thru:o.thru,life:o.life,joined:o.joined,cu:o.cu,addr:o.addr};
     if(!(f in o._apt0))o._apt0[f]=o[f];o[f]=v;R.changed[f]=(R.changed[f]||0)+1;};
   const seen=new Set();
-  const take=(o,ts)=>{const cur=ts.slice().sort((a,b)=>a.e.localeCompare(b.e)).pop(),first=ts.slice().sort((a,b)=>a.s.localeCompare(b.s))[0];
+  const take=(o,ts)=>{let cur=ts.slice().sort((a,b)=>a.e.localeCompare(b.e)).pop(),first=ts.slice().sort((a,b)=>a.s.localeCompare(b.s))[0];
+    /* a record that carries two Aptify companies (a merge) keeps the term that ends last and the start that comes first */
+    if(o.aptTerm&&o.aptTerm.e>cur.e)cur=o.aptTerm;if(o.aptStart&&o.aptStart<first.s)first=Object.assign({},first,{s:o.aptStart});
     seen.add(o.k);o.aptTerm=cur;o.aptStart=first.s;
     /* a special's label (Corporate (TMC), Corporate (Broker)) stays when Aptify says the same base level */
     if(cur.lv&&o.level!==cur.lv&&String(o.level||"").replace(/\s*\(.*\)\s*$/,"")!==cur.lv)set(o,"level",cur.lv);
@@ -5957,10 +5959,10 @@ function mmMatcher(){
   const map=(ALIAS&&ALIAS.map)||{},ign=(ALIAS&&ALIAS.ignore)||[];
   const m=r=>{
     const cid=r.companyId!=null&&r.companyId!==""?String(r.companyId).trim().replace(/\.0$/,""):"";
-    if(cid){const c=BY["c"+cid];if(c&&!c.mm)return {k:"c"+cid};const ks=byCid[cid]||[];if(ks.length===1)return {k:ks[0]};}
+    if(cid){const c=BY["c"+cid];if(c&&!c.mm)return {k:c.k};const ks=byCid[cid]||[];if(ks.length===1)return {k:ks[0]};}
     const name=String(r.company||"").trim();
     if(name&&ign.includes(name))return {ignored:true};
-    if(name&&map[name]&&BY[map[name]]&&!BY[map[name]].mm)return {k:map[name]};
+    if(name&&map[name]&&BY[map[name]]&&!BY[map[name]].mm)return {k:BY[map[name]].k};
     const ks=byName[mmNorm(name)]||[];if(ks.length===1)return {k:ks[0]};
     return {name,cid,ambiguous:ks.length>1};
   };
@@ -6032,6 +6034,10 @@ function remergeAct(){
   /* a season line on an order that also holds earlier membership lines is part of a multi-year order (a dues deal for a
      member who joined mid-year, or a two-year renewal) paid before the season: the member is already covered, not
      renewed (Jonna, Oct 26, 2026, from the Non-Lender Deferral sheet). Only a season line on an order of its own is a renewal. */
+  /* a record folded into another one brings its payments with it, so the record it joined sees them all */
+  Object.keys(MERGED).forEach(k0=>{const w=MERGED[k0];if(!w||w===k0||!out[k0])return;const a=out[k0],b=out[w]||{};
+    const iif=Object.assign({},b.iif||{});Object.keys(a.iif||{}).forEach(y=>{iif[y]=(iif[y]||0)+(a.iif[y]||0);});
+    out[w]=Object.assign({},a,b,{items:(b.items||[]).concat(a.items||[]).sort((x,y)=>String(y.d||"").localeCompare(String(x.d||""))),iif});delete out[k0];});
   {const RYS=RY+"-01-01";Object.keys(out).forEach(k=>{const a=out[k];if(!a)return;const its=a.items||[];
     const multi=o_=>!!o_&&its.some(j=>j.c==="Membership"&&String(j.o||"")===String(o_)&&(j.s||"")<RYS);
     let pd=null,pre=null;
