@@ -4247,13 +4247,23 @@ async function autoCommit(o,type){if(!db||!canWrite)return;
 async function commitFromPayment(o,i){
   if(blocked())return null;
   const sold=(i.d||TODAY).slice(0,10);
-  const type=(joinedOf(o)||"").slice(0,4)===sold.slice(0,4)?"New Member":"Renewal";
-  const lv=(o.level||"Corporate").replace(/ \(.*\)$/,"");
-  const f=dealDefaults(type,"Standard",sold);
-  const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:o.level||lv,
-    sold,start:(i.s||f.start),end:f.end,price:Math.round((i.n||0)*100)/100,order:i.o||"",
+  /* the same payment is never recorded twice, however many times the button is pressed */
+  const tag=sold+"|"+(i.n||0);
+  if(DEALS.some(d=>d.org===o.k&&d.fromPay===tag))return null;
+  /* the term the payment buys: its own service dates when the Financial System has them,
+     otherwise the standard dates for the month it was sold in. The end always follows the
+     start's year, so a 2027 membership sold in 2026 never runs backwards. */
+  const f=dealDefaults("Renewal","Standard",sold);
+  const start=(i.s||f.start).slice(0,10);
+  const end=(i.e&&i.e>=start?i.e.slice(0,10):start.slice(0,4)+"-12-31");
+  /* a renewal unless this is the first membership they have ever had: a joined date
+     before the term being bought means they were already a member */
+  const j=(joinedOf(o)||"").slice(0,10);
+  const type=(!j||j>=start)?"New Member":"Renewal";
+  const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:o.level||"Corporate",
+    sold,start,end,price:Math.round((i.n||0)*100)/100,order:i.o||"",
     by:owner(o)||myName()||"",notes:"Recorded from the "+fmt(sold)+" payment in the Financial System.",
-    ap:"Needs AP Update",auto:true,fromPay:sold+"|"+(i.n||0),at:new Date().toISOString(),createdBy:myName()||""};
+    ap:"Needs AP Update",auto:true,fromPay:tag,at:new Date().toISOString(),createdBy:myName()||""};
   try{await db.collection("deals").add(doc);return doc;}catch(e){onWriteErr(e);return null;}
 }
 async function autoUncommit(o,type){if(!db||!canWrite)return;const season=type==="Renewal"?RY:TODAY.slice(0,4);
@@ -5018,7 +5028,7 @@ function reportCtl(it){
     const d=await commitFromPayment(o,i);
     if(d){ISGEN++;renderIssues();scheduleRefresh();
       toast(o.name+" added to the report as a committed "+d.type.toLowerCase()+" of "+money(d.price)+".");}
-    else go.disabled=false;});
+    else{go.disabled=false;toast("That payment is already on the report.",true);}});
   return h("div",{class:"ismatch"},h("div",{class:"btnrow",style:"margin-top:0"},go));}
 /* "this leader works somewhere else": moves a workgroup seat onto the company the
    person actually works for. Saved against the record here, so every later Leadership
