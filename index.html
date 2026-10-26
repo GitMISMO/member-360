@@ -2270,6 +2270,11 @@ function applyCidOv(){
   let changed=false;
   ORGS.forEach(o=>{
     const d=OV[o.k]||{};
+    /* a name set by hand on the record (Aptify renamed the company, or the member list had it wrong).
+       The old name is kept as nameWas, so search, payments and the Aptify upload still find the record by it. */
+    if(d.name!==undefined){const v=String(d.name||"").trim();
+      if(v&&o.name!==v){if(o.nameWas===undefined)o.nameWas=o.name;o.name=v;changed=true;}
+      else if(!v&&o.nameWas!==undefined&&o.name!==o.nameWas){o.name=o.nameWas;changed=true;}}
     if(d.cid!==undefined){const v=String(d.cid||"").trim();
       if(o.cid!==v){if(o.cidWas===undefined)o.cidWas=o.cid||"";o.cid=v;changed=true;}}
     /* A Sole membership is bought by a person and paid for by their firm, so
@@ -2459,7 +2464,36 @@ function lifeFact(facts,o){
   show();
   facts.appendChild(h("div",{class:"fact"},h("label",null,"Membership Status"),d));
 }
-function cidFact(facts,o){lifeFact(facts,o);idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under. Never a MERS Org ID: those are the IIF’s and sit under Innovation Investment Fund.");
+/* the record's name, correctable by hand when Aptify renames a company */
+function nameFact(facts,o){
+  const d=h("div",null);
+  const show=()=>{
+    d.textContent="";
+    if(!db||!canWrite){d.appendChild(document.createTextNode(o.name||"\u2014"));return;}
+    const b=h("button",{type:"button",class:"linkbtn",title:"Change the name Member 360 shows"},o.name||"\u2014");
+    b.addEventListener("click",edit);d.appendChild(b);
+    if(o.nameWas!==undefined&&o.nameWas!==o.name)d.appendChild(h("div",{class:"hint"},"Renamed by hand \u00b7 the member list had "+o.nameWas));
+  };
+  const edit=()=>{
+    d.textContent="";
+    const inp=h("input",{type:"text",value:o.name||"","aria-label":"Organization name",style:"max-width:260px"});
+    const ok=h("button",{type:"button",class:"btn sm",style:"min-width:max-content"},"Save");
+    const no=h("button",{type:"button",class:"btn ghost sm",style:"min-width:max-content"},"Cancel");
+    ok.addEventListener("click",()=>{const v=String(inp.value||"").trim().slice(0,160);
+      if(!v){toast("A record needs a name.",true);return;}
+      if(v===o.name){show();return;}
+      if(o.nameWas===undefined)o.nameWas=o.name;
+      o.name=v;saveOv(o.k,{name:v});rebuildOrgs();show();
+      toast("Renamed to "+v+". The old name still finds it.");});
+    no.addEventListener("click",show);
+    d.appendChild(h("div",{class:"btnrow",style:"margin-top:0;gap:8px"},inp,ok,no));
+    d.appendChild(h("div",{class:"hint"},"Use the name on the company record in Aptify. The old name is kept, so search, payments and the Aptify upload still find the record."));
+    try{inp.focus();}catch(e){}
+  };
+  show();
+  facts.appendChild(h("div",{class:"fact"},h("label",null,"Organization Name"),d));
+}
+function cidFact(facts,o){nameFact(facts,o);lifeFact(facts,o);idFact(facts,o,"cid","Company ID","Use the Company ID on the company record in Aptify — the one the membership order is under. Never a MERS Org ID: those are the IIF’s and sit under Innovation Investment Fund.");
   if(isSole(o)||o.pid)idFact(facts,o,"pid","Person ID","Use the ID on the person’s own record in Aptify — the one the Sole membership is recorded against.");}
 function idFact(facts,o,key,label,help){
   const d=h("div",null);
@@ -3239,7 +3273,7 @@ function fillForm(o,box){
   const id=p=>"tp-"+o.k+"-"+p;
   const F=(label,el,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",{for:el.id},label),el);
   const date=h("input",{type:"date",id:id("date"),value:TODAY,disabled:dis});
-  const type=select(TYPES,"Call",{id:id("type"),disabled:dis});
+  const type=select(TYPES,"Note",{id:id("type"),disabled:dis});
   const topic=select(TOPICS,inCohort(o)?"Renewal":"Other",{id:id("topic"),disabled:dis});
   const who=select([{v:"",l:"Not Specified"}].concat(o.people.filter(p=>p.email||p.name).map(p=>({v:p.email||p.name,l:(p.name||p.email)+(p.roles.length?" ("+p.roles[0]+")":"")}))),"",{id:id("who"),disabled:dis});
   const sent=select(SENTS,"Neutral",{id:id("sent"),disabled:dis});
@@ -3395,7 +3429,7 @@ function filterOpts(){
   const lv=[...new Set(renewalGroup().map(o=>o.level).filter(Boolean))].sort();
   fillSelect("ren-level",[{v:"",l:"All Levels"}].concat(lv.map(x=>({v:x,l:x}))),true);
 }
-function matchQ(o,q){if(!q)return true;if(norm(o.name).includes(q)||o.cid===q)return true;return o.people.some(p=>norm(p.email).includes(q)||norm(p.name).includes(q));}
+function matchQ(o,q){if(!q)return true;if(norm(o.name).includes(q)||o.cid===q||(o.nameWas&&norm(o.nameWas).includes(q)))return true;return o.people.some(p=>norm(p.email).includes(q)||norm(p.name).includes(q));}
 function ownerMatch(o,v){if(!v)return true;if(v==="__none")return !owner(o);return owner(o)===v;}
 function renewalItems(){
   const q=norm($("ren-q").value),st=$("ren-stage").value,au=$("ren-auto").value,ow=$("ren-owner").value,lv=$("ren-level").value;
@@ -5421,7 +5455,8 @@ async function resolveNames(){
      sets the Credit Union flag) and the city and state when the record has no address. Its Join Date,
      Dues Paid Thru, Status and Member Type are MBA's membership, not MISMO's, and are never used.
    - A term that ends today or later makes the record a current member. A current member with no active
-     term is listed for a person to look at, never turned Former automatically.
+     term is no longer counted as current (lenders: unless their IIF this year is $1,000 or more);
+     a status set by hand on the record still wins.
    - Test records (names with "Test") are skipped. */
 const APT_LV={"MISMO Corporate Membership":"Corporate","MISMO Associate Champion":"Associate","MISMO Executive Champion":"Executive","MISMO Chair Champion":"Chair","MISMO Sole Membership":"Sole"};
 let APT=null,APTR={noRecord:[],noTerm:[],changed:{}};
@@ -5438,7 +5473,7 @@ function applyAptify(){
        half of a paired Sole membership: Aptify files a Sole term under the person, so
        once the person and the company are one record it still has to be reachable by
        the person's name. */
-    const raw=[o.name,ov(o).pairName||""].concat((o.mergedIn||[]).map(x=>x.name)),nms=[];
+    const raw=[o.name,ov(o).pairName||""].concat((o.mergedIn||[]).map(x=>x.name)).concat(o.nameWas?[o.nameWas]:[]),nms=[];
     raw.forEach(n=>{if(!n)return;nms.push(n);nms.push(String(n).replace(/\s*\([^)]*\)\s*/g," "));});
     [...new Set(nms.map(aptN))].forEach(n=>{if(n)(byName[n]=byName[n]||[]).push(o);});});
   /* two records can share a Company ID (ServiceLink and "Service Link, A Black Knight..."): the current one gets
@@ -5469,6 +5504,21 @@ function applyAptify(){
        25 Oct 2026 and it turned 1 flagged record into 38. */
     if(/credit union/i.test(c.ct||"")&&!o.cu)set(o,"cu",true);
     if(!o.addr&&(c.city||c.st))set(o,"addr",[c.city,c.st].filter(Boolean).join(", "));});
+  /* Aptify can take a member off too (Jonna, Oct 25, 2026). A record the old tracker marked Active
+     with no active Aptify term is no longer counted as current: a Non-Lender goes to Former; a lender
+     goes to IIF Invoiced unless it paid $1,000 or more IIF this year (a lender is a member by paying
+     the IIF) or is on a special rate. Lenders are only checked once the Financial System payments have
+     loaded. Records added from payments, and any status a person set by hand, are left alone. */
+  R.dropped=[];
+  const actReady=Object.keys(ACT||{}).length>0;
+  ORGS.forEach(o=>{
+    if(o.life!=="Active"||seen.has(o.k)||o.mm||o.manual||o.auto)return;
+    if((OV[o.k]||{}).life)return;
+    let to="Former";
+    if(o.type==="Lender"){if(!actReady||specialOf(o)||lendPaid(o,IY)>=1000)return;to="IIF Invoiced";}
+    if(!o._apt0)o._apt0={level:o.level,thru:o.thru,life:o.life,joined:o.joined,cu:o.cu,addr:o.addr};
+    if(!("life" in o._apt0))o._apt0.life=o.life;
+    o.life=to;R.dropped.push(o);});
   applyLifeOv();
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
   certMatch(R);
@@ -5602,7 +5652,7 @@ function renderApt(){
       h("div",{class:"fact"},h("label",null,"Joined Dates Filled"),h("div",{class:"num"},n(c.joined||0))),
       APT.orders?h("div",{class:"fact"},h("label",null,"Orders Through"),h("div",{style:"white-space:nowrap"},fmt(APT.orders.asOf))):null,
       APT.certified?h("div",{class:"fact"},h("label",null,"Certified People"),h("div",{class:"num"},n(APT.certified.people.length)+" ("+n(APT.certified.people.length-(APTR.certNo||[]).length)+" matched)")):null));
-    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify is the record. Where the weekly upload disagrees with the member list \u2014 level, membership dates, the joined date, the credit union flag \u2014 Aptify replaces what the member list had; anything a person has set by hand on a record stays. "+n(APTR.noRecord.length)+" Aptify membership"+(APTR.noRecord.length===1?" has":"s have")+" no Member 360 record and "+n(APTR.noTerm.length)+" current Non-Lender member"+(APTR.noTerm.length===1?" has":"s have")+" no active Aptify term. Both lists are in the Issues Log for someone to look at."));}
+    box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"Aptify is the record. Where the weekly upload disagrees with the member list \u2014 level, membership dates, the joined date, the credit union flag \u2014 Aptify replaces what the member list had; anything a person has set by hand on a record stays. "+n(APTR.noRecord.length)+" Aptify membership"+(APTR.noRecord.length===1?" has":"s have")+" no Member 360 record and "+n(APTR.noTerm.length)+" current Non-Lender member"+(APTR.noTerm.length===1?" has":"s have")+" no active Aptify term. Both lists are in the Issues Log for someone to look at."+((APTR.dropped||[]).length?" "+n(APTR.dropped.length)+" record"+(APTR.dropped.length===1?"":"s")+" the old tracker had as current "+(APTR.dropped.length===1?"has":"have")+" no active Aptify term (and, for lenders, under $1,000 IIF this year), so "+(APTR.dropped.length===1?"it is":"they are")+" no longer counted as current: "+APTR.dropped.slice(0,12).map(o=>o.name).join(", ")+(APTR.dropped.length>12?", \u2026":"")+".":"")));}
   else box.appendChild(h("div",{class:"hint",style:"margin-bottom:12px"},"No Aptify files have been uploaded yet."));
   const inp=h("input",{type:"file",id:"apt-files",multiple:true,accept:".xlsx,.xls,.csv",style:"position:absolute;width:1px;height:1px;opacity:0;pointer-events:none"});
   const pick=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Choose the Files");const picked=h("span",{class:"hint",style:"margin:0"},"No files chosen");
@@ -5854,7 +5904,8 @@ function mmItems(r){
 }
 function mmMatcher(){
   const byCid={},byName={};
-  ORGS.forEach(o=>{if(o.mm)return;if(o.cid)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o.k);const n=mmNorm(o.name);if(n)(byName[n]=byName[n]||[]).push(o.k);});
+  ORGS.forEach(o=>{if(o.mm)return;if(o.cid)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o.k);const n=mmNorm(o.name);if(n)(byName[n]=byName[n]||[]).push(o.k);
+    if(o.nameWas){const n2=mmNorm(o.nameWas);if(n2&&n2!==n)(byName[n2]=byName[n2]||[]).push(o.k);}});
   const map=(ALIAS&&ALIAS.map)||{},ign=(ALIAS&&ALIAS.ignore)||[];
   const m=r=>{
     const cid=r.companyId!=null&&r.companyId!==""?String(r.companyId).trim().replace(/\.0$/,""):"";
@@ -5931,6 +5982,8 @@ function remergeAct(){
       out[k]=Object.assign({},a,{items:its,iif,paid:pd});});
   }
   ACT=out;
+  /* the lender check in the Aptify join needs the payments: run it again the first time they arrive */
+  if(APT&&APT.terms&&Object.keys(out).length&&!applyAptify._act){applyAptify._act=true;applyAptify();scheduleRefresh();}
   /* new members join the member list (only when the set changed, so nothing redraws for no reason) */
   const sig=JSON.stringify(newRecs);
   if(sig!==remergeAct._sig){remergeAct._sig=sig;EXTRA.mm=newRecs;MMBUSY=true;try{rebuildOrgs();}finally{MMBUSY=false;}}
