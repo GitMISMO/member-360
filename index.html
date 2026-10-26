@@ -1703,6 +1703,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="vright"><button type="button" class="btn ghost" id="dl-sent">Mark Shown as Sent to AP</button><button type="button" class="btn" id="dl-csv">Download for AP</button></div>
     </div>
     <div class="headline" id="dl-hl"><div class="hl-date" id="dl-eb"></div><div class="hl-say" id="dl-say"></div><div class="tiles" id="dl-tiles"></div></div>
+    <div class="warnnote" id="dl-warn" hidden style="margin:0 0 14px"></div>
     <div class="filters" id="dl-filters">
       <select id="dl-month" aria-label="Month committed"></select>
       <select id="dl-type" aria-label="Type"><option value="">New, Renewals and Upgrades</option><option>New Member</option><option>Renewal</option><option>Upgrade</option></select>
@@ -2020,7 +2021,7 @@ const STAGE_CLS={"Not Renewed Yet":"s-nry","Contacted":"s-con","Invoiced":"s-inv
 const STAGE_COLOR={"Not Renewed Yet":"var(--ink-3)","Contacted":"var(--c1)","Invoiced":"var(--c4)","Committed":"var(--c3)","Payment in Process":"var(--c5)","Renewed":"var(--good)","Lost":"var(--bad)"};
 const LOSS=["Doesn't Wish to Renew","No Longer in Business","Merger/Purchased","Budget","Not Getting Enough Value","No Response","Other"];
 const PSTAGES=["Identified","Contacted","Engaged","Proposal Sent","Joined","Not Interested"];
-const TYPES=["Call","Email","Meeting","Event Conversation","Other"];
+const TYPES=["Note","Call","Email","Meeting","Event Conversation","Other"];
 const TOPICS=["Renewal","Invoice or Payment","Upgrade","Sponsorship","Certification","Workgroup","Summit","Education","Other"];
 const SENTS=["Positive","Neutral","Concern"];
 const STEPS=[
@@ -2527,6 +2528,9 @@ function renderProfile(o,box){
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},sq));}
   box.appendChild(h("div",{"data-part":"ctrls"}));
   box.appendChild(h("div",{"data-part":"reasons"}));
+  /* the two the team uses every day sit at the top: everything else is reference */
+  box.appendChild(sect("Log a Touchpoint","form",null));
+  box.appendChild(sect("Conversation History","history",0));
   if(renewable(o))box.appendChild(sect("Renewal Timeline","timeline",null));
   if(o.iif)box.appendChild(sect("Innovation Investment Fund","iifs",null));
   box.appendChild(sect("Payments and Activity","act",0));
@@ -2538,8 +2542,6 @@ function renderProfile(o,box){
   box.appendChild(sect("Membership History and Levels","mhist",o.hist.length));
   box.appendChild(sect("Membership Benefits","benefits",null));
   box.appendChild(sect("Issues Log","issues",0));
-  box.appendChild(sect("Log a Touchpoint","form",null));
-  box.appendChild(sect("Conversation History","history",0));
   if(sampleCap)box.appendChild(sect("Draft a Personal Email","draft",null));
   fillContacts(o,box.querySelector('[data-part="contacts"]'));
   fillMhist(o,box.querySelector('[data-part="mhist"]'));fillDeals(o,box.querySelector('[data-part="deals"]'));
@@ -4336,12 +4338,37 @@ function monthLabel(m){if(!m)return "All Months";const [y,mm]=m.split("-").map(N
 function paidNotReported(m){const out=[];ORGS.forEach(o=>{fsItems(o).forEach(i=>{if(i.c!=="Membership"||i.n<=0||(m&&i.d.slice(0,7)!==m))return;
   const rec=DEALS.some(d=>d.org===o.k&&dealPaid(d)&&((i.s&&i.s>=addDays(d.start,-62)&&i.s<=d.end)||(!i.s&&i.d>=addDays(d.sold||d.start,-45))));if(!rec)out.push({o,i});});});
   return out.sort((a,b)=>a.i.d.localeCompare(b.i.d));}
+/* A commitment built from a payment can only be wrong two ways: a term that runs backwards,
+   or the same payment recorded twice. Both are safe to take off the report without asking,
+   because nothing here was typed by a person. */
+function badDeals(){
+  const seen={},out=[];
+  DEALS.slice().sort((a,b)=>String(a.at||"").localeCompare(String(b.at||""))).forEach(d=>{
+    if(!d.fromPay)return;
+    if(d.start&&d.end&&d.start>d.end){out.push(d);return;}
+    const key=d.org+"|"+d.fromPay;
+    if(seen[key]){out.push(d);return;}
+    seen[key]=1;});
+  return out;}
+async function tidyDeals(){
+  if(blocked())return;
+  const bad=badDeals();if(!bad.length)return;
+  let n=0;for(const d of bad){try{await db.doc("deals/"+d.id).delete();n++;}catch(e){}}
+  DEALS=DEALS.filter(d=>!bad.some(b=>b.id===d.id));
+  renderDeals();scheduleRefresh();
+  toast(n+" commitment"+(n===1?"":"s")+" taken off the report: a term that ran backwards, or the same payment twice.");}
 function renderDeals(){
   const ms=$("dl-month"),cur=ms.dataset.init?ms.value:TODAY.slice(0,7);ms.textContent="";ms.appendChild(h("option",{value:""},"All Months"));dealMonths().forEach(m=>ms.appendChild(h("option",{value:m},"Committed in "+monthLabel(m))));ms.value=cur;ms.dataset.init="1";
   const bs=$("dl-by"),bc=bs.value;bs.textContent="";bs.appendChild(h("option",{value:""},"Everyone"));(SET.staff||[]).forEach(x=>bs.appendChild(h("option",{value:x},x)));bs.value=bc;
   const L=dealsShown(),tot=L.reduce((a,d)=>a+(d.price||0),0),need=L.filter(d=>(d.ap||"Needs AP Update")==="Needs AP Update").length;
   const P=L.map(d=>({d,p:dealPaid(d)})),paidN=P.filter(x=>x.p).length,paidAmt=P.reduce((a,x)=>a+(x.p?x.p.n:0),0);
   /* each card filters the table below to what it counts; selecting it again shows everything for the month */
+  const bad=badDeals();
+  const warn=$("dl-warn");
+  if(warn){warn.textContent="";warn.hidden=!bad.length;
+    if(bad.length){warn.appendChild(h("span",null,n(bad.length)+" commitment"+(bad.length===1?"":"s")+" built from a payment "+(bad.length===1?"does":"do")+" not add up "+"\u2014"+" a term that runs backwards, or the same payment recorded twice. "));
+      const b=h("button",{type:"button",class:"btn sm",style:"min-width:max-content",disabled:!db||!canWrite},"Tidy "+(bad.length===1?"It":"Them")+" Up");
+      b.addEventListener("click",()=>{b.disabled=true;tidyDeals();});warn.appendChild(b);}}
   const DF={type:$("dl-type").value,terms:$("dl-terms").value,paid:$("dl-pd").value,ap:$("dl-ap").value};
   const FSET=[{},{type:"New Member"},{type:"Renewal"},{terms:"Dues Deal"},{paid:"paid"},{ap:"Needs AP Update"}];
   const isOn=f=>["type","terms","paid","ap"].every(k=>(f[k]||"")===DF[k]);
