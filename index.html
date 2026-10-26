@@ -4240,6 +4240,22 @@ async function autoCommit(o,type){if(!db||!canWrite)return;
   const last=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0).sort((a,b)=>b.d.localeCompare(a.d))[0];
   const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:lv,sold:TODAY,start:f.start,end:f.end,price:listPrice(lv)||(last?last.n:0),order:"",by:owner(o)||myName()||"",notes:"",ap:"Needs AP Update",auto:true,at:new Date().toISOString(),createdBy:myName()||""};
   try{await db.collection("deals").add(doc);toast("Added to the Monthly Report as a committed "+type.toLowerCase()+". Check the amount under Sales and Renewals.");}catch(e){onWriteErr(e);}}
+/* A membership payment arrives and the record turns Renewed on its own, because Aptify holds the
+   term and the money is in. Nobody pressed anything, so autoCommit never ran and the month's report
+   has no commitment behind the payment. This builds that commitment from the payment itself: the
+   amount paid, the month it was paid in, and whether they joined this year or renewed. */
+async function commitFromPayment(o,i){
+  if(blocked())return null;
+  const sold=(i.d||TODAY).slice(0,10);
+  const type=(joinedOf(o)||"").slice(0,4)===sold.slice(0,4)?"New Member":"Renewal";
+  const lv=(o.level||"Corporate").replace(/ \(.*\)$/,"");
+  const f=dealDefaults(type,"Standard",sold);
+  const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:o.level||lv,
+    sold,start:(i.s||f.start),end:f.end,price:Math.round((i.n||0)*100)/100,order:i.o||"",
+    by:owner(o)||myName()||"",notes:"Recorded from the "+fmt(sold)+" payment in the Financial System.",
+    ap:"Needs AP Update",auto:true,fromPay:sold+"|"+(i.n||0),at:new Date().toISOString(),createdBy:myName()||""};
+  try{await db.collection("deals").add(doc);return doc;}catch(e){onWriteErr(e);return null;}
+}
 async function autoUncommit(o,type){if(!db||!canWrite)return;const season=type==="Renewal"?RY:TODAY.slice(0,4);
   const L=DEALS.filter(d=>d.org===o.k&&d.auto&&!d.edited&&d.type===type&&(d.start||"").slice(0,4)===season);
   for(const d of L){try{await db.doc("deals/"+d.id).delete();}catch(e){}}
@@ -4834,7 +4850,7 @@ function isChecks(){
       items:()=>O(NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)&&!aptCovers(o,Y)),o=>"Last membership payment is for "+lastMemFor(o)+" · "+(o.level||""))},
     {key:"not-reported",cat:"Payments",title:"Membership Payments Not on the Monthly Report",
       why:"Membership payments the Financial System received this month with no commitment recorded by the team. Open the record and add it under Sales and Renewals if it belongs on the report.",
-      items:()=>paidNotReported(TODAY.slice(0,7)).map(({o,i})=>({id:o.k+"|"+i.d+"|"+i.n,o,note:money(i.n)+" · "+fmt(i.d)+" · "+(i.p||"Membership")}))}];
+      items:()=>paidNotReported(TODAY.slice(0,7)).map(({o,i})=>({id:o.k+"|"+i.d+"|"+i.n,o,i,note:money(i.n)+" · "+fmt(i.d)+" · "+(i.p||"Membership")}))}];
   C.forEach(c=>{const d=isDoc("auto-"+c.key)||{},ok=new Set(d.ok||[]);let all=[];try{all=c.items();}catch(e){all=[];}
     if(c.fix==="match"&&c.key!=="auto-added")all=all.filter(x=>!(x.r&&((ALIAS.map||{})[x.r.name]||(ALIAS.ignore||[]).includes(x.r.name))));
     c.all=all;c.list=all.filter(x=>!ok.has(x.id));c.okd=all.filter(x=>ok.has(x.id));c.doc=d;c.id="auto-"+c.key;c.auto=true;
@@ -4992,6 +5008,18 @@ function solePairCtl(o){
     h("div",{class:"fld"},h("label",null,"The Person This Sole Membership Is Recorded Under"),inp,msg,
       h("div",{class:"hint"},"They become one record carrying both names and both Aptify IDs, counted as one Sole membership.")),
     h("div",{class:"btnrow",style:"margin-top:0"},go));}
+/* put a payment on the month's report without opening the record */
+function reportCtl(it){
+  const o=it.o,i=it.i;if(!o||!i)return null;
+  const dis=!db||!canWrite;
+  const go=h("button",{type:"button",class:"btn",disabled:dis,style:"min-width:max-content"},"Record It on the Report");
+  go.addEventListener("click",async()=>{
+    if(blocked())return;go.disabled=true;
+    const d=await commitFromPayment(o,i);
+    if(d){ISGEN++;renderIssues();scheduleRefresh();
+      toast(o.name+" added to the report as a committed "+d.type.toLowerCase()+" of "+money(d.price)+".");}
+    else go.disabled=false;});
+  return h("div",{class:"ismatch"},h("div",{class:"btnrow",style:"margin-top:0"},go));}
 /* "this leader works somewhere else": moves a workgroup seat onto the company the
    person actually works for. Saved against the record here, so every later Leadership
    Tracker update lands the seat in the same place and the issue stays settled. */
@@ -5076,13 +5104,25 @@ function isItems(x,wrap){
       x.key==="dupes"&&!marked&&it.os?mergeCtl(it):null,
       x.key==="lead-nonmember"&&!marked&&it.o?leadAtCtl(it):null,
       x.key==="cid-mers"&&!marked&&it.o?cidFixCtl(it.o):null,
-      x.key==="apt-noterm"&&!marked&&it.o&&it.o.type!=="Lender"?solePairCtl(it.o):null),btn);};
+      x.key==="apt-noterm"&&!marked&&it.o&&it.o.type!=="Lender"?solePairCtl(it.o):null,
+      x.key==="not-reported"&&!marked&&it.o&&it.i?reportCtl(it):null),btn);};
   /* which checks are showing their whole list survives the redraw (the wrap is rebuilt each time) */
   const L=x.list,cap=ISALL.has(x.id)?L.length:25;
   const box=h("div",{class:"isitems"});L.slice(0,cap).forEach(it=>box.appendChild(row(it,false)));
   if(!L.length)box.appendChild(h("div",{class:"hint",style:"padding:10px 12px"},"Nothing to look at right now."));
   const out=[box];
   if(L.length>cap){const more=h("button",{type:"button",class:"linkbtn",style:"margin-top:8px"},"Show All "+n(L.length));more.addEventListener("click",e=>{ISALL.add(x.id);e.currentTarget.blur();renderIssues();});out.push(more);}
+  if(x.key==="not-reported"&&x.list.length&&!(!db||!canWrite)){
+    const n0=x.list.length;
+    const tot=x.list.reduce((a,it)=>a+((it.i&&it.i.n)||0),0);
+    const all=h("button",{type:"button",class:"btn",style:"min-width:max-content;margin-top:10px"},"Record All "+n0+" on the Report");
+    all.addEventListener("click",async()=>{
+      if(blocked())return;all.disabled=true;all.textContent="Recording\u2026";
+      let done=0;
+      for(const it of x.list.slice()){if(it.o&&it.i&&await commitFromPayment(it.o,it.i))done++;}
+      ISGEN++;renderIssues();scheduleRefresh();
+      toast(done+" payment"+(done===1?"":"s")+" added to the report, "+money(tot)+" in all. Check the amounts under Sales and Renewals.");});
+    out.push(h("div",null,all,h("div",{class:"hint",style:"margin-top:6px"},"Each one is recorded as a committed new membership or renewal for the month it was paid, at the amount paid. Nothing is sent to AP until you mark it Sent.")));}
   if(x.key==="lead-nonmember"){const mv=leadMoved();
     if(mv.length){const dd=h("details",{class:"sect",style:"margin-top:10px"},h("summary",null,"Leaders Moved to Their Own Company",h("span",{class:"cnt"},String(mv.length))));
       const b3=h("div",{class:"isitems"});
