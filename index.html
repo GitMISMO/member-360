@@ -1571,7 +1571,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <input type="search" id="ren-q" placeholder="Filter by company or contact" aria-label="Filter renewals by company or contact">
       <select id="ren-stage" aria-label="Stage"></select>
       <select id="ren-auto" aria-label="Automation">
-        <option value="">All Handling</option><option value="auto">Automatic</option><option value="person">Personal Outreach</option><option value="hold">On Hold</option><option value="iif">Renews Through IIF</option><option value="stop">Stopped</option>
+        <option value="">All Handling</option><option value="auto">Automatic</option><option value="person">Personal Outreach</option><option value="hold">On Hold</option><option value="iif">Renews Through IIF</option><option value="stop">Done (Renewed, Covered or Lost)</option>
       </select>
       <select id="ren-owner" aria-label="Owner"></select>
       <select id="ren-level" aria-label="Level"></select>
@@ -2115,9 +2115,9 @@ function joinedOf(o){return ov(o).joined||o.joined||"";}
 function sov(o,key){const v=ov(o);return (v.stageYr||DATA_RY)===RY?v[key]:undefined;}
 /* saving a season field: last season's stage, loss reason and replied are cleared so they never carry over */
 function seasonPatch(o,p){const v=ov(o);const base=(v.stageYr||DATA_RY)===RY?{}:{stage:"",lossReason:"",replied:false};return Object.assign(base,p,{stageYr:RY});}
-/* who renews: every current Non-Lender member (Jonna, Oct 26, 2026), not only the ones the Sept 26 tracker listed,
-   plus anyone marked Lost this season. Lenders renew through the IIF and keep their own cycle. */
-function inCohort(o){if(o.type!=="Lender")return o.life==="Active"||sov(o,"stage")==="Lost";if(RY===DATA_RY)return !!o.stage;return o.life==="Active"&&!!o.thru&&o.thru<=END;}
+/* who renews: every current member (Jonna, Oct 26, 2026), not only the ones the Sept 26 tracker listed, plus anyone
+   marked Lost this season. Non-Lenders renew through dues; lenders through the IIF (handling "iif", never automated emails). */
+function inCohort(o){return o.life==="Active"||sov(o,"stage")==="Lost";}
 /* already covered for the season: Aptify's term runs through it (a two-year deal, or a member who joined late in the year),
    with no payment for the season and no stage set by hand. Counted apart from Renewed. */
 function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
@@ -3420,11 +3420,15 @@ function renderTiles(){
   C.forEach(o=>{cnt[stageOf(o)]++;hc[handling(o)]++;});
   const open_=C.length-cnt.Renewed-cnt.Lost;
   const cov=C.filter(covered).length,ren_=cnt.Renewed-cov;
-  const T=[["Up for Renewal",C.length,"Current Non-Lender members","var(--sky)",{}],
-    ["Renewed",ren_,Math.round(100*ren_/Math.max(1,C.length))+"% \u00b7 "+C.filter(o=>paid(o)).length+" from payments","var(--good)",{stage:"Renewed"}],
-    ["Already Covered",cov,"Membership already runs through "+RY,"var(--c3)",{stage:"covered"}],
+  /* Non-Lender Members = Already Covered + Up for Renewal; Up for Renewal = Renewed + Still Open + Lost */
+  const due_=C.length-cov;
+  const T=[["Non-Lender Members",C.length,"Current members","var(--ink-3)",{}],
+    ["Already Covered",cov,"Paid through "+RY+" before the season","var(--c3)",{stage:"covered"}],
+    ["Up for Renewal",due_,"Membership ends Dec 31, "+(RY-1),"var(--sky)",{stage:"due"}],
+    ["Renewed",ren_,Math.round(100*ren_/Math.max(1,due_))+"% of those up for renewal \u00b7 "+C.filter(o=>paid(o)).length+" from payments","var(--good)",{stage:"Renewed"}],
     ["Still Open",open_,"Not renewed or lost yet","var(--c1)",{stage:"open"}],
     ["Personal Outreach",hc.person,"Routed to a person","var(--warn)",{auto:"person"}],
+    ["Automatic Emails",hc.auto,"Reminders go out on schedule","var(--c2)",{auto:"auto"}],
     ["On Hold",hc.hold,"Automated emails paused","var(--ink-3)",{auto:"hold"}],
     ["Lost",cnt.Lost,"Not renewing","var(--bad)",{stage:"Lost"}]];
   const box=$("ren-tiles");box.textContent="";
@@ -3464,7 +3468,7 @@ function mix(box,segs,onPick,selKey){
 }
 function fillSelect(id,opts,keep){const s=$(id);const v=keep?s.value:"";s.textContent="";opts.forEach(o=>s.appendChild(h("option",{value:o.v},o.l)));s.value=v;if(s.value!==v)s.value="";}
 function filterOpts(){
-  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"open",l:"Still Open"},{v:"covered",l:"Already Covered"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
+  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"due",l:"Up for Renewal"},{v:"open",l:"Still Open"},{v:"covered",l:"Already Covered"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
   const ownersAll=[{v:"",l:"All Owners"},{v:"__none",l:"Unassigned"}].concat((SET.staff||[]).map(s=>({v:s,l:s})));
   fillSelect("ren-owner",ownersAll,true);fillSelect("fu-owner",ownersAll,true);fillSelect("mem-owner",ownersAll,true);
   fillSelect("mem-pstage",[{v:"",l:"All Sales Stages"},{v:"__open",l:"Open Pipeline"},{v:"__none",l:"No Sales Stage"}].concat(PSTAGES.map(s=>({v:s,l:s}))),true);
@@ -3477,7 +3481,7 @@ function renewalItems(){
   const q=norm($("ren-q").value),st=$("ren-stage").value,au=$("ren-auto").value,ow=$("ren-owner").value,lv=$("ren-level").value;
   return (au==="iif"?lenderGroup():renewalGroup()).filter(o=>{const s=stageOf(o);
     if(st==="open"&&(s==="Renewed"||s==="Lost"))return false;
-    if(st==="covered"){if(!covered(o))return false;}else if(st==="Renewed"){if(s!=="Renewed"||covered(o))return false;}else if(st&&st!=="open"&&s!==st)return false;
+    if(st==="covered"){if(!covered(o))return false;}else if(st==="due"){if(covered(o))return false;}else if(st==="Renewed"){if(s!=="Renewed"||covered(o))return false;}else if(st&&st!=="open"&&s!==st)return false;
     if(au&&handling(o)!==au)return false;if(!ownerMatch(o,ow))return false;if(lv&&o.level!==lv)return false;return matchQ(o,q);})
   .sort((a,b)=>{const na=nextStep(a),nb=nextStep(b);return ((na?na.d:"9")+a.name).localeCompare((nb?nb.d:"9")+b.name);});
 }
@@ -4820,7 +4824,7 @@ function renderStats(){
     let say="MISMO "+(cur?"has ":"had ")+em(plural(A.length,"member","members"))+" in "+Y;
     say+=". ";void PA;void d;
     say+="Lenders make up "+em(Math.round(100*K.Lender/Math.max(1,A.length))+"%")+(top?", and the largest group outside lending is "+em(sectorLab(top)+"s")+" ("+n(ns[top])+")":"")+".";
-    if(cur){const R=renewalGroup(),rn=R.filter(o=>stageOf(o)==="Renewed").length;if(R.length)say+=" So far "+em(Math.round(100*rn/R.length)+"%")+" of Non-Lender members have renewed for "+RY+".";}
+    if(cur){const R=renewalGroup().filter(o=>!covered(o)),rn=R.filter(o=>stageOf(o)==="Renewed").length;if(R.length)say+=" So far "+em(Math.round(100*rn/R.length)+"%")+" of the Non-Lender members up for renewal have renewed for "+RY+".";}
     else if(champ)say+=" "+em(plural(champ,"Champion","Champions"))+" held the top three levels.";
     hl("st",Y+" Membership Year · "+(cur?"As of "+fmt(TODAY):"From the Records for "+Y),say);}
   // the list behind the selected number
