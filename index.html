@@ -1699,14 +1699,14 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   <section class="view" id="v-deals" hidden>
     <div class="vhead">
       <div><h1>Monthly Membership Report</h1>
-      <div class="vsub">What the team committed each month, whether it's been paid, and the file AP needs to update Aptify.</div></div>
+      <div class="vsub">New members the team signed each month, whether they've paid, and the file AP needs to update Aptify. Renewals aren't on this report.</div></div>
       <div class="vright"><button type="button" class="btn ghost" id="dl-sent">Mark Shown as Sent to AP</button><button type="button" class="btn" id="dl-csv">Download for AP</button></div>
     </div>
     <div class="headline" id="dl-hl"><div class="hl-date" id="dl-eb"></div><div class="hl-say" id="dl-say"></div><div class="tiles" id="dl-tiles"></div></div>
     <div class="warnnote" id="dl-warn" hidden style="margin:0 0 14px"></div>
     <div class="filters" id="dl-filters">
       <select id="dl-month" aria-label="Month committed"></select>
-      <select id="dl-type" aria-label="Type"><option value="">New, Renewals and Upgrades</option><option>New Member</option><option>Renewal</option><option>Upgrade</option></select>
+      <select id="dl-type" aria-label="Type" hidden><option value="">New Members</option></select>
       <select id="dl-terms" aria-label="Terms"><option value="">Standard and Dues Deals</option><option>Standard</option><option>Dues Deal</option></select>
       <select id="dl-pd" aria-label="Paid"><option value="">Paid and Not Paid Yet</option><option value="paid">Paid</option><option value="unpaid">Not Paid Yet</option></select>
       <select id="dl-ap" aria-label="AP status"><option value="">All AP Statuses</option><option>Needs AP Update</option><option>Sent to AP</option><option>Updated in Aptify</option></select>
@@ -4614,13 +4614,16 @@ function fillDeals(o,box){
   if(!dis&&!box._new){const add=h("button",{type:"button",class:"btn ghost",style:"margin-top:10px"},"Record a New Membership, Renewal or Dues Deal");add.addEventListener("click",()=>{box._new=true;box._open=null;fillDeals(o,box);});box.appendChild(add);}
 }
 /* the monthly report */
-function dealMonths(){const set=new Set(DEALS.map(d=>(d.sold||"").slice(0,7)).filter(Boolean));set.add(TODAY.slice(0,7));return [...set].sort().reverse();}
+function dealMonths(){const set=new Set(DEALS.filter(d=>d.type==="New Member"&&!d.archived).map(d=>(d.sold||"").slice(0,7)).filter(Boolean));set.add(TODAY.slice(0,7));return [...set].sort().reverse();}
 function dealsShown(){const m=$("dl-month").value,ap=$("dl-ap").value,by=$("dl-by").value,ty=$("dl-type").value,tm=$("dl-terms").value,pd=$("dl-pd").value;
-  return DEALS.filter(d=>(!m||(d.sold||"").slice(0,7)===m)&&(!ap||(d.ap||"Needs AP Update")===ap)&&(!by||d.by===by)&&(!ty||d.type===ty)&&(!tm||termsOf(d)===tm)&&(!pd||(pd==="paid")===!!dealPaid(d)))
+  /* the report is new members only (Jonna, Oct 27, 2026); renewals stay on each record under Sales and Renewals */
+  return DEALS.filter(d=>d.type==="New Member"&&!d.archived&&(!m||(d.sold||"").slice(0,7)===m)&&(!ap||(d.ap||"Needs AP Update")===ap)&&(!by||d.by===by)&&(!ty||d.type===ty)&&(!tm||termsOf(d)===tm)&&(!pd||(pd==="paid")===!!dealPaid(d)))
     .sort((a,b)=>(a.sold||"").localeCompare(b.sold||"")||(a.orgName||"").localeCompare(b.orgName||""));}
 function days_(a,b){return Math.round((Date.parse(b)-Date.parse(a))/864e5);}
 function monthLabel(m){if(!m)return "All Months";const [y,mm]=m.split("-").map(Number);return MONTHS[mm-1]+" "+y;}
 function paidNotReported(m){const out=[];ORGS.forEach(o=>{fsItems(o).forEach(i=>{if(i.c!=="Membership"||i.n<=0||(m&&i.d.slice(0,7)!==m))return;
+  /* new members only: a joined date before the term being paid for means it is a renewal */
+  const j_=(joinedOf(o)||"").slice(0,10);if(j_&&j_<(i.s||i.d||"").slice(0,10))return;
   const rec=DEALS.some(d=>d.org===o.k&&dealPaid(d)&&((i.s&&i.s>=addDays(d.start,-62)&&i.s<=d.end)||(!i.s&&i.d>=addDays(d.sold||d.start,-45))));if(!rec)out.push({o,i});});});
   return out.sort((a,b)=>a.i.d.localeCompare(b.i.d));}
 /* A commitment built from a payment can only be wrong two ways: a term that runs backwards,
@@ -4629,7 +4632,7 @@ function paidNotReported(m){const out=[];ORGS.forEach(o=>{fsItems(o).forEach(i=>
 function badDeals(){
   const seen={},out=[];
   DEALS.slice().sort((a,b)=>String(a.at||"").localeCompare(String(b.at||""))).forEach(d=>{
-    if(!d.fromPay)return;
+    if(!d.fromPay||d.archived||d.type!=="New Member")return;
     if(d.start&&d.end&&d.start>d.end){out.push(d);return;}
     const key=d.org+"|"+d.fromPay;
     if(seen[key]){out.push(d);return;}
@@ -4655,16 +4658,14 @@ function renderDeals(){
       const b=h("button",{type:"button",class:"btn sm",style:"min-width:max-content",disabled:!db||!canWrite},"Tidy "+(bad.length===1?"It":"Them")+" Up");
       b.addEventListener("click",()=>{b.disabled=true;tidyDeals();});warn.appendChild(b);}}
   const DF={type:$("dl-type").value,terms:$("dl-terms").value,paid:$("dl-pd").value,ap:$("dl-ap").value};
-  const FSET=[{},{type:"New Member"},{type:"Renewal"},{terms:"Dues Deal"},{paid:"paid"},{ap:"Needs AP Update"}];
+  const FSET=[{},{terms:"Dues Deal"},{paid:"paid"},{ap:"Needs AP Update"}];
   const isOn=f=>["type","terms","paid","ap"].every(k=>(f[k]||"")===DF[k]);
   let ti=0;
   const tile=(l,v,sub,c)=>{const f=FSET[ti++],on=Object.keys(f).length&&isOn(f);const b=h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+c,"aria-pressed":String(!!on)},h("span",{class:"lab"},l),h("span",{class:"val"},v),h("span",{class:"sub"},sub));
     b.addEventListener("click",()=>{const g=on?{}:f;$("dl-type").value=g.type||"";$("dl-terms").value=g.terms||"";$("dl-pd").value=g.paid||"";$("dl-ap").value=g.ap||"";renderDeals();goList("dl-filters");});return b;};
   const tb=$("dl-tiles");tb.textContent="";
-  [["Committed",n(L.length),money(Math.round(tot))+" · "+monthLabel(ms.value),"var(--sky)"],
-   ["New Memberships",n(L.filter(d=>d.type==="New Member").length),money(Math.round(L.filter(d=>d.type==="New Member").reduce((a,d)=>a+(d.price||0),0))),"var(--c3)"],
-   ["Renewals",n(L.filter(d=>d.type==="Renewal").length),money(Math.round(L.filter(d=>d.type==="Renewal").reduce((a,d)=>a+(d.price||0),0))),"var(--c1)"],
-   ["Dues Deals",n(L.filter(d=>termsOf(d)==="Dues Deal").length),"longer or special terms","var(--c4)"],
+  [["New Members",n(L.length),money(Math.round(tot))+" · "+monthLabel(ms.value),"var(--sky)"],
+["Dues Deals",n(L.filter(d=>termsOf(d)==="Dues Deal").length),"longer or special terms","var(--c4)"],
    ["Paid So Far",n(paidN)+" of "+n(L.length),money(Math.round(paidAmt))+" in the Financial System","var(--good)"],
    ["Needs AP Update",n(need),"not sent to AP yet","var(--warn)"]].forEach(t=>tb.appendChild(tile(...t)));
   const box=$("dl-rows");box.textContent="";
@@ -6359,7 +6360,7 @@ async function boot(){
   db.doc("aptify/main").onSnapshot(sn=>{APT=sn.exists?sn.data():null;applyAptify();paintDataDates();ISGEN++;const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderApt();scheduleRefresh();},err);
   db.collection("outbox").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]=d.data());OUTBOX=m;scheduleRefresh();},err);
   if(window.__m360Sent)window.__m360Sent.onData(d=>{const m={};((d&&d.list)||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});MAILED=m;scheduleRefresh();});
-  db.collection("deals").onSnapshot(q=>{DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
+  db.collection("deals").onSnapshot(q=>{/* archived commitments (duplicates) stay saved but are left out everywhere */DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>!d.archived);scheduleRefresh();},err);
   db.collection("sync").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="state")SYNC=d.data();if(d.id==="neworgs")mergeNew((d.data()||{}).orgs||[]);if(d.id==="review")REVIEW0=d.data();if(d.id==="aliases")ALIAS=Object.assign({map:{},ignore:[]},d.data());});remergeAct();if(APT)applyAptify();ISGEN++;
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();scheduleRefresh();},err);
   db.doc("settings/main").onSnapshot(s=>{if(s.exists){SET=Object.assign({staff:[],rules:{}},s.data());}filterOpts();scheduleRefresh();},err);
