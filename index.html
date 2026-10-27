@@ -4630,7 +4630,17 @@ function fillDeals(o,box){
   if(!dis&&!box._new){const add=h("button",{type:"button",class:"btn ghost",style:"margin-top:10px"},"Record a New Membership, Renewal or Dues Deal");add.addEventListener("click",()=>{box._new=true;box._open=null;fillDeals(o,box);});box.appendChild(add);}
 }
 /* the monthly report */
-function dealMonths(){const set=new Set(DEALS.filter(d=>d.type==="New Member"&&!d.archived).map(d=>(d.sold||"").slice(0,7)).filter(Boolean));set.add(TODAY.slice(0,7));return [...set].sort().reverse();}
+/* Jonna, Oct 27, 2026: the New Members card works for any month, and the Applications Report email links here.
+   resources.mismo.org/member-360/#new-members/2026-10 opens this report on that month (#new-members alone opens this month). */
+let DL_WANT=null,DL_PIN=null;
+function openFromHash(){const m=(location.hash||"").match(/^#(?:new-members|deals)(?:\/(\d{4}-\d{2}))?$/i);if(!m)return;
+  DL_WANT=DL_PIN=m[1]||TODAY.slice(0,7);show("deals");}
+window.addEventListener("hashchange",openFromHash);
+function dealMonths(){const set=new Set(DEALS.filter(d=>d.type==="New Member"&&!d.archived).map(d=>(d.sold||"").slice(0,7)).filter(Boolean));set.add(TODAY.slice(0,7));set.add("2025-01");if(DL_PIN)set.add(DL_PIN);
+  /* every month from the first one through this month, so any month can be picked, even one with no new members */
+  const first=[...set].sort()[0],end=TODAY.slice(0,7);let y=+first.slice(0,4),mo=+first.slice(5,7);
+  for(let i=0;i<600;i++){const k=y+"-"+String(mo).padStart(2,"0");if(k>end)break;set.add(k);if(++mo>12){mo=1;y++;}}
+  return [...set].sort().reverse();}
 function dealsShown(){const m=$("dl-month").value,ap=$("dl-ap").value,by=$("dl-by").value,ty=$("dl-type").value,tm=$("dl-terms").value,pd=$("dl-pd").value;
   /* the report is new members only (Jonna, Oct 27, 2026); renewals stay on each record under Sales and Renewals */
   return DEALS.filter(d=>d.type==="New Member"&&!d.archived&&(!m||(d.sold||"").slice(0,7)===m)&&(!ap||(d.ap||"Needs AP Update")===ap)&&(!by||d.by===by)&&(!ty||d.type===ty)&&(!tm||termsOf(d)===tm)&&(!pd||(pd==="paid")===!!dealPaid(d)))
@@ -4662,7 +4672,7 @@ async function tidyDeals(){
   renderDeals();scheduleRefresh();
   toast(n+" commitment"+(n===1?"":"s")+" taken off the report: a term that ran backwards, or the same payment twice.");}
 function renderDeals(){
-  const ms=$("dl-month"),cur=ms.dataset.init?ms.value:TODAY.slice(0,7);ms.textContent="";ms.appendChild(h("option",{value:""},"All Months"));dealMonths().forEach(m=>ms.appendChild(h("option",{value:m},"Committed in "+monthLabel(m))));ms.value=cur;ms.dataset.init="1";
+  const ms=$("dl-month"),cur=DL_WANT||(ms.dataset.init?ms.value:TODAY.slice(0,7));DL_WANT=null;ms.textContent="";ms.appendChild(h("option",{value:""},"All Months"));dealMonths().forEach(m=>ms.appendChild(h("option",{value:m},"Committed in "+monthLabel(m))));ms.value=cur;ms.dataset.init="1";
   const bs=$("dl-by"),bc=bs.value;bs.textContent="";bs.appendChild(h("option",{value:""},"Everyone"));(SET.staff||[]).forEach(x=>bs.appendChild(h("option",{value:x},x)));bs.value=bc;
   const L=dealsShown(),tot=L.reduce((a,d)=>a+(d.price||0),0),need=L.filter(d=>(d.ap||"Needs AP Update")==="Needs AP Update").length;
   const P=L.map(d=>({d,p:dealPaid(d)})),paidN=P.filter(x=>x.p).length,paidAmt=P.reduce((a,x)=>a+(x.p?x.p.n:0),0);
@@ -4680,7 +4690,7 @@ function renderDeals(){
   const tile=(l,v,sub,c)=>{const f=FSET[ti++],on=Object.keys(f).length&&isOn(f);const b=h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+c,"aria-pressed":String(!!on)},h("span",{class:"lab"},l),h("span",{class:"val"},v),h("span",{class:"sub"},sub));
     b.addEventListener("click",()=>{const g=on?{}:f;$("dl-type").value=g.type||"";$("dl-terms").value=g.terms||"";$("dl-pd").value=g.paid||"";$("dl-ap").value=g.ap||"";renderDeals();goList("dl-filters");});return b;};
   const tb=$("dl-tiles");tb.textContent="";
-  [["New Members",n(L.length),money(Math.round(tot))+" · "+monthLabel(ms.value),"var(--sky)"],
+  [[ms.value?"New Members in "+monthLabel(ms.value):"New Members, All Months",n(L.length),money(Math.round(tot))+(ms.value?" committed that month":" committed"),"var(--sky)"],
 ["Dues Deals",n(L.filter(d=>termsOf(d)==="Dues Deal").length),"longer or special terms","var(--c4)"],
    ["Paid So Far",n(paidN)+" of "+n(L.length),money(Math.round(paidAmt))+" in the Financial System","var(--good)"],
    ["Needs AP Update",n(need),"not sent to AP yet","var(--warn)"]].forEach(t=>tb.appendChild(tile(...t)));
@@ -6345,7 +6355,7 @@ async function boot(){
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&paneK&&!(e.target&&e.target.id==="rail-q")){e.preventDefault();closePane();}});
   /* Member 360 always opens on This Week; the last tab is no longer remembered between visits */
   try{localStorage.removeItem("m360.view");}catch(e){}
-  show("week");
+  show("week");openFromHash();
 
   if(!window.claude||!window.claude.use){$("savebanner").hidden=false;return;}
   const [d0,u0,s0,dl0]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("sample"),claude.use("downloads")]);
