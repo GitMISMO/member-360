@@ -1127,6 +1127,8 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .pc-main{min-width:0}
 .pc-main b{display:block;font-size:12.5px;overflow-wrap:anywhere}
 .pc-main span{display:block;color:var(--ink-3);font-size:11.5px;line-height:1.35;margin-top:1px;overflow-wrap:anywhere}
+/* a long note shows two lines on the card; hover shows it all, and the record has it in full (Jonna, Oct 27, 2026) */
+.pc-main .pc-sub{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pc-main .late{color:var(--bad);font-weight:600}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
@@ -3954,7 +3956,7 @@ function planCard(item,withMove){
   const sub=item.kind==="fu"?item.t.next.text:(LANE[item.p.lane]?LANE[item.p.lane].name:"Planned touch");
   const nm=item.kind==="fu"?item.t.next.owner:item.p.owner;
   const c=h("div",{class:"pcard"+(done?" done":"")+(item.late?" is-late":""),style:"--lc:"+L.c,draggable:item.kind==="plan"?"true":null,tabindex:"0",role:"button","data-k":o.k},
-    cb,h("div",{class:"pc-main"},h("b",null,o.name),h("span",null,(item.kind==="fu"?"Follow-up: ":"")+sub),item.late?h("span",{class:"late"},"Was due "+fmtS(item.day)):null),h("div",{class:"pc-side"},ownerBadge(nm),x));
+    cb,h("div",{class:"pc-main"},h("b",null,o.name),h("span",{class:"pc-sub",title:(item.kind==="fu"?"Follow-up: ":"")+sub},(item.kind==="fu"?"Follow-up: ":"")+sub),item.late?h("span",{class:"late"},"Was due "+fmtS(item.day)):null),h("div",{class:"pc-side"},ownerBadge(nm),x));
   if(withMove){const mv=select(moveOpts(),"",{"aria-label":"Move "+o.name+" to a day",class:"plansel"});
     mv.addEventListener("click",e=>e.stopPropagation());mv.addEventListener("change",()=>{if(mv.value)moveItem(item,mv.value);});
     c.querySelector(".pc-main").appendChild(h("div",{class:"tc-act"},mv));}
