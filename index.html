@@ -2883,7 +2883,8 @@ function fillRegs(o,box){
 function engOf(o){const e=(ENG.orgs||{})[o.k]||{};return {certs:e.certs||[],spons:e.spons||[],people:CERTP?(CERTP[o.k]||[]):(e.people||[])};}
 
 /* ---------- contacts: Aptify list plus staff edits saved in Member 360 (orgs/{k}.contacts) ---------- */
-const CROLES=["Primary","Alternate","Billing","Marketing","Authorized Signer","VIP","Senior Advisor","IIF Primary","IIF Secondary","IIF Billing"];
+/* Compliance added (Amy, Oct 27, 2026) */
+const CROLES=["Primary","Alternate","Billing","Marketing","Compliance","Authorized Signer","VIP","Senior Advisor","IIF Primary","IIF Secondary","IIF Billing"];
 function ckey(p,i){return p.email?"e:"+p.email.toLowerCase():p.name?"n:"+norm(p.name):"i:"+i;}
 function applyContacts(o){
   if(!o._base){const base=(o.people||[]).map(p=>Object.assign({},p,{roles:(p.roles||[]).slice()}));
