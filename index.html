@@ -4417,6 +4417,8 @@ function openNewProspect(){
   const src=inp("source","text","e.g. Met at Fall Summit, referral from Brian");
   const cf=inp("first"),cl=inp("last"),ct=inp("title"),ce=inp("email","email"),cp=inp("phone","tel");
   const note=h("textarea",{id:id("note"),rows:"3",placeholder:"Anything the team should know"});
+  /* Jonna, Oct 27, 2026: the same sales pipeline fields as on a record (Lead Source is How We Met Them) */
+  const pf={};PIPE_F.filter(([k])=>k!=="lead").forEach(([k,label,t])=>{let el;if(t==="area")el=h("textarea",{id:id("p-"+k),rows:"2"});else{const a={type:t==="date"?"date":"text",id:id("p-"+k)};if(t==="money"||t==="pct")a.inputmode="decimal";if(t==="money")a.placeholder="e.g. 5000";if(t==="pct")a.placeholder="0 to 100";el=h("input",a);}pf[k]={el,label,t};});
   const dup=h("div",{class:"warnnote",hidden:true,style:"grid-column:1/-1;margin:0"});
   nm.addEventListener("input",()=>{const t=norm(nm.value);const hit=t.length>=3?ORGS.filter(o=>norm(o.name)===t||(t.length>=5&&norm(o.name).includes(t))).slice(0,3):[];
     dup.hidden=!hit.length;dup.textContent="";if(hit.length){dup.appendChild(h("b",null,"Already in Member 360? "));hit.forEach((o,i)=>{if(i)dup.appendChild(document.createTextNode(", "));dup.appendChild(h("button",{type:"button",class:"linkbtn",onclick:()=>openPane(o.k)},o.name+" ("+o.life+")"));});}});
@@ -4426,12 +4428,17 @@ function openNewProspect(){
     const em=ce.value.trim();if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast("That email address doesn't look complete.",true);ce.focus();return;}
     const person=(cf.value.trim()||cl.value.trim()||em)?[{name:(cf.value.trim()+" "+cl.value.trim()).trim(),title:ct.value.trim(),email:em,phone:cp.value.trim(),roles:["Primary"]}]:[];
     const doc={name,cid:cid.value.trim(),type:ty.value,sector5:sc.value,people:person,note:note.value.trim(),source:src.value.trim(),at:new Date().toISOString(),by:ME||"",byName:myName()||""};
+    const pipe={};for(const pk in pf){const {el,label,t}=pf[pk];let x=String(el.value||"").trim();if(!x)continue;
+      if(t==="money"||t==="pct"){x=x.replace(/[$,%\s]/g,"");if(isNaN(Number(x))){toast(label+" needs a number.",true);el.focus();return;}x=Number(x);if(t==="pct"&&(x<0||x>100)){toast("Probability is a number from 0 to 100.",true);el.focus();return;}}
+      pipe[pk]=x;}
     save.disabled=true;
     try{const ref=await db.collection("prospects").add(doc);const k="p"+(ref&&ref.id?ref.id:"");
-      if(ow.value||ps.value)await saveOv(k,{owner:ow.value,pstage:ps.value});
+      const hasPipe=Object.keys(pipe).length>0;if(ow.value||ps.value||hasPipe)await saveOv(k,Object.assign({owner:ow.value,pstage:ps.value},hasPipe?{pipe}:{}));
       toast(name+" added as a prospect.");EXTRA.manual.push(prospectOrg(Object.assign({id:ref.id},doc)));rebuildOrgs();memLife="Prospect";renderMemChips();renderList("members");openPane(k);}
     catch(e){save.disabled=false;onWriteErr(e);}});
-  body.appendChild(h("div",{class:"formgrid"},F("Organization Name",nm,true),dup,F("Member Type",ty),F("Industry Sector",sc),F("Aptify Company ID",cid),F("Relationship Owner",ow),F("Prospect Stage",ps),F("How We Met Them",src,true)));
+  body.appendChild(h("div",{class:"formgrid"},F("Organization Name",nm,true),dup,F("Member Type",ty),F("Industry Sector",sc),F("Aptify Company ID",cid),F("Relationship Owner",ow),F("Sales Stage",ps),F("Lead Source (How We Met Them)",src,true)));
+  body.appendChild(h("h4",{class:"subh",style:"margin-top:16px"},"Sales Pipeline"));
+  body.appendChild(h("div",{class:"formgrid"},...Object.values(pf).map(x=>F(x.label,x.el,x.t==="area"))));
   body.appendChild(h("h4",{class:"subh",style:"margin-top:16px"},"Main Contact"));
   body.appendChild(h("div",{class:"formgrid"},F("First Name",cf),F("Last Name",cl),F("Title",ct),F("Email",ce),F("Phone",cp)));
   body.appendChild(h("div",{class:"formgrid",style:"margin-top:12px"},F("Note",note,true)));
