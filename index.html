@@ -251,7 +251,8 @@
         /* the email outbox also carries its batches as a plain list: Power Automate can
            loop over a list but not over an object (the Sponsorship Portal does the same) */
         if (f.name === 'outbox') next.list = Object.keys(next.docs).map(function (k) { return Object.assign({ id: idOf(k) }, next.docs[k]); });
-        if (JSON.stringify(next).length > MAX_FILE) throw err('TOO_BIG', 'This part of Member 360 has grown too big to save in one piece.');
+        /* the relay saves files pretty-printed and can only read back a file under 1 MB, so the pretty size is what counts */
+        if (JSON.stringify(next, null, 2).length > MAX_FILE) throw err('TOO_BIG', 'This part of Member 360 has grown too big to save in one piece.');
         return put(f.name, { content: next, sha: f.sha }).then(function (b) {
           f.server = next; f.sha = (b && b.sha) || f.sha; f.loadedAt = now();
           f.pending = f.pending.filter(function (op) { return batch.indexOf(op) < 0; }); f.view = null;
@@ -1748,7 +1749,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="vsub">Open questions and data problems in one place. Member 360 finds some on its own, and anyone can log others.</div></div>
       <div class="vright"><button type="button" class="btn" id="is-new">Log an Issue</button></div>
     </div>
-    <div class="headline" id="is-hl"><div class="hl-date" id="is-eb"></div><div class="hl-say" id="is-say"></div><div class="tiles" id="is-tiles"></div></div>
+    <div class="headline" id="is-hl" style="display:none"><div class="hl-date" id="is-eb"></div><div class="hl-say" id="is-say"></div><div class="tiles" id="is-tiles"></div></div>
     <div class="dealnew" id="is-newform" hidden></div>
     <div class="filters" id="is-filters">
       <input type="search" id="is-q" placeholder="Search issues and organizations" aria-label="Search issues">
@@ -2059,7 +2060,16 @@ const HCLS={auto:"a-auto",person:"a-person",hold:"a-hold",stop:"a-stop",iif:"a-h
 const CATS=["Membership","IIF","Summit","Sponsorship","Education","Certification","Other"];
 const PAGE=100;
 const OUTREACH=["Not Contacted","In Discussions","Count Me In","Will Not Pay","No Further Contact"];
-const KEYDATES=[["2026-10-30","Consent notice redlines to MERS"],["2026-11-23","MERS sends consent (opt-out) notice"],["2026-12-04","MERS preliminary file arrives"],["2027-01-15","MERS final file arrives"],["2027-02-05","Order IDs, W9 and bank letter to MERS"],["2027-02-10","MERS sends IIF invoices"],["2027-03-22","MERS first reminder"],["2027-03-31","MISMO Connect grace period ends"],["2027-04-19","MERS second reminder"]];
+/* the IIF cycle's key dates: these are the fallback; loadKeyDates() replaces them with the due dates in IIF Planning HQ's task list */
+const KEYTASKS=["t006","t014","t017","t033","t046","t063","t082","t903","t088"];
+let KEYSRC="";
+let KEYDATES=[["2026-10-30","Consent notice redlines to MERS"],["2026-11-23","MERS sends consent (opt-out) notice"],["2026-12-04","MERS preliminary file arrives"],["2027-01-15","MERS final file arrives"],["2027-02-05","Order IDs, W9 and bank letter to MERS"],["2027-02-10","MERS sends IIF invoices"],["2027-03-22","MERS first reminder"],["2027-03-31","MISMO Connect grace period ends"],["2027-04-19","MERS second reminder"]];
+/* read IIF Planning HQ's tasks (its own relay project, same sign-in) so its due dates and Done marks drive the cycle here */
+async function loadKeyDates(){try{const rs=window.ResourcesSession,tok=rs&&rs.token&&rs.token(),cfg=(window.__hqRelay&&window.__hqRelay.config)||{};if(!tok||!cfg.RELAY_URL)return;
+  const r=await fetch(cfg.RELAY_URL+"/iif-hq/data/tasks",{cache:"no-store",headers:{Authorization:"Bearer "+tok}});if(!r.ok)return;
+  const b=await r.json(),T=(b&&b.data&&b.data.docs)||{};let hit=0;
+  const kd=KEYDATES.map((x,i)=>{const t=T["tasks/"+KEYTASKS[i]];if(t&&t.due){hit++;return [String(t.due).slice(0,10),x[1],(t.done||/^(done|complete)/i.test(t.status||""))?1:0];}return [x[0],x[1],x[2]||0];});
+  if(hit){KEYDATES=kd.sort((a,b)=>a[0].localeCompare(b[0]));KEYSRC="IIF Planning HQ";scheduleRefresh();}}catch(e){}}
 
 /* ---------- state ---------- */
 let ORGS=[],BY={},META={};
@@ -2635,6 +2645,8 @@ function sect(title,part,cnt){
   d.appendChild(h("div",{class:"sbody","data-part":part}));return d;
 }
 function refreshProfile(o,box){
+  /* the pane may have been closed since (a drag on the planner refreshes everything) */
+  if(!box||!box.querySelector('[data-part="ctrls"]'))return;
   fillCtrls(o,box.querySelector('[data-part="ctrls"]'));
   const rs=box.querySelector('[data-part="reasons"]');rs.textContent="";
   if(renewable(o)){const r=handReasons(o);const hd=handling(o);
@@ -3497,7 +3509,7 @@ function renewalItems(){
 let memLife="Active";
 function memberItems(){
   const q=norm($("mem-q").value),rv=$("mem-review").value,sv=$("mem-sector").value;
-  return ORGS.filter(o=>(memLife==="All"||o.life===memLife||(memLife==="Former"&&o.life==="Other"))&&(!rv||(rv==="dup"?o.dupId:o.noId))&&(!sv||(sv==="__none"?!sectorOf(o):sectorOf(o)===sv))&&pipeMatch(o,$("mem-pstage").value)&&ownerMatch(o,$("mem-owner").value)&&matchQ(o,q)).sort((a,b)=>a.name.localeCompare(b.name));
+  return ORGS.filter(o=>(memLife==="All"||o.life===memLife||(memLife==="Former"&&o.life==="Other"))&&(!rv||(rv==="dup"?o.dupId:!o.cid))&&(!sv||(sv==="__none"?!sectorOf(o):sectorOf(o)===sv))&&pipeMatch(o,$("mem-pstage").value)&&ownerMatch(o,$("mem-owner").value)&&matchQ(o,q)).sort((a,b)=>a.name.localeCompare(b.name));
 }
 function weekItems(){
   const ow=$("week-owner").value;
@@ -3570,14 +3582,14 @@ function renderIIF(){
   mix($("iif-mix-status"),[{k:"st:Paid Full Amount",l:"Paid in Full",v:cc["Paid Full Amount"],c:"var(--good)"},{k:"st:Partial Payment Received",l:"Partial",v:cc["Partial Payment Received"],c:"var(--c4)"},{k:"st:open",l:"Not Paid",v:cc["Not Paid"],c:"var(--ink-3)"}],
     x=>{if(selK===x.k)iifPick(null,"","");else iifPick(null,x.k.slice(3),"");},selK);
   const kd=$("iif-dates");kd.textContent="";
-  KEYDATES.forEach(([d,l])=>{const days=Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);
-    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,days<0?"Done":days===0?"Today":"In "+n(days)+" days")));});
+  KEYDATES.forEach(([d,l,dn])=>{const days=Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);
+    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":"In "+n(days)+" days")));});
   const ir=$("iif-right");ir.textContent="";ir.hidden=false;
-  ir.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"Planning starts in October; invoices go out in February"));
+  ir.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"Planning starts in October; invoices go out in February"+(KEYSRC?". Key dates come from IIF Planning HQ.":"")));
   if(canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
     sq.addEventListener("click",()=>openSquarePay(null));ir.appendChild(sq);}
   const chip=$("iif-sel");chip.textContent="";chip.hidden=!IIFSEL;if(IIFSEL){chip.appendChild(h("span",null,"Showing: "+IIFSEL.label));const x=h("button",{type:"button","aria-label":"Show all lenders"},"\u00d7");x.addEventListener("click",()=>iifPick(null,"",""));chip.appendChild(x);}
-  {let say;const nxk=KEYDATES.find(x=>x[0]>=TODAY);
+  {let say;const nxk=KEYDATES.find(x=>!x[2]&&x[0]>=TODAY);
     if(inv0){let out=0,bo=0,bn=0;L.forEach(o=>{const yd=iifY(o,Y);const due=Math.max(0,yd.inv-yd.paid);if(yd.cs==="Paid Full Amount"||yd.cs==="Paid")return;out+=due;if(yd.inv>=20000&&due>0){bo+=due;bn++;}});
       say="The "+Y+" cycle has collected "+em(Math.round(100*paid/Math.max(1,inv))+"%")+" of what was invoiced. "+em(money(Math.round(out)))+" is still outstanding"+(bn?", and "+em(plural(bn,"lender","lenders"))+" with invoices of $20,000 or more owe "+em(money(Math.round(bo)))+" of it":"")+".";}
     else say="Only Financial System payments exist for "+Y+", so there's no invoice to compare against. "+em(plural(L.length,"lender","lenders"))+" paid, and "+em(n(members))+" paid enough to be members.";
@@ -3596,7 +3608,7 @@ function renderMemHl(){const box=$("mem-tiles");if(!box)return;box.textContent="
   [["Active","Current Members","paid or free","var(--sky)"],["Prospect","Prospects","not members yet","var(--c5)"],["IIF Invoiced","IIF Invoiced","lenders under $1,000 paid","var(--c2)"],["Former","Former Members","membership ended","var(--ink-3)"],["Lost","Lost","chose not to renew","var(--bad)"]].forEach(([L,l,sub,col])=>{
     const on=memLife===L;box.appendChild(h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+col,"aria-pressed":String(on),onclick:()=>{memLife=L;shown.members=PAGE;renderMemChips();renderList("members");goList("mem-rows");}},h("span",{class:"lab"},l),h("span",{class:"val"},n(c[L])),h("span",{class:"sub"},sub)));});
   const P=ORGS.filter(o=>o.life==="Prospect"&&!PCLOSED[ov(o).pstage||""]),never=P.filter(o=>!lastTouch(o)&&!ov(o).pstage).length;
-  const noid=ORGS.filter(o=>o.noId&&o.life==="Active").length,dup=ORGS.filter(o=>o.dupId&&o.life==="Active").length;
+  const noid=ORGS.filter(o=>!o.cid&&o.life==="Active").length,dup=ORGS.filter(o=>o.dupId&&o.life==="Active").length;
   let say=em(plural(P.length,"open prospect","open prospects"))+(never?", and "+em(n(never))+" of them "+(never===1?"has":"have")+" never been contacted":"")+". ";
   {const PL=ORGS.filter(o=>{const s=ov(o).pstage||"";return s&&!PCLOSED[s]&&s!=="Hold";});
    const fc=PL.reduce((a,o)=>a+(Number((ov(o).pipe||{}).forecast)||0),0),wt=PL.reduce((a,o)=>{const p=ov(o).pipe||{};return a+(Number(p.forecast)||0)*(Number(p.prob)||0)/100;},0);
@@ -4159,7 +4171,7 @@ function renderSettings(){
   renderSync();
   renderApt();
   const di=$("datainfo");di.textContent="";
-  const dup=ORGS.filter(o=>o.dupId).length,noid=ORGS.filter(o=>o.noId).length,notes=ORGS.reduce((a,o)=>a+o.notes.length,0);
+  const dup=ORGS.filter(o=>o.dupId).length,noid=ORGS.filter(o=>!o.cid).length,notes=ORGS.reduce((a,o)=>a+o.notes.length,0);
   di.appendChild(h("div",{class:"facts"},
     h("div",{class:"fact"},h("label",null,"Source"),h("div",null,META.source||"")),
     h("div",{class:"fact"},h("label",null,"Organizations"),h("div",{class:"num"},n(ORGS.length))),
@@ -5899,11 +5911,13 @@ function weekdaysBetween(a,b){
   return n;}
 function payBehind(){const t=payUpdated();if(!t||t>=TODAY)return 0;
   return weekdaysBetween(t,TODAY);}
+/* a date with the time it happened, in the viewer's own time zone (Jonna, Oct 27, 2026) */
+function fmtStamp(iso){const d=new Date(iso||"");if(isNaN(d))return "";return fmt(ymd(d))+", "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
 function paintDataDates(){
   const a=$("asof"),b=$("asofbuilt"),c=$("asofpay");
-  if(a)a.textContent=aptAsOf()?fmt(aptAsOf()):"not uploaded yet";
+  if(a)a.textContent=aptAsOf()?fmtStamp(APT.uploadedAt)||fmt(aptAsOf()):"not uploaded yet";
   if(c){const t=payUpdated(),d=payBehind();
-    c.textContent=t?fmt(t):"not loaded yet";
+    c.textContent=t?fmtStamp(MMINFO.updated)||fmt(t):"not loaded yet";
     const late=d!==null&&d>PAY_LATE_AFTER;
     c.classList.toggle("late",late);
     const sib=c.nextSibling;if(sib&&sib.nodeType===1&&sib.className&&sib.className.indexOf("payby")===0)sib.remove();
@@ -5958,6 +5972,13 @@ function renderApt(){
 const SENDERS={amoses:"Amy Moses",kbradshaw:"Kelly Bradshaw",bvieaux:"Brian Vieaux",jcritchley:"Jonna Critchley"};
 const EMAIL_LOGO="https://resources.mismo.org/member-360/mismo-logo-email.png";
 let OUTBOX={},MAILED={};
+/* The outbox is one file the relay can only read back under 1 MB, and each batch carries its email, so it is kept small:
+   batches Power Automate has finished (sent or failed) that were queued more than 30 days ago move to a monthly
+   archive file, outbox-YYYY-MM. Who received what stays in SENDS; only the batch card list gets shorter. */
+async function archiveOutbox(){try{if(!db||!canWrite)return;const ids=Object.keys(OUTBOX);if(ids.length<=25)return;
+  const cut=new Date(Date.now()-30*864e5).toISOString();
+  const old=ids.filter(id=>{const m=MAILED[id];return m&&(m.status==="sent"||m.status==="failed")&&String(OUTBOX[id].queuedAt||"")<cut;});
+  for(const id of old){const b=OUTBOX[id],ym=String(b.queuedAt||"").slice(0,7)||"old";await db.doc("outbox-"+ym+"/"+id).set(b);await db.doc("outbox/"+id).delete();delete OUTBOX[id];}}catch(e){}}
 function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLowerCase():"";}
 function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
 function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
@@ -6097,7 +6118,7 @@ function openSend(opt){
           fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk};});
       const thru=opt.thru||"";
       const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};
-      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;
+      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;archiveOutbox();
         /* the planner moves on: each organization is marked as sent this step, as Mark as Sent did */
         const orgsDone=[...new Set(rec.map(r=>r.org))].filter(k=>BY[k]&&inCohort(BY[k]));
         const byThru={};orgsDone.forEach(k=>{const tt=BY[k].thru||END;(byThru[tt]=byThru[tt]||[]).push(k);});
@@ -6339,6 +6360,7 @@ async function boot(){
     if(sig!==MERGESIG){MERGESIG=sig;rebuildOrgs();}
     else if(applyCidOv()&&APT)applyAptify();
     scheduleRefresh();},err);
+  loadKeyDates();
   db.doc("engage/deferral").onSnapshot(s=>{DEF=s&&s.exists?s.data():null;scheduleRefresh();},()=>{});
   dlListen("licdl");dlListen("hldl");dlListen("hllog");
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
