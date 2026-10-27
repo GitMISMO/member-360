@@ -4199,7 +4199,8 @@ function dlListen(base){
 }
 async function dlSave(base,pack){
   const rows=pack.r||[],parts=[];let cur=[],size=0;
-  rows.forEach(r=>{const l=JSON.stringify(r).length+1;if(size+l>850000&&cur.length){parts.push(cur);cur=[];size=0;}cur.push(r);size+=l;});
+  /* the relay stores files pretty-printed and can only read back files under 1 MB, so parts are sized by their pretty-printed length */
+  rows.forEach(r=>{const l=JSON.stringify(r,null,2).length+6*(r.length+2)+2;if(size+l>800000&&cur.length){parts.push(cur);cur=[];size=0;}cur.push(r);size+=l;});
   if(cur.length||!parts.length)parts.push(cur);
   for(let i=0;i<parts.length;i++)await db.doc("engage/"+base+"-"+i).set({r:parts[i]});
   const ix=Object.assign({},pack);delete ix.r;
@@ -5608,6 +5609,9 @@ function benCommon(o){const w=h("div",null,h("div",{class:"subh",style:"margin-t
   BEN_ALL.forEach(b=>{let sub="Not tracked yet: waiting on "+b.wait,done=false;
     if(b.lead&&LD.length){const gs=new Set(LD.map(x=>x.g));sub=n(LD.length)+(LD.length===1?" leadership role":" leadership roles")+" in "+n(gs.size)+(gs.size===1?" workgroup":" workgroups")+(LEAD.asOf?" (Leadership Tracker, "+fmt(LEAD.asOf)+")":"");done=true;}
     else if(b.lead&&LEAD.asOf){sub="No leadership roles in the Leadership Tracker ("+fmt(LEAD.asOf)+")";done=true;}
+    if(b.is==="data-connect"&&DL.log){const e=dlIndex().org[o.k],L=e?e.log.map(i=>DL.log.r[i]):[],R=e&&DL.hl?e.hl.map(i=>DL.hl.r[i]).filter(x=>x[0]>=addDays(TODAY,-365)):[];
+      const last=L.reduce((m,x)=>(x[5]||"")>m?x[5]:m,"");
+      sub=L.length?plural(L.length,"person","people")+" logged in between "+fmt(DL.log.from)+" and "+fmt(DL.log.to)+", last "+fmt(last).replace(/ /g,"\u00a0")+(R.length?" · "+plural(R.reduce((t,x)=>t+(x[6]||1),0),"library download","library downloads")+" in the last 12 months":""):"No one logged in between "+fmt(DL.log.from)+" and "+fmt(DL.log.to);done=true;}
     if(b.wg){const W=WG[o.k]||[],ML=mtgOf(o),parts=[];
       if(ML.length){const m12=ML.reduce((a,g)=>a+g.n12,0);parts.push(n(mtgCount(ML))+" monthly meetings in "+n(ML.length)+" workgroup"+(ML.length===1?"":"s")+(m12?" ("+n(m12)+" in the last 12 months)":"")+", last "+fmt(ML.reduce((a,g)=>g.last>a?g.last:a,"")).replace(/ /g,"\u00a0"));}
       if(W.length){const sm=new Set(W.map(x=>x.s)),gs=new Set(W.map(x=>x.g));parts.push(n(gs.size)+" workgroup"+(gs.size===1?"":"s")+" at "+n(sm.size)+" Summit"+(sm.size===1?"":"s"));}
