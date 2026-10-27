@@ -1572,7 +1572,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <input type="search" id="ren-q" placeholder="Filter by company or contact" aria-label="Filter renewals by company or contact">
       <select id="ren-stage" aria-label="Stage"></select>
       <select id="ren-auto" aria-label="Automation">
-        <option value="">All Handling</option><option value="auto">Automatic</option><option value="person">Personal Outreach</option><option value="hold">On Hold</option><option value="iif">Renews Through IIF</option><option value="stop">Done (Renewed, Covered or Lost)</option>
+        <option value="">All Handling</option><option value="auto">Automatic</option><option value="person">Personal Outreach</option><option value="hold">On Hold</option><option value="iif">Renews Through IIF</option><option value="stop">No Outreach (Renewed, Covered, Lost or Payment in Process)</option>
       </select>
       <select id="ren-owner" aria-label="Owner"></select>
       <select id="ren-level" aria-label="Level"></select>
@@ -3451,6 +3451,8 @@ function renderTiles(){
     ["Personal Outreach",hc.person,"Routed to a person","var(--warn)",{auto:"person"}],
     ["Automatic Emails",hc.auto,"Reminders go out on schedule","var(--c2)",{auto:"auto"}],
     ["On Hold",hc.hold,"Automated emails paused","var(--ink-3)",{auto:"hold"}],
+    /* Still Open = Personal Outreach + Automatic Emails + On Hold + Payment in Process (no outreach while the money is on its way) */
+    ["Payment in Process",cnt["Payment in Process"]||0,"Paying now, so no outreach","var(--good)",{stage:"Payment in Process"}],
     ["Lost",cnt.Lost,"Not renewing","var(--bad)",{stage:"Lost"}]];
   const box=$("ren-tiles");box.textContent="";
   const cur={stage:$("ren-stage").value,auto:$("ren-auto").value};
@@ -4540,7 +4542,7 @@ async function autoCommit(o,type){if(!db||!canWrite)return;
   const f=dealDefaults(type,"Standard",TODAY),lv=o.level||"Corporate";
   const last=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0).sort((a,b)=>b.d.localeCompare(a.d))[0];
   const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:lv,sold:TODAY,start:f.start,end:f.end,price:listPrice(lv)||(last?last.n:0),order:"",by:owner(o)||myName()||"",notes:"",ap:"Needs AP Update",auto:true,at:new Date().toISOString(),createdBy:myName()||""};
-  try{await db.collection("deals").add(doc);toast("Added to the Monthly Report as a committed "+type.toLowerCase()+". Check the amount under Sales and Renewals.");}catch(e){onWriteErr(e);}}
+  try{await db.collection("deals").add(doc);toast(type==="Renewal"?"Recorded as a renewal under Sales and Renewals. Check the amount there.":"Added to the Monthly Report as a committed new member. Check the amount under Sales and Renewals.");}catch(e){onWriteErr(e);}}
 /* A membership payment arrives and the record turns Renewed on its own, because Aptify holds the
    term and the money is in. Nobody pressed anything, so autoCommit never ran and the month's report
    has no commitment behind the payment. This builds that commitment from the payment itself: the
@@ -4570,7 +4572,7 @@ async function commitFromPayment(o,i){
 async function autoUncommit(o,type){if(!db||!canWrite)return;const season=type==="Renewal"?RY:TODAY.slice(0,4);
   const L=DEALS.filter(d=>d.org===o.k&&d.auto&&!d.edited&&d.type===type&&(d.start||"").slice(0,4)===season);
   for(const d of L){try{await db.doc("deals/"+d.id).delete();}catch(e){}}
-  if(L.length)toast("Taken off the Monthly Report.");}
+  if(L.length)toast(type==="Renewal"?"Taken off Sales and Renewals.":"Taken off the Monthly Report.");}
 function dealForm(o,d,box){
   const isNew=!d.id,dis=!db||!canWrite,id=f=>"dd-"+(d.id||"new")+"-"+f;
   const F=(label,el,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",{for:el.id},label),el);
