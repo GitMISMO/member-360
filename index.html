@@ -4932,7 +4932,9 @@ function fsItems(o){return ((ACT[o.k]||{}).items||[]);}
 function lendPaid(o,y){const a=ACT[o.k];const fs=a&&a.iif?(a.iif[y]||0):0;return Math.max(y===IY?iifPaid(o):0,fs);}
 /* a membership payment covers year y when it starts in y, or starts in the second half of the year before (new members get the rest of that year plus y), or is a two-year deal */
 function memCovers(o,y){const py=String(Number(y)-1),two=o.twoYear||(o.hand||[]).some(x=>/two-year/i.test(x));
-  return fsItems(o).some(i=>i.c==="Membership"&&i.n>0&&i.s&&(i.s.slice(0,4)===y||(i.s.slice(0,4)===py&&(i.s>=py+"-07-01"||two))));}
+  /* a $0 line counts when it is on the same order as a paid one: a mid-year join where this year is free and next year is paid */
+  const its=fsItems(o).filter(i=>i.c==="Membership"&&i.s),paidD=new Set(its.filter(i=>i.n>0).map(i=>i.d));
+  return its.some(i=>(i.n>0||paidD.has(i.d))&&(i.s.slice(0,4)===y||(i.s.slice(0,4)===py&&(i.s>=py+"-07-01"||two))));}
 function lastMemFor(o){const m=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0&&i.s).map(i=>i.s.slice(0,4)).sort();return m.length?m[m.length-1]:"";}
 let STSEL=null;
 /* open the list behind a number: shown right under the section that was selected; each row opens the member record */
