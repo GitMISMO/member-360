@@ -4192,7 +4192,7 @@ function dlListen(base){
   db.doc("engage/"+base).onSnapshot(s=>{const ix=s&&s.exists?s.data():null;
     if(!ix||!ix.parts){DL[DLB[base]]=null;DLX=null;scheduleRefresh();renderDlSettings();return;}
     const st={ix,parts:new Array(ix.parts).fill(null)};DLP[base]=st;
-    for(let i=0;i<ix.parts;i++)db.doc("engage/"+base+"-"+i).onSnapshot(p=>{if(DLP[base]!==st)return;
+    for(let i=0;i<ix.parts;i++)db.doc("engage/"+base+(ix.pv?"-"+ix.pv:"")+"-"+i).onSnapshot(p=>{if(DLP[base]!==st)return;
       st.parts[i]=p&&p.exists?((p.data()||{}).r||[]):[];
       if(st.parts.every(x=>x)){DL[DLB[base]]=Object.assign({},ix,{r:[].concat(...st.parts)});DLX=null;scheduleRefresh();renderDlList();renderDlSettings();}},()=>{});
   },()=>{});
@@ -4202,9 +4202,11 @@ async function dlSave(base,pack){
   /* the relay stores files pretty-printed and can only read back files under 1 MB, so parts are sized by their pretty-printed length */
   rows.forEach(r=>{const l=JSON.stringify(r,null,2).length+6*(r.length+2)+2;if(size+l>800000&&cur.length){parts.push(cur);cur=[];size=0;}cur.push(r);size+=l;});
   if(cur.length||!parts.length)parts.push(cur);
-  for(let i=0;i<parts.length;i++)await db.doc("engage/"+base+"-"+i).set({r:parts[i]});
+  /* each save writes new part files (named with pv), so a part never has to be read back before it is replaced */
+  const pv=Date.now().toString(36);
+  for(let i=0;i<parts.length;i++)await db.doc("engage/"+base+"-"+pv+"-"+i).set({r:parts[i]});
   const ix=Object.assign({},pack);delete ix.r;
-  Object.assign(ix,{parts:parts.length,rows:rows.length,uploadedAt:new Date().toISOString(),uploadedBy:ME||"",uploadedByName:myName()||""});
+  Object.assign(ix,{pv,parts:parts.length,rows:rows.length,uploadedAt:new Date().toISOString(),uploadedBy:ME||"",uploadedByName:myName()||""});
   await db.doc("engage/"+base).set(ix);
   DL[DLB[base]]=Object.assign({},ix,{r:rows});DLX=null;
 }
