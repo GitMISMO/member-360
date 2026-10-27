@@ -2034,7 +2034,8 @@ const PSTAGES=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Sch
 const PCLOSED={"8 - Paid":1,"Closed Won":1,"Closed Lost":1};
 const PIPE_F=[["lead","Lead Source","text"],["ctype","Company Type","text"],["forecast","Forecast Amount","money"],["prob","Probability","pct"],["first","First Point of Contact","date"],["last","Last Touchpoint","date"],["won","Won Date","date"],["bv","BV's Action","text"],["next","Next Step","area","The Relationship Owner owns the next step."]];
 const TYPES=["Note","Call","Email","Meeting","Event Conversation","Other"];
-const TOPICS=["Renewal","Invoice or Payment","Upgrade","Sponsorship","Certification","Workgroup","Summit","Education","Other"];
+/* Membership added for prospect and new-member conversations (Amy, Oct 27, 2026) */
+const TOPICS=["Membership","Renewal","Invoice or Payment","Upgrade","Sponsorship","Certification","Workgroup","Summit","Education","Other"];
 const SENTS=["Positive","Neutral","Concern"];
 const STEPS=[
   {id:"r90",name:"Value Recap",off:-90,to:["Primary","Alternate"],what:"Reminds the company what its membership includes before any ask for money."},
@@ -2644,6 +2645,10 @@ function sect(title,part,cnt){
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
   d.appendChild(h("div",{class:"sbody","data-part":part}));return d;
 }
+/* a contact added or edited on the record shows in Log a Touchpoint's Contact list right away, keeping whatever is picked (Amy, Oct 27, 2026) */
+function refreshWho(o,box){const sel=box&&box.querySelector('[id="tp-'+o.k+'-who"]');if(!sel)return;const cur=sel.value;sel.textContent="";
+  [{v:"",l:"Not Specified"}].concat(o.people.filter(p=>p.email||p.name).map(p=>({v:p.email||p.name,l:(p.name||p.email)+(p.roles.length?" ("+p.roles[0]+")":"")}))).forEach(x=>sel.appendChild(h("option",{value:x.v},x.l)));
+  sel.value=[...sel.options].some(op=>op.value===cur)?cur:"";}
 function refreshProfile(o,box){
   /* the pane may have been closed since (a drag on the planner refreshes everything) */
   if(!box||!box.querySelector('[data-part="ctrls"]'))return;
@@ -2663,6 +2668,7 @@ function refreshProfile(o,box){
   const ii=box.querySelector('[data-part="iifs"]');if(ii)fillIIF(o,ii);
   const hi=box.querySelector('[data-part="history"]');fillHistory(o,hi);
   const cx=box.querySelector('[data-part="contacts"]');if(cx&&!cx.contains(document.activeElement))fillContacts(o,cx);
+  refreshWho(o,box);
   const dx=box.querySelector('[data-part="deals"]');if(dx&&!dx.contains(document.activeElement))fillDeals(o,dx);
   const mh=box.querySelector('[data-part="mhist"]');if(mh&&!mh.contains(document.activeElement))fillMhist(o,mh);
   const bnx=box.querySelector('[data-part="benefits"]');if(bnx&&!bnx.contains(document.activeElement))fillBenefits(o,bnx);
@@ -3334,7 +3340,7 @@ function fillForm(o,box){
   const F=(label,el,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",{for:el.id},label),el);
   const date=h("input",{type:"date",id:id("date"),value:TODAY,disabled:dis});
   const type=select(TYPES,"Note",{id:id("type"),disabled:dis});
-  const topic=select(TOPICS,inCohort(o)?"Renewal":"Other",{id:id("topic"),disabled:dis});
+  const topic=select(TOPICS,inCohort(o)?"Renewal":(o.life==="Prospect"?"Membership":"Other"),{id:id("topic"),disabled:dis});
   const who=select([{v:"",l:"Not Specified"}].concat(o.people.filter(p=>p.email||p.name).map(p=>({v:p.email||p.name,l:(p.name||p.email)+(p.roles.length?" ("+p.roles[0]+")":"")}))),"",{id:id("who"),disabled:dis});
   const sent=select(SENTS,"Neutral",{id:id("sent"),disabled:dis});
   const sum=h("textarea",{id:id("sum"),rows:"3",maxlength:"1200",disabled:dis,placeholder:"What was discussed, in a few lines"});
