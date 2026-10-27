@@ -2138,6 +2138,9 @@ function inCohort(o){return o.life==="Active"||sov(o,"stage")==="Lost";}
    with no payment for the season and no stage set by hand. Counted apart from Renewed. */
 /* paid ahead on the Deferral sheet: the same order covers this season and the one before it (a two-year deal, e.g. CBRE) */
 function defAhead(o){const y=String(RY),a=defCovers(o,y),b=defCovers(o,String(Number(y)-1));return !!(a&&b&&a[2]===b[2]);}
+/* a complimentary (free) membership is set up by the membership team, so it is not counted as a renewal (Jonna, Oct 27, 2026) */
+function freeRen(o){return /^free/i.test(curStatus(o)||"");}
+function inDue(o){return !covered(o)&&!freeRen(o);}
 function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||defAhead(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
 function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:null;}
@@ -3445,26 +3448,32 @@ function plural(k,one,many){return n(k)+" "+(k===1?one:many);}
 function renderTiles(){
   const C=renewalGroup();const cnt={};STAGES.forEach(s=>cnt[s]=0);const hc={auto:0,person:0,hold:0,stop:0,iif:0};
   C.forEach(o=>{cnt[stageOf(o)]++;hc[handling(o)]++;});
-  const open_=C.length-cnt.Renewed-cnt.Lost;
-  const cov=C.filter(covered).length,ren_=cnt.Renewed-cov;
-  /* Non-Lender Members = Already Covered + Up for Renewal; Up for Renewal = Renewed + Still Open + Lost */
-  const due_=C.length-cov;
-  const T=[["Non-Lender Members",C.length,"Current members","var(--ink-3)",{}],
-    ["Already Covered",cov,"Paid through "+RY+" before the season","var(--c3)",{stage:"covered"}],
-    ["Up for Renewal",due_,"Membership ends Dec 31, "+(RY-1),"var(--sky)",{stage:"due"}],
-    ["Renewed",ren_,Math.round(100*ren_/Math.max(1,due_))+"% of those up for renewal \u00b7 "+C.filter(o=>paid(o)).length+" from payments","var(--good)",{stage:"Renewed"}],
-    ["Still Open",open_,"Not renewed or lost yet","var(--c1)",{stage:"open"}],
-    ["Personal Outreach",hc.person,"Routed to a person","var(--warn)",{auto:"person"}],
-    ["Automatic Emails",hc.auto,"Reminders go out on schedule","var(--c2)",{auto:"auto"}],
-    ["On Hold",hc.hold,"Automated emails paused","var(--ink-3)",{auto:"hold"}],
-    /* Still Open = Personal Outreach + Automatic Emails + On Hold + Payment in Process (no outreach while the money is on its way) */
-    ["Payment in Process",cnt["Payment in Process"]||0,"Paying now, so no outreach","var(--good)",{stage:"Payment in Process"}],
-    ["Lost",cnt.Lost,"Not renewing","var(--bad)",{stage:"Lost"}]];
+  /* Jonna, Oct 27, 2026 (Kelly): the renewal number is the paid memberships that end this Dec 31, nothing else.
+     Current Non-Lender members = Up for Renewal + Free Members + Already Covered
+     Up for Renewal = Renewed + Payment in Process + Lost + Still to Renew
+     Still to Renew = Personal Outreach + Automatic Emails + On Hold */
+  const cov=C.filter(covered).length,free=C.filter(o=>!covered(o)&&freeRen(o)),D=C.filter(inDue),due_=D.length;
+  const dc={};D.forEach(o=>{const s=stageOf(o);dc[s]=(dc[s]||0)+1;});
+  const ren_=dc.Renewed||0,pip_=dc["Payment in Process"]||0,lost_=dc.Lost||0;
+  const todo=D.filter(o=>!["Renewed","Lost","Payment in Process"].includes(stageOf(o)));
+  const th={auto:0,person:0,hold:0};todo.forEach(o=>{const x=handling(o);if(x in th)th[x]++;});
+  const freeSet=free.filter(o=>stageOf(o)==="Renewed").length;
+  const T=[["Up for Renewal",due_,"Paid memberships ending Dec 31, "+(RY-1),"var(--sky)",{stage:"due"}],
+    ["Renewed",ren_,Math.round(100*ren_/Math.max(1,due_))+"% of those up for renewal","var(--good)",{stage:"Renewed"}],
+    ["Payment in Process",pip_,"Paying now, so no outreach","var(--good)",{stage:"Payment in Process"}],
+    ["Lost",lost_,"Not renewing","var(--bad)",{stage:"Lost"}],
+    ["Still to Renew",todo.length,"Not paid, paying or lost yet","var(--c1)",{stage:"open"}],
+    ["Personal Outreach",th.person,"Still to renew, routed to a person","var(--warn)",{stage:"open",auto:"person"}],
+    ["Automatic Emails",th.auto,"Still to renew, reminders on schedule","var(--c2)",{stage:"open",auto:"auto"}],
+    ["On Hold",th.hold,"Still to renew, emails paused","var(--ink-3)",{stage:"open",auto:"hold"}],
+    ["Free Members",free.length,(freeSet?n(freeSet)+" set up for "+RY+" · ":"")+"Complimentary: the membership team sets these up, no invoice","var(--c3)",{stage:"free"}],
+    ["Already Covered",cov,"Paid through "+RY+" before the season","var(--c4)",{stage:"covered"}]];
   const box=$("ren-tiles");box.textContent="";
   const cur={stage:$("ren-stage").value,auto:$("ren-auto").value};
   T.forEach(([l,v,s,c,f])=>{const on=(f.stage||"")===cur.stage&&(f.auto||"")===cur.auto;
     box.appendChild(h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+c,onclick:()=>{$("ren-stage").value=f.stage||"";$("ren-auto").value=f.auto||"";shown.renewals=PAGE;renderList("renewals");renderTiles();goList("ren-filters");}},
       h("span",{class:"lab"},l),h("span",{class:"val"},n(v)),h("span",{class:"sub"},s)));});
+  box.appendChild(h("div",{class:"hint",style:"grid-column:1/-1;flex-basis:100%;width:100%;margin-top:2px"},n(C.length)+" current Non-Lender members: "+n(due_)+" up for renewal, "+n(free.length)+" free and "+n(cov)+" already paid through "+RY+"."));
   // mixes
   mix($("mix-stage"),STAGES.map(s=>({l:s,v:cnt[s],c:STAGE_COLOR[s]})));
   const lv={};C.forEach(o=>{let L=o.level||"Not Recorded";if(/^Corporate \(/.test(L))L="Corporate (TMC or Broker)";lv[L]=(lv[L]||0)+1;});
@@ -3475,11 +3484,11 @@ function renderTiles(){
   mix($("mix-level"),segs);
   $("ren-right").textContent="Runway starts "+fmt(addDays(END,-90))+" for Dec 31 memberships";
   $("ren-note").textContent=n(lenderGroup().length)+" lenders are not in this runway. Lenders renew through the IIF, which gets its own process. Choose Renews Through IIF under All Handling to see them.";
-  {const pct=Math.round(100*cnt.Renewed/Math.max(1,C.length));let nx=null;const G={};
+  {const pct=Math.round(100*ren_/Math.max(1,due_));let nx=null;const G={};
     C.forEach(o=>{if(handling(o)!=="auto")return;const x=nextStep(o);if(!x)return;const k=x.d+"|"+x.st.id;(G[k]=G[k]||{st:x.st,d:x.d,n:0}).n++;});
     Object.values(G).forEach(g=>{if(!nx||g.d<nx.d)nx=g;});
-    const per=C.filter(o=>handling(o)==="person").sort((a,b)=>(LVR[b.level]||0)-(LVR[a.level]||0)||a.name.localeCompare(b.name));
-    let say=em(pct+"%")+" of "+RY+" renewals are in"+(cnt.Renewed?", "+n(C.filter(o=>paid(o)).length)+" of them confirmed by a payment":"")+". ";
+    const per=todo.filter(o=>handling(o)==="person").sort((a,b)=>(LVR[b.level]||0)-(LVR[a.level]||0)||a.name.localeCompare(b.name));
+    let say=em(n(ren_)+" of the "+n(due_))+" renewals for "+RY+" are in ("+pct+"%)"+(pip_?", "+n(pip_)+" more are paying now":"")+", and "+em(n(todo.length)+" still need to renew")+". ";
     if(nx)say+="Next, the "+em(nx.st.name)+" email goes to "+plural(nx.n,"member","members")+(nx.d<TODAY?", and it was due "+fmtS(nx.d):" on "+dow(nx.d)+", "+fmtS(nx.d))+". ";
     else say+="No automated emails are scheduled right now. ";
     if(per.length)say+=em(plural(per.length,"member needs","members need"))+" a personal touch instead, starting with "+em(per[0].name)+(per[0].level?" ("+per[0].level+")":"")+".";
@@ -3497,7 +3506,7 @@ function mix(box,segs,onPick,selKey){
 }
 function fillSelect(id,opts,keep){const s=$(id);const v=keep?s.value:"";s.textContent="";opts.forEach(o=>s.appendChild(h("option",{value:o.v},o.l)));s.value=v;if(s.value!==v)s.value="";}
 function filterOpts(){
-  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"due",l:"Up for Renewal"},{v:"open",l:"Still Open"},{v:"covered",l:"Already Covered"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
+  fillSelect("ren-stage",[{v:"",l:"All Stages"},{v:"due",l:"Up for Renewal"},{v:"open",l:"Still to Renew"},{v:"free",l:"Free Members"},{v:"covered",l:"Already Covered"}].concat(STAGES.map(s=>({v:s,l:s}))),true);
   const ownersAll=[{v:"",l:"All Owners"},{v:"__none",l:"Unassigned"}].concat((SET.staff||[]).map(s=>({v:s,l:s})));
   fillSelect("ren-owner",ownersAll,true);fillSelect("fu-owner",ownersAll,true);fillSelect("mem-owner",ownersAll,true);
   fillSelect("mem-pstage",[{v:"",l:"All Sales Stages"},{v:"__open",l:"Open Pipeline"},{v:"__none",l:"No Sales Stage"}].concat(PSTAGES.map(s=>({v:s,l:s}))),true);
@@ -3509,8 +3518,8 @@ function ownerMatch(o,v){if(!v)return true;if(v==="__none")return !owner(o);retu
 function renewalItems(){
   const q=norm($("ren-q").value),st=$("ren-stage").value,au=$("ren-auto").value,ow=$("ren-owner").value,lv=$("ren-level").value;
   return (au==="iif"?lenderGroup():renewalGroup()).filter(o=>{const s=stageOf(o);
-    if(st==="open"&&(s==="Renewed"||s==="Lost"))return false;
-    if(st==="covered"){if(!covered(o))return false;}else if(st==="due"){if(covered(o))return false;}else if(st==="Renewed"){if(s!=="Renewed"||covered(o))return false;}else if(st&&st!=="open"&&s!==st)return false;
+    if(st==="open"&&(s==="Renewed"||s==="Lost"||s==="Payment in Process"||!inDue(o)))return false;
+    if(st==="covered"){if(!covered(o))return false;}else if(st==="free"){if(covered(o)||!freeRen(o))return false;}else if(st==="due"){if(!inDue(o))return false;}else if(st==="Renewed"||st==="Payment in Process"||st==="Lost"){if(s!==st||!inDue(o))return false;}else if(st&&st!=="open"&&s!==st)return false;
     if(au&&handling(o)!==au)return false;if(!ownerMatch(o,ow))return false;if(lv&&o.level!==lv)return false;return matchQ(o,q);})
   .sort((a,b)=>{const na=nextStep(a),nb=nextStep(b);return ((na?na.d:"9")+a.name).localeCompare((nb?nb.d:"9")+b.name);});
 }
