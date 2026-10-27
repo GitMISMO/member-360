@@ -3891,13 +3891,14 @@ async function dropPlan(p){if(blocked())return;PLANS=PLANS.filter(x=>x!==p);rend
   catch(e){onWriteErr(e);}}
 async function markPlan(p,v,silent){if(blocked())return;p.done=v;renderThisWeek();
   try{await db.doc("plans/"+p.id).update({done:v,doneAt:v?new Date().toISOString():""});if(!silent)pushUndo((v?"Marked ":"Reopened ")+nm(p.org)+(v?" done":""),()=>markPlan(p,!v,true));}catch(e){onWriteErr(e);}}
+/* a follow-up keeps its text, owner and due date when it is ticked done or moved: the save only changes those fields (Jonna, Oct 27, 2026) */
 async function fuDone(t,v,silent){if(blocked())return;t.next.done=v;renderThisWeek();
-  try{await db.doc("touchpoints/"+t.id).update({next:{done:v,doneAt:v?new Date().toISOString():"",doneBy:ME||""}});
+  try{await db.doc("touchpoints/"+t.id).update({next:Object.assign({},t.next,{done:v,doneAt:v?new Date().toISOString():"",doneBy:ME||""})});
     if(!silent)pushUndo((v?"Marked the follow-up for ":"Reopened the follow-up for ")+nm(t.org)+(v?" done":""),()=>fuDone(t,!v,true));}catch(e){onWriteErr(e);}}
 function snooze(o){const until=addDays(TODAY,30),prev=ov(o).snooze||"";saveOv(o.k,{snooze:until});
   pushUndo("Hid "+o.name+" until "+fmtS(until),()=>saveOv(o.k,{snooze:prev}));}
 async function fuMove(t,day,silent){if(blocked())return;const from=t.next.due;t.next.due=day;renderThisWeek();
-  try{await db.doc("touchpoints/"+t.id).update({next:{due:day}});if(!silent)pushUndo("Moved the follow-up for "+nm(t.org)+" from "+dayLab(from)+" to "+dayLab(day),()=>fuMove(t,from,true));}catch(e){onWriteErr(e);}}
+  try{await db.doc("touchpoints/"+t.id).update({next:Object.assign({},t.next,{due:day})});if(!silent)pushUndo("Moved the follow-up for "+nm(t.org)+" from "+dayLab(from)+" to "+dayLab(day),()=>fuMove(t,from,true));}catch(e){onWriteErr(e);}}
 function thisMonday(){const d=new Date(TODAY+"T12:00:00");const wd=d.getDay();return addDays(TODAY,wd===0?-6:1-wd);}
 function pastItems(){const w=who(),out=[];
   PLANS.forEach(p=>{if(p.day<TODAY&&!planDone(p)&&(!w||p.owner===w))out.push({kind:"plan",p,org:p.org,day:p.day,late:true});});
@@ -4131,7 +4132,7 @@ function renderFollow(){
   items.forEach(t=>{const o=BY[t.org];
     const cb=h("input",{type:"checkbox","aria-label":"Mark done",disabled:!db||!canWrite});cb.checked=!!t.next.done;
     cb.addEventListener("change",async()=>{if(blocked()){cb.checked=!cb.checked;return;}
-      try{await db.doc("touchpoints/"+t.id).update({next:{done:cb.checked,doneAt:cb.checked?new Date().toISOString():"",doneBy:ME||""}});toast(cb.checked?"Follow-up done.":"Follow-up reopened.");}
+      try{await db.doc("touchpoints/"+t.id).update({next:Object.assign({},t.next,{done:cb.checked,doneAt:cb.checked?new Date().toISOString():"",doneBy:ME||""})});toast(cb.checked?"Follow-up done.":"Follow-up reopened.");}
       catch(e){cb.checked=!cb.checked;onWriteErr(e);}});
     const late=!t.next.done&&t.next.due&&t.next.due<TODAY;
     box.appendChild(h("div",{class:"fu"},cb,
