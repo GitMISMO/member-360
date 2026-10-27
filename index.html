@@ -1686,7 +1686,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     </div>
     <div class="panel" id="st-recon">
       <h2>Check Against the Financial System</h2>
-      <div class="psub">Compares who Member 360 shows as a member with the payments in the Financial System (payments from January 2024 on). Select a row to see the organizations.</div>
+      <div class="psub">Compares who Member 360 shows as a member with the payments in the Financial System (payments from January 2024 on), and with accounting's Non-Lender Deferral sheet for dues paid before the Financial System's records begin or under another name. Select a row to see the organizations.</div>
       <div class="rcsum" id="st-recsum"></div>
       <div class="rcrows" id="st-recrows"></div>
     </div>
@@ -4931,7 +4931,14 @@ function specialOf(o){const v=ov(o).special;if(v!==undefined&&v!==null&&v!=="")r
 function fsItems(o){return ((ACT[o.k]||{}).items||[]);}
 function lendPaid(o,y){const a=ACT[o.k];const fs=a&&a.iif?(a.iif[y]||0):0;return Math.max(y===IY?iifPaid(o):0,fs);}
 /* a membership payment covers year y when it starts in y, or starts in the second half of the year before (new members get the rest of that year plus y), or is a two-year deal */
-function memCovers(o,y){const py=String(Number(y)-1),two=o.twoYear||(o.hand||[]).some(x=>/two-year/i.test(x));
+/* accounting's Non-Lender Deferral sheet (engage/deferral): rows [record, name, order, paid, start, end, amount, level, two-year, new or renewal] */
+let DEF=null;
+function defCovers(o,y){if(!DEF||!DEF.rows)return null;if(!DEF._n)DEF._n=DEF.rows.map(r=>dlNorm(r[1]));
+  /* by the record it was matched to; a row whose record is gone falls back to the name */
+  const ks=[o.k].concat((o.mergedIn||[]).map(x=>x.k)),ns=[o.name].concat((o.mergedIn||[]).map(x=>x.name)).map(dlNorm);
+  return DEF.rows.find((r,i)=>(ks.includes(r[0])||(!(r[0]&&BY[r[0]])&&ns.includes(DEF._n[i])))&&r[4]<=y+"-12-31"&&r[5]>=y+"-12-31")||null;}
+function memCovers(o,y){return memCoversFs(o,y)||!!defCovers(o,y);}
+function memCoversFs(o,y){const py=String(Number(y)-1),two=o.twoYear||(o.hand||[]).some(x=>/two-year/i.test(x));
   /* a $0 line counts when it is on the same order as a paid one: a mid-year join where this year is free and next year is paid */
   const its=fsItems(o).filter(i=>i.c==="Membership"&&i.s),paidD=new Set(its.filter(i=>i.n>0).map(i=>i.d));
   return its.some(i=>(i.n>0||paidD.has(i.d))&&(i.s.slice(0,4)===y||(i.s.slice(0,4)===py&&(i.s>=py+"-07-01"||two))));}
@@ -5003,13 +5010,13 @@ function renderStats(){
       sp.appendChild(b);});
     // Financial System check
     const NL=A.filter(o=>kindIn(o,Y)==="Non-Lender"),LN=A.filter(o=>kindIn(o,Y)==="Lender"),py=String(Number(Y)-1);
-    const noteNL=o=>{if(memCovers(o,Y))return "Membership payment covers "+Y;const lm=lastMemFor(o);if(lm)return "Last membership payment is for "+lm;return fsItems(o).length?"Payments, none for membership":"No payments under this name";};
+    const noteNL=o=>{if(memCoversFs(o,Y))return "Membership payment covers "+Y;const df=defCovers(o,Y);if(df)return "Paid per the Deferral sheet: order "+df[2]+", paid "+fmtS(df[3])+(df[8]?" (two-year)":"");const lm=lastMemFor(o);if(lm)return "Last membership payment is for "+lm;return fsItems(o).length?"Payments, none for membership":"No payments under this name";};
     const noteL=o=>{const p=lendPaid(o,Y);const s_=specialOf(o);return (p?money(p)+" IIF paid in "+Y:"No "+Y+" IIF payment")+(s_?" · "+s_+" special":"");};
     const G=[
       {k:"rc:nl-ok",g:"ok",l:"Non-Lender members with a membership payment for "+Y,f:()=>NL.filter(o=>memCovers(o,Y)),n:noteNL},
       {k:"rc:nl-last",g:"look",l:"Non-Lender members whose last membership payment is for an earlier year",f:()=>NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)),n:noteNL},
       {k:"rc:nl-other",g:"look",l:"Non-Lender members with payments, but none for membership",f:()=>NL.filter(o=>!memCovers(o,Y)&&!lastMemFor(o)&&fsItems(o).length),n:noteNL},
-      {k:"rc:nl-none",g:"look",l:"Non-Lender members with no payments under this name",h:"They may pay under another name. Match it in Settings under Payer Names to Match.",f:()=>NL.filter(o=>!fsItems(o).length),n:noteNL},
+      {k:"rc:nl-none",g:"look",l:"Non-Lender members with no payments under this name",h:"They may pay under another name. Match it in Settings under Payer Names to Match.",f:()=>NL.filter(o=>!memCovers(o,Y)&&!fsItems(o).length),n:noteNL},
       {k:"rc:l-ok",g:"ok",l:"Lender members who paid $1,000 or more IIF in "+Y,f:()=>LN.filter(o=>lendPaid(o,Y)>=1000),n:noteL},
       {k:"rc:l-sp",g:"ok",l:"Lender members on a special rate ("+SPECIALS.join(", ")+")",f:()=>LN.filter(o=>lendPaid(o,Y)<1000&&specialOf(o)),n:noteL},
       {k:"rc:l-low",g:"look",l:"Lender members who paid under $1,000 IIF",f:()=>LN.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),n:noteL},
@@ -6329,6 +6336,7 @@ async function boot(){
     if(sig!==MERGESIG){MERGESIG=sig;rebuildOrgs();}
     else if(applyCidOv()&&APT)applyAptify();
     scheduleRefresh();},err);
+  db.doc("engage/deferral").onSnapshot(s=>{DEF=s&&s.exists?s.data():null;scheduleRefresh();},()=>{});
   dlListen("licdl");dlListen("hldl");dlListen("hllog");
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
