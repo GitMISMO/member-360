@@ -2125,7 +2125,9 @@ function seasonPatch(o,p){const v=ov(o);const base=(v.stageYr||DATA_RY)===RY?{}:
 function inCohort(o){return o.life==="Active"||sov(o,"stage")==="Lost";}
 /* already covered for the season: Aptify's term runs through it (a two-year deal, or a member who joined late in the year),
    with no payment for the season and no stage set by hand. Counted apart from Renewed. */
-function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
+/* paid ahead on the Deferral sheet: the same order covers this season and the one before it (a two-year deal, e.g. CBRE) */
+function defAhead(o){const y=String(RY),a=defCovers(o,y),b=defCovers(o,String(Number(y)-1));return !!(a&&b&&a[2]===b[2]);}
+function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||defAhead(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
 function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:null;}
 function prepaid(o){const a=ACT[o.k];return a&&a.prepaid?a.prepaid:null;}
