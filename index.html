@@ -1372,6 +1372,23 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .txt.rt-view{white-space:normal}
 
 .p360-remind .p360-rm-set input[type=date]{width:170px!important;flex:0 0 auto}.p360-remind .p360-rm-set select{width:auto!important}
+/* the day board back above Up Next, and the drop bar while dragging (Jonna, Oct 28, 2026) */
+#wk-plan.planner{margin:4px 0 18px}
+#wk-plan .pday{background:var(--surface);border-radius:14px;padding:10px;min-height:150px;gap:8px}
+#wk-plan .pday.today{border-color:var(--sky);box-shadow:inset 0 4px 0 var(--sky)}
+#wk-plan .pd-h{align-items:center;padding:2px 4px 8px;border-bottom:1px solid var(--rule)}
+#wk-plan .pd-n{margin-left:auto;font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
+#wk-plan .pd-empty{border:2px dashed var(--border);border-radius:10px;padding:18px 8px;text-align:center;color:var(--ink-3);font-size:12px}
+#wk-plan .pday.over .pd-empty{border-color:var(--sky);color:var(--ink)}
+.wf-dock{position:fixed;left:calc(var(--rail-w) + 16px);bottom:16px;z-index:130;display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;padding:10px;border-radius:14px;background:var(--surface);border:1px solid var(--border-strong);box-shadow:0 12px 34px rgba(6,32,47,.28)}
+body.railmini .wf-dock{left:calc(var(--rail-mini) + 16px)}
+.wf-dock-k{align-self:center;font-size:12px;font-weight:600;color:var(--ink-2);padding:0 6px;white-space:nowrap}
+.wf-dock-d{min-width:84px;padding:12px 10px;border:2px dashed var(--border-strong);border-radius:10px;display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--surface-2)}
+.wf-dock-d b{font-size:13px;color:var(--ink)}
+.wf-dock-d span{font-size:11.5px;color:var(--ink-3)}
+.wf-dock-d.today{border-color:var(--sky)}
+.wf-dock-d.past{opacity:.6}
+.wf-dock-d.over{background:var(--chip);border-color:var(--sky);border-style:solid}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3092,8 +3109,8 @@ function wfDrop(el,k){
 function renderFocus(){
   const plan=$("wk-plan");if(!plan)return;
   let box=$("wk-focus");
-  if(!box){box=h("div",{id:"wk-focus",class:"wf"});plan.parentNode.insertBefore(box,plan);}
-  const due=wkOff==="due";box.hidden=due;plan.hidden=!due;if(due)return;
+  if(!box){box=h("div",{id:"wk-focus",class:"wf"});plan.parentNode.insertBefore(box,plan.nextSibling);}
+  const due=wkOff==="due";box.hidden=due;plan.hidden=false;if(due)return;
   box.textContent="";
   const write=!!(db&&canWrite),ws=weekStart(wkOff),days=[0,1,2,3,4].map(i=>addDays(ws,i));
   const all=wfItems(),rank=it=>it.late?0:1;
@@ -3132,7 +3149,7 @@ function renderFocus(){
     const tm=h("span",{class:"wf-day"+(it.late?" late":"")},it.late?"Was due "+fmtS(it.day):it.day===TODAY?"Today":dow(it.day));
     const sd=c.querySelector(".pc-side");if(sd)sd.insertBefore(tm,sd.firstChild);list.appendChild(c);});
   if(!rest.length)list.appendChild(h("div",{class:"wf-empty"},WF.day?"Nothing else on this day.":"Nothing else planned. Add someone from Who to Touch below."));
-  main.appendChild(list);
+  /* the day board above Up Next has the rest of the week (Jonna, Oct 28, 2026) */
   /* the week strip: click a day to see only that day, drop a card on it to plan or move */
   const strip=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,wkOff===1?"Next Week":"This Week"),h("span",null,write?"Drop a card on a day":"")));
   const g=h("div",{class:"wf-days"});
@@ -3142,7 +3159,7 @@ function renderFocus(){
     if(write)wfDrop(b,k);g.appendChild(b);});
   strip.appendChild(g);
   const late=open.filter(it=>it.late).length;if(late)strip.appendChild(h("div",{class:"wf-late"},late+(late===1?" item is":" items are")+" past due. They come first in your list."));
-  side.appendChild(strip);
+
   /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
   if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drop an email from Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
   /* done this week */
@@ -3156,6 +3173,8 @@ function renderFocus(){
   try{const S=LASTS||suggestions(),bS=nextEvent("Summit"),bn=S&&S.benefits?S.benefits.filter(x=>x.gaps.some(q=>q.kind==="Summit")).length:0;
     if(bS&&bn){const nt=h("section",{class:"wf-note"});nt.appendChild(p360Icon("cal"));nt.appendChild(h("div",null,h("b",null,bS.name+", "+fmtS(bS.date)+". "),bn+(bn===1?" member still has":" members still have")+" free registrations to use."));side.appendChild(nt);}}catch(e){}
   box.appendChild(main);box.appendChild(side);
+  /* the day board: a count on each day */
+  plan.querySelectorAll(".pday").forEach(c=>{const h0=c.querySelector(".pd-h");if(!h0||h0.querySelector(".pd-n"))return;const n=c.querySelectorAll(".pcard:not(.done)").length;if(n)h0.appendChild(h("span",{class:"pd-n"},n+" to do"));});
 }
 {const _rtw=renderThisWeek;renderThisWeek=function(){_rtw.apply(this,arguments);try{renderFocus();}catch(e){console.error("planner focus",e);}};}
 /* ---------- log an email by dropping it: an Outlook .msg, an .eml, or text dragged from an email (Jonna, Oct 27, 2026) ----------
@@ -3438,6 +3457,15 @@ function p360RemindRow(o,c,dis){
 /* Conversation History shows the formatted notes when there are some */
 function p360HistTxt(t){const d=h("div",{class:"txt"});if(t.html){d.innerHTML=p360CleanHtml(t.html);d.classList.add("rt-view");}else d.textContent=t.summary||"";return d;}
 
+/* ---------- a drop bar while dragging on the planner: the week's days appear at the bottom left, beside an open panel, so a card can always be dropped (Jonna, Oct 28, 2026) ---------- */
+function wfDock(on){let d=$("wf-dock");if(!on){if(d)d.remove();return;}if(d)return;
+  const ws=weekStart(wkOff==="due"?0:wkOff);d=h("div",{id:"wf-dock",class:"wf-dock",role:"region","aria-label":"Drop on a day to plan it"});
+  d.appendChild(h("span",{class:"wf-dock-k"},"Drop on a day"));
+  [0,1,2,3,4].forEach(i=>{const k=addDays(ws,i),t=h("div",{class:"wf-dock-d"+(k===TODAY?" today":"")+(k<TODAY?" past":"")},h("b",null,dow(k).slice(0,3)),h("span",null,fmtS(k)));wfDrop(t,k);d.appendChild(t);});
+  document.body.appendChild(d);}
+document.addEventListener("dragstart",()=>{setTimeout(()=>{const v=$("v-week");if(typeof dragData!=="undefined"&&dragData&&v&&!v.hidden&&db&&canWrite)wfDock(true);},0);},true);
+document.addEventListener("dragend",()=>setTimeout(()=>wfDock(false),60),true);
+document.addEventListener("drop",()=>setTimeout(()=>wfDock(false),60),true);
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
