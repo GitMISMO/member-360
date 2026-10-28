@@ -1130,6 +1130,61 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 /* a long note shows two lines on the card; hover shows it all, and the record has it in full (Jonna, Oct 27, 2026) */
 .pc-main .pc-sub{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pc-main .late{color:var(--bad);font-weight:600}
+/* the company panel: actions, header metrics, tabs and an overview (Jonna, Oct 28, 2026, design A) */
+.p360-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.p360-actions .btn{margin:0}
+.p360-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:0 0 6px;background:var(--surface)}
+.p360-metric{padding:11px 13px;border-right:1px solid var(--border);min-width:0}
+.p360-metric:last-child{border-right:0}
+.p360-metric .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p360-metric .v{margin-top:4px;font-size:15px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.p360-tabs{display:flex;gap:20px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;margin-top:10px}
+.p360-tab{border:0;background:none;padding:10px 0 11px;border-bottom:3px solid transparent;color:var(--ink-2);font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.p360-tab:hover{color:var(--ink)}
+.p360-tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--sky)}
+.p360-tab .n{font-size:11px;font-weight:500;padding:1px 6px;border-radius:999px;background:var(--chip);color:var(--ink-2);margin-left:5px}
+.p360-panel{padding-top:18px;display:flex;flex-direction:column;gap:16px}
+.p360-panel[hidden]{display:none}
+.p360-panel > details.sect{margin:0}
+.p360-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.p360-card h3{margin:0;font-size:15px;font-weight:600;color:var(--ink)}
+.p360-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.p360-sub{font-size:12.5px;color:var(--ink-2)}
+.p360-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0 0 16px}
+.p360-step i{display:block;height:6px;border-radius:3px;background:var(--border)}
+.p360-step.on i{background:var(--sky)}
+.p360-step span{display:block;margin-top:6px;font-size:11.5px;color:var(--ink-3)}
+.p360-step.cur span{color:var(--ink);font-weight:600}
+.p360-status .ctrls{background:none;border:0;padding:0;margin:0}
+.p360-next{display:flex;gap:12px;align-items:center}
+.p360-next input{width:18px;height:18px;accent-color:var(--sky);flex-shrink:0}
+.p360-next-main{flex:1;min-width:0}
+.p360-next-main .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.p360-next-main .t{margin-top:3px;font-size:14px;font-weight:500;color:var(--ink)}
+.p360-next-side{text-align:right;font-size:12.5px;color:var(--ink-2);line-height:1.4;display:flex;flex-direction:column}
+.p360-next-side b{color:var(--ink)}
+.p360-next-side.late b{color:var(--bad)}
+.p360-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.p360-quick:empty{display:none}
+.p360-q{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px}
+.p360-q:hover{border-color:var(--border-strong)}
+.p360-q b{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.p360-q span{font-size:12px;color:var(--ink-2)}
+.p360-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.p360-head + .p360-row{border-top:0;padding-top:2px}
+.p360-row.top{align-items:flex-start}
+.p360-av{width:32px;height:32px;border-radius:50%;background:var(--surface-3);color:var(--ink);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-dot{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--ink-2);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.p360-grow b{font-size:13.5px;font-weight:600;color:var(--ink)}
+.p360-grow span{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.p360-grow .clamp{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.p360-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2);white-space:nowrap}
+.p360-mail{font-size:12.5px;white-space:nowrap}
+.p360-link{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline}
+.p360-details .facts{margin:0}
+@media (max-width:700px){.p360-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-metric{border-bottom:1px solid var(--border)}.p360-quick{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-steps span{font-size:10.5px}}
+
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -2645,6 +2700,93 @@ function renderProfile(o,box){
   if(sampleCap)fillDraft(o,box.querySelector('[data-part="draft"]'));
   refreshProfile(o,box);
 }
+/* ---------- the company panel: actions, header metrics, tabs and an overview (Jonna, Oct 28, 2026, design A) ----------
+   renderProfile still builds every section; this moves them into tabs, so every fill and refresh works as before.
+   Members, former members and prospects all get it. */
+const P360={k:null,tab:"overview"};
+const P360_TABS=[["overview","Overview",[]],["activity","Activity",["form","history","draft"]],["contacts","Contacts",["contacts"]],["money","Money",["timeline","iifs","act","deals","mhist"]],["engagement","Engagement",["regs","mtg","eng","dl","benefits"]],["issues","Issues",["issues"]]];
+function p360Initials(s){const w=String(s||"").replace(/[^A-Za-z0-9 ]/g," ").trim().split(/\s+/).filter(Boolean);return ((w[0]||"?")[0]+(w[1]?w[1][0]:"")).toUpperCase();}
+function p360Facts(box){const m={};box.querySelectorAll(".facts .fact").forEach(f=>{const k=f.children[0],v=f.children[1];if(k&&v)m[k.textContent.trim().toLowerCase()]=v.textContent.trim();});return m;}
+function p360Touches(o){const out=[];TP.forEach(t=>{if(t.org===o.k)out.push({d:t.date||"",kind:t.type||"Note",who:t.by?(NAMES[t.by]||""):"",text:t.summary||""});});
+  (o.notes||[]).forEach(n=>out.push({d:n.d||"",kind:"Note",who:n.by||"",text:n.t||""}));return out.sort((a,b)=>String(b.d).localeCompare(String(a.d)));}
+function p360Go(box,tab,part){P360.tab=tab;
+  box.querySelectorAll(".p360-tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
+  box.querySelectorAll(".p360-panel").forEach(p=>{p.hidden=p.dataset.tab!==tab;});
+  if(part){const s=box.querySelector('[data-part="'+part+'"]');if(s){const d=s.closest("details");if(d)d.open=true;
+    setTimeout(()=>{try{s.scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}if(part==="form"){const f=s.querySelector("textarea,input,select");if(f)try{f.focus({preventScroll:true});}catch(e){}}},40);}}}
+function p360Dress(o,box){
+  if(!o||!box||box.querySelector(".p360-tabs"))return;
+  const secs={};box.querySelectorAll(":scope > details.sect").forEach(d=>{const b=d.querySelector(".sbody");if(b&&b.dataset.part)secs[b.dataset.part]=d;});
+  if(!Object.keys(secs).length)return;
+  const facts=box.querySelector(":scope > .facts"),btnrow=box.querySelector(":scope > .btnrow"),ctrls=box.querySelector(':scope > [data-part="ctrls"]'),reasons=box.querySelector(':scope > [data-part="reasons"]');
+  if(P360.k!==o.k){P360.k=o.k;P360.tab="overview";}
+  const act=h("div",{class:"p360-actions"});
+  act.appendChild(h("button",{type:"button",class:"btn",onclick:()=>p360Go(box,"activity","form")},"Log Touchpoint"));
+  if(btnrow){[...btnrow.children].forEach(b=>act.appendChild(b));btnrow.remove();}
+  if(secs.issues)act.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>p360Go(box,"issues","issues")},"Log an Issue"));
+  const bar=h("div",{class:"p360-tabs",role:"tablist","aria-label":"Record sections"}),panels={};
+  P360_TABS.forEach(([id,label,parts])=>{const have=parts.filter(p=>secs[p]);if(id!=="overview"&&!have.length)return;
+    const b=h("button",{type:"button",class:"p360-tab",role:"tab","data-tab":id,"aria-selected":"false",onclick:()=>p360Go(box,id)},label);
+    if(id==="activity"||id==="contacts"||id==="issues")b.appendChild(h("span",{class:"n","data-tabn":id},"0"));
+    bar.appendChild(b);
+    const p=h("div",{class:"p360-panel","data-tab":id,role:"tabpanel"});panels[id]=p;
+    have.forEach(part=>{const d=secs[part];if(part!=="draft")d.open=true;p.appendChild(d);});});
+  const ovp=panels.overview,card=h("section",{class:"p360-card p360-status"},h("div",{class:"p360-steps-wrap"}));
+  if(ctrls)card.appendChild(ctrls);if(reasons)card.appendChild(reasons);
+  ovp.appendChild(card);ovp.appendChild(h("div",{class:"p360-next-wrap"}));ovp.appendChild(h("div",{class:"p360-quick"}));
+  ovp.appendChild(h("section",{class:"p360-card p360-people"}));ovp.appendChild(h("section",{class:"p360-card p360-recent"}));
+  if(facts){const dc=h("section",{class:"p360-card p360-details"},h("div",{class:"p360-head"},h("h3",null,"Company Details")));dc.appendChild(facts);ovp.appendChild(dc);}
+  /* anything else at the top (a lane's back button, notes) stays above the actions */
+  box.appendChild(act);box.appendChild(h("div",{class:"p360-metrics"}));box.appendChild(bar);Object.values(panels).forEach(p=>box.appendChild(p));
+  p360Update(o,box);p360Go(box,P360.tab);
+}
+function p360Update(o,box){
+  if(!o||!box||!box.querySelector(".p360-tabs"))return;
+  const F=p360Facts(box),T=p360Touches(o),last=T[0],isPro=o.life==="Prospect",v=ov(o)||{},pipe=v.pipe||{};
+  const cnt=p=>{const c=box.querySelector('.cnt[data-cnt="'+p+'"]');return c?c.textContent.trim():"";};
+  const lt=last&&last.d?fmtS(last.d):(pipe.last?fmtS(pipe.last):"None yet");
+  const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Owner",owner(o)||"Unassigned"],["Last Touch",lt]]
+    :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",lt]];
+  const mx=box.querySelector(".p360-metrics");mx.textContent="";M.forEach(([k,val])=>mx.appendChild(h("div",{class:"p360-metric"},h("div",{class:"k"},k),h("div",{class:"v"},String(val)))));
+  /* status card: the renewal steps for a member in this season, a plain heading otherwise */
+  const sw=box.querySelector(".p360-steps-wrap");sw.textContent="";
+  if(inCohort(o)){const s=stageOf(o),L=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in Process","Renewed"],at=L.indexOf(s);
+    sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),h("span",{class:"p360-sub"},s==="Lost"?"Marked lost":(s||""))));
+    if(s!=="Lost"){const g=h("div",{class:"p360-steps"});L.forEach((x,i)=>g.appendChild(h("div",{class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":"")},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x))));sw.appendChild(g);}}
+  else sw.appendChild(h("div",{class:"p360-head"},h("h3",null,isPro?"Sales":"Relationship")));
+  /* next open follow-up */
+  const nw=box.querySelector(".p360-next-wrap");nw.textContent="";
+  const fu=TP.filter(t=>t.org===o.k&&t.next&&t.next.text&&!t.next.done).sort((a,b)=>String(a.next.due||"9").localeCompare(String(b.next.due||"9")));
+  if(fu.length){const t=fu[0],late=!!(t.next.due&&t.next.due<TODAY),cb=h("input",{type:"checkbox","aria-label":"Mark this follow-up done"});
+    cb.addEventListener("change",()=>{if(cb.checked)fuDone(t,true);});
+    nw.appendChild(h("section",{class:"p360-card p360-next"},cb,h("div",{class:"p360-next-main"},h("div",{class:"k"},"Next Up"+(fu.length>1?" · "+fu.length+" open":"")),h("div",{class:"t"},t.next.text)),
+      h("div",{class:"p360-next-side"+(late?" late":"")},h("b",null,t.next.due?(late?"Was due ":"Due ")+fmtS(t.next.due):"No date"),h("span",null,t.next.owner||""))));}
+  /* quick counts that open the tab they belong to */
+  const q=box.querySelector(".p360-quick");q.textContent="";
+  [["act","Payments and Activity","money"],["regs","Summit Registrations","engagement"],["mtg","Workgroup Meetings","engagement"],["dl","Connect and Downloads","engagement"]].forEach(([p,l,tab])=>{
+    if(!box.querySelector('[data-part="'+p+'"]'))return;q.appendChild(h("button",{type:"button",class:"p360-q",onclick:()=>p360Go(box,tab,p)},h("b",null,cnt(p)||"0"),h("span",null,l)));});
+  /* key contacts */
+  const pc=box.querySelector(".p360-people");pc.textContent="";
+  const R=["Primary","Alternate","Billing","Marketing","Compliance"],rank=p=>{const r=(p.roles||[]).map(x=>R.indexOf(x)).filter(i=>i>=0);return r.length?Math.min(...r):9;};
+  const ppl=(o.people||[]).filter(p=>p.name||p.email).slice().sort((a,b)=>rank(a)-rank(b));
+  pc.appendChild(h("div",{class:"p360-head"},h("h3",null,"Key Contacts"),ppl.length?h("button",{type:"button",class:"p360-link",onclick:()=>p360Go(box,"contacts","contacts")},ppl.length>3?"All "+ppl.length+" contacts":"Edit contacts"):null));
+  if(!ppl.length)pc.appendChild(h("div",{class:"hint"},"No contacts on file yet."));
+  ppl.slice(0,3).forEach(p=>pc.appendChild(h("div",{class:"p360-row"},h("div",{class:"p360-av","aria-hidden":"true"},p360Initials(p.name||p.email)),
+    h("div",{class:"p360-grow"},h("b",null,p.name||p.email),h("span",null,p.title||(p.name?p.email:"")||"")),
+    ...(p.roles||[]).slice(0,2).map(r=>h("span",{class:"p360-chip"},r)),p.email?h("a",{class:"p360-mail",href:"mailto:"+p.email,"aria-label":"Email "+(p.name||p.email)},"Email"):null)));
+  /* recent conversations and notes */
+  const rc=box.querySelector(".p360-recent");rc.textContent="";
+  rc.appendChild(h("div",{class:"p360-head"},h("h3",null,"Recent Activity"),T.length?h("button",{type:"button",class:"p360-link",onclick:()=>p360Go(box,"activity","history")},T.length>3?"View all "+T.length:"Open activity"):null));
+  if(!T.length)rc.appendChild(h("div",{class:"hint"},"No conversations logged yet."));
+  T.slice(0,3).forEach(x=>rc.appendChild(h("div",{class:"p360-row top"},h("div",{class:"p360-dot","aria-hidden":"true"},(x.kind||"N").slice(0,1).toUpperCase()),
+    h("div",{class:"p360-grow"},h("b",null,(x.kind||"Note")+(x.who?" · "+x.who:"")+(x.d?" · "+fmtS(x.d):"")),h("span",{class:"clamp"},x.text)))));
+  const setN=(id,n)=>{const s=box.querySelector('[data-tabn="'+id+'"]');if(s)s.textContent=String(n);};
+  setN("activity",T.length);setN("contacts",ppl.length);setN("issues",cnt("issues")||"0");
+}
+{const _rp=renderProfile;renderProfile=function(o,box){_rp(o,box);try{p360Dress(o,box);}catch(e){console.error("company panel",e);}};
+ const _rf=refreshProfile;refreshProfile=function(o,box){_rf(o,box);try{p360Update(o,box);}catch(e){console.error("company panel",e);}};
+ /* the line under the name is gone: the metrics carry it (Jonna, Oct 28, 2026) */
+ const _pt=paneTitle;paneTitle=function(o){_pt(o);const s=$("m360-pane-sub");if(s)s.textContent="";};}
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
