@@ -1131,14 +1131,24 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .pc-main .pc-sub{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pc-main .late{color:var(--bad);font-weight:600}
 /* the company panel: actions, header metrics, tabs and an overview (Jonna, Oct 28, 2026, design A) */
-.p360-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-.p360-actions .btn{margin:0}
+.headline .hl-date,.headline .hl-say{display:none}
+.p360-hero{display:flex;gap:14px;align-items:center;margin:0 0 14px}
+.p360-badge{width:52px;height:52px;border-radius:12px;background:#14486e;color:#a9d8f3;font-weight:700;font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-name{flex:1;min-width:0;margin:0;font-size:22px;line-height:1.2;font-weight:600;letter-spacing:-.012em;color:var(--ink);overflow-wrap:anywhere}
+.p360-owner{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border:1px solid var(--border);border-radius:999px;flex-shrink:0}
+.p360-owner i{width:26px;height:26px;border-radius:50%;background:var(--c1);color:#fff;font-style:normal;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.p360-owner span{font-size:12px;line-height:1.25;color:var(--ink-3)}
+.p360-owner b{display:block;color:var(--ink);font-weight:600}
+.p360-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
+.p360-actions .btn{margin:0;display:inline-flex;align-items:center;gap:6px}
+.p360-actions svg{width:14px;height:14px}
+.p360-plan{height:36px;border-radius:7px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;font-size:13px;padding:0 10px;cursor:pointer}
 .p360-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:0 0 6px;background:var(--surface)}
 .p360-metric{padding:11px 13px;border-right:1px solid var(--border);min-width:0}
 .p360-metric:last-child{border-right:0}
 .p360-metric .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .p360-metric .v{margin-top:4px;font-size:15px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
-.p360-tabs{display:flex;gap:20px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;margin-top:10px}
+.p360-tabs{display:flex;gap:20px;border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none;margin-top:12px}
 .p360-tab{border:0;background:none;padding:10px 0 11px;border-bottom:3px solid transparent;color:var(--ink-2);font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .p360-tab:hover{color:var(--ink)}
 .p360-tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--sky)}
@@ -1148,42 +1158,69 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-panel > details.sect{margin:0}
 .p360-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
 .p360-card h3{margin:0;font-size:15px;font-weight:600;color:var(--ink)}
-.p360-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+.p360-card h4{margin:0 0 10px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;color:var(--ink-3)}
+.p360-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:14px}
 .p360-sub{font-size:12.5px;color:var(--ink-2)}
-.p360-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0 0 16px}
+.p360-sub b{color:var(--ink)}
+.p360-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0 0 12px}
+.p360-step{border:0;background:none;padding:0;text-align:left;font:inherit;cursor:pointer}
+.p360-step:disabled{cursor:default}
 .p360-step i{display:block;height:6px;border-radius:3px;background:var(--border)}
 .p360-step.on i{background:var(--sky)}
+.p360-step:hover:not(:disabled) i{background:var(--border-strong)}
+.p360-step.on:hover:not(:disabled) i{background:var(--sky)}
 .p360-step span{display:block;margin-top:6px;font-size:11.5px;color:var(--ink-3)}
 .p360-step.cur span{color:var(--ink);font-weight:600}
+.p360-touch{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:9px;background:var(--warn-soft);border:1px solid var(--warn);margin-top:12px;font-size:13px;line-height:1.5;color:var(--ink)}
+.p360-touch svg{flex-shrink:0;margin-top:2px;color:var(--warn)}
+.p360-touch b{color:var(--warn)}
+.p360-set{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px}
+.p360-set > summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);list-style:revert}
+.p360-set[open] > summary{margin-bottom:10px}
 .p360-status .ctrls{background:none;border:0;padding:0;margin:0}
+.p360-status [data-part="reasons"]{display:none}
 .p360-next{display:flex;gap:12px;align-items:center}
 .p360-next input{width:18px;height:18px;accent-color:var(--sky);flex-shrink:0}
 .p360-next-main{flex:1;min-width:0}
 .p360-next-main .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
 .p360-next-main .t{margin-top:3px;font-size:14px;font-weight:500;color:var(--ink)}
 .p360-next-side{text-align:right;font-size:12.5px;color:var(--ink-2);line-height:1.4;display:flex;flex-direction:column}
-.p360-next-side b{color:var(--ink)}
+.p360-next-side b{color:var(--warn)}
 .p360-next-side.late b{color:var(--bad)}
-.p360-quick{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.p360-quick:empty{display:none}
-.p360-q{text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 13px;cursor:pointer;font:inherit;color:var(--ink);display:flex;flex-direction:column;gap:3px}
-.p360-q:hover{border-color:var(--border-strong)}
-.p360-q b{font-family:var(--mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
-.p360-q span{font-size:12px;color:var(--ink-2)}
-.p360-row{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
-.p360-head + .p360-row{border-top:0;padding-top:2px}
+.p360-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.p360-three .p360-card{padding:15px 16px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.p360-big{font-family:var(--mono);font-size:21px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.p360-line{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.p360-line b{color:var(--ink);font-weight:600}
+.p360-kv{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
+.p360-kv b{color:var(--ink);font-weight:600;font-family:var(--mono);white-space:nowrap}
+.p360-bar{height:6px;border-radius:3px;background:var(--rule);margin-top:5px;overflow:hidden}
+.p360-bar i{display:block;height:6px;border-radius:3px;background:var(--good)}
+.p360-bar i.low{background:var(--warn)}
+.p360-mixbar{display:flex;height:6px;border-radius:3px;overflow:hidden;gap:2px}
+.p360-mixbar span{min-width:2px}
+.p360-chips{display:flex;gap:6px;flex-wrap:wrap}
+.p360-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2);white-space:nowrap}
+.p360-list{padding:6px 0}
+.p360-list .p360-head{padding:10px 18px 6px;margin:0}
+.p360-row{display:flex;gap:12px;align-items:center;padding:10px 18px;border-top:1px solid var(--rule)}
 .p360-row.top{align-items:flex-start}
-.p360-av{width:32px;height:32px;border-radius:50%;background:var(--surface-3);color:var(--ink);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.p360-dot{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--ink-2);font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-av{width:34px;height:34px;border-radius:50%;background:#14486e;color:#a9d8f3;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-ic{width:28px;height:28px;border-radius:50%;background:var(--surface-3);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-ic svg{width:13px;height:13px}
 .p360-grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .p360-grow b{font-size:13.5px;font-weight:600;color:var(--ink)}
+.p360-grow b small{font-weight:400;color:var(--ink-3);font-size:12.5px}
 .p360-grow span{font-size:12.5px;color:var(--ink-2);line-height:1.5}
 .p360-grow .clamp{display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.p360-chip{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--ink-2);white-space:nowrap}
-.p360-mail{font-size:12.5px;white-space:nowrap}
-.p360-link{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline}
+.p360-mail{width:32px;height:32px;border-radius:6px;border:1px solid var(--border);color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p360-mail:hover{border-color:var(--border-strong);color:var(--ink)}
+.p360-mail svg{width:14px;height:14px}
+.p360-link{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;cursor:pointer;padding:0;text-decoration:none}
+.p360-link:hover{text-decoration:underline}
+.p360-empty{padding:4px 18px 12px;font-size:12.5px;color:var(--ink-3)}
 .p360-details .facts{margin:0}
-@media (max-width:700px){.p360-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-metric{border-bottom:1px solid var(--border)}.p360-quick{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-steps span{font-size:10.5px}}
+@media (max-width:700px){.p360-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-metric{border-bottom:1px solid var(--border)}.p360-three{grid-template-columns:minmax(0,1fr)}.p360-steps span{font-size:10.5px}.p360-owner span{display:none}}
 
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
@@ -2705,7 +2742,11 @@ function renderProfile(o,box){
    Members, former members and prospects all get it. */
 const P360={k:null,tab:"overview"};
 const P360_TABS=[["overview","Overview",[]],["activity","Activity",["form","history","draft"]],["contacts","Contacts",["contacts"]],["money","Money",["timeline","iifs","act","deals","mhist"]],["engagement","Engagement",["regs","mtg","eng","dl","benefits"]],["issues","Issues",["issues"]]];
+const P360_IC={plus:'<path d="M12 5v14M5 12h14"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',call:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',meet:'<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M15 15c2.8 0 5 1.8 5.8 5"/>',note:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',flag:'<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',person:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'};
+function p360Icon(name){const s=h("span",{class:"p360-svg","aria-hidden":"true",style:"display:inline-flex"});s.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(P360_IC[name]||P360_IC.note)+'</svg>';return s;}
 function p360Initials(s){const w=String(s||"").replace(/[^A-Za-z0-9 ]/g," ").trim().split(/\s+/).filter(Boolean);return ((w[0]||"?")[0]+(w[1]?w[1][0]:"")).toUpperCase();}
+/* the year shows when it is not this year */
+function p360D(d){d=String(d||"");return d.slice(0,4)===String(TODAY).slice(0,4)?fmtS(d):fmt(d);}
 function p360Facts(box){const m={};box.querySelectorAll(".facts .fact").forEach(f=>{const k=f.children[0],v=f.children[1];if(k&&v)m[k.textContent.trim().toLowerCase()]=v.textContent.trim();});return m;}
 function p360Touches(o){const out=[];TP.forEach(t=>{if(t.org===o.k)out.push({d:t.date||"",kind:t.type||"Note",who:t.by?(NAMES[t.by]||""):"",text:t.summary||""});});
   (o.notes||[]).forEach(n=>out.push({d:n.d||"",kind:"Note",who:n.by||"",text:n.t||""}));return out.sort((a,b)=>String(b.d).localeCompare(String(a.d)));}
@@ -2714,16 +2755,24 @@ function p360Go(box,tab,part){P360.tab=tab;
   box.querySelectorAll(".p360-panel").forEach(p=>{p.hidden=p.dataset.tab!==tab;});
   if(part){const s=box.querySelector('[data-part="'+part+'"]');if(s){const d=s.closest("details");if(d)d.open=true;
     setTimeout(()=>{try{s.scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}if(part==="form"){const f=s.querySelector("textarea,input,select");if(f)try{f.focus({preventScroll:true});}catch(e){}}},40);}}}
+/* set the stage with the record's own stage control, so saving, undo and automatic entries all work as they do there */
+function p360SetStage(box,stage){const sel=[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>[...s.options].some(op=>op.value==="Invoiced"));
+  if(!sel||sel.disabled||sel.value===stage)return;sel.value=stage;sel.dispatchEvent(new Event("change",{bubbles:true}));}
 function p360Dress(o,box){
   if(!o||!box||box.querySelector(".p360-tabs"))return;
   const secs={};box.querySelectorAll(":scope > details.sect").forEach(d=>{const b=d.querySelector(".sbody");if(b&&b.dataset.part)secs[b.dataset.part]=d;});
   if(!Object.keys(secs).length)return;
   const facts=box.querySelector(":scope > .facts"),btnrow=box.querySelector(":scope > .btnrow"),ctrls=box.querySelector(':scope > [data-part="ctrls"]'),reasons=box.querySelector(':scope > [data-part="reasons"]');
   if(P360.k!==o.k){P360.k=o.k;P360.tab="overview";}
+  /* the name moves from the bar into the header, next to the owner */
+  const pt=$("m360-pane-t");if(pt)pt.textContent="";const pn=$("m360-pane");if(pn)pn.setAttribute("aria-label",o.name);
+  const hero=h("div",{class:"p360-hero"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),h("h2",{class:"p360-name"},o.name),h("div",{class:"p360-owner"}));
   const act=h("div",{class:"p360-actions"});
-  act.appendChild(h("button",{type:"button",class:"btn",onclick:()=>p360Go(box,"activity","form")},"Log Touchpoint"));
-  if(btnrow){[...btnrow.children].forEach(b=>act.appendChild(b));btnrow.remove();}
-  if(secs.issues)act.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>p360Go(box,"issues","issues")},"Log an Issue"));
+  const lt=h("button",{type:"button",class:"btn",onclick:()=>p360Go(box,"activity","form")},p360Icon("plus"),"Log Touchpoint");act.appendChild(lt);
+  if(btnrow){[...btnrow.children].forEach(b=>{if(b.tagName==="BUTTON"&&/email/i.test(b.textContent)){b.textContent="";b.appendChild(p360Icon("mail"));b.appendChild(document.createTextNode("Email"));}act.appendChild(b);});btnrow.remove();}
+  if(db&&canWrite!==false&&typeof moveOpts==="function"&&typeof addPlan==="function"){const opts=moveOpts();opts[0]={v:"",l:"Plan for…"};
+    const ps=select(opts,"",{class:"p360-plan","aria-label":"Plan a touch for a day"});ps.addEventListener("change",()=>{const d=ps.value;ps.value="";if(d)addPlan(o,d,"");});act.appendChild(ps);}
+  if(secs.issues)act.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>p360Go(box,"issues","issues")},p360Icon("flag"),"Log an Issue"));
   const bar=h("div",{class:"p360-tabs",role:"tablist","aria-label":"Record sections"}),panels={};
   P360_TABS.forEach(([id,label,parts])=>{const have=parts.filter(p=>secs[p]);if(id!=="overview"&&!have.length)return;
     const b=h("button",{type:"button",class:"p360-tab",role:"tab","data-tab":id,"aria-selected":"false",onclick:()=>p360Go(box,id)},label);
@@ -2731,55 +2780,106 @@ function p360Dress(o,box){
     bar.appendChild(b);
     const p=h("div",{class:"p360-panel","data-tab":id,role:"tabpanel"});panels[id]=p;
     have.forEach(part=>{const d=secs[part];if(part!=="draft")d.open=true;p.appendChild(d);});});
-  const ovp=panels.overview,card=h("section",{class:"p360-card p360-status"},h("div",{class:"p360-steps-wrap"}));
-  if(ctrls)card.appendChild(ctrls);if(reasons)card.appendChild(reasons);
-  ovp.appendChild(card);ovp.appendChild(h("div",{class:"p360-next-wrap"}));ovp.appendChild(h("div",{class:"p360-quick"}));
-  ovp.appendChild(h("section",{class:"p360-card p360-people"}));ovp.appendChild(h("section",{class:"p360-card p360-recent"}));
-  if(facts){const dc=h("section",{class:"p360-card p360-details"},h("div",{class:"p360-head"},h("h3",null,"Company Details")));dc.appendChild(facts);ovp.appendChild(dc);}
-  /* anything else at the top (a lane's back button, notes) stays above the actions */
-  box.appendChild(act);box.appendChild(h("div",{class:"p360-metrics"}));box.appendChild(bar);Object.values(panels).forEach(p=>box.appendChild(p));
+  /* overview: status card, next up, three summary cards, key contacts, recent activity, company details */
+  const ovp=panels.overview,card=h("section",{class:"p360-card p360-status"},h("div",{class:"p360-steps-wrap"}),h("div",{class:"p360-touch-wrap"}));
+  if(ctrls){const set=h("details",{class:"p360-set"},h("summary",null,o.life==="Prospect"?"Sales details and owner":"Stage, owner and outreach settings"));set.appendChild(ctrls);card.appendChild(set);}
+  if(reasons)card.appendChild(reasons);
+  ovp.appendChild(card);ovp.appendChild(h("div",{class:"p360-next-wrap"}));ovp.appendChild(h("div",{class:"p360-three"}));
+  ovp.appendChild(h("section",{class:"p360-card p360-list p360-people"}));ovp.appendChild(h("section",{class:"p360-card p360-list p360-recent"}));
+  if(facts){const dc=h("details",{class:"sect p360-details"},h("summary",null,"Company Details"));const sb=h("div",{class:"sbody"});sb.appendChild(facts);dc.appendChild(sb);ovp.appendChild(dc);}
+  /* anything else at the top (a lane's back button, notes) stays above the header */
+  box.appendChild(hero);box.appendChild(act);box.appendChild(h("div",{class:"p360-metrics"}));box.appendChild(bar);Object.values(panels).forEach(p=>box.appendChild(p));
   p360Update(o,box);p360Go(box,P360.tab);
 }
 function p360Update(o,box){
   if(!o||!box||!box.querySelector(".p360-tabs"))return;
   const F=p360Facts(box),T=p360Touches(o),last=T[0],isPro=o.life==="Prospect",v=ov(o)||{},pipe=v.pipe||{};
   const cnt=p=>{const c=box.querySelector('.cnt[data-cnt="'+p+'"]');return c?c.textContent.trim():"";};
-  const lt=last&&last.d?fmtS(last.d):(pipe.last?fmtS(pipe.last):"None yet");
-  const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Owner",owner(o)||"Unassigned"],["Last Touch",lt]]
-    :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",lt]];
+  const ltxt=last&&last.d?p360D(last.d):(pipe.last?p360D(pipe.last):"None yet"),own=owner(o)||"";
+  /* owner pill */
+  const op=box.querySelector(".p360-owner");if(op){op.textContent="";op.appendChild(h("i",{"aria-hidden":"true"},own?p360Initials(own):"?"));op.appendChild(h("span",null,"Owner",h("b",null,own||"Unassigned")));}
+  /* header metrics */
+  const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Lead Source",pipe.lead||o.source||"Not set"],["Last Touch",ltxt]]
+    :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",ltxt]];
   const mx=box.querySelector(".p360-metrics");mx.textContent="";M.forEach(([k,val])=>mx.appendChild(h("div",{class:"p360-metric"},h("div",{class:"k"},k),h("div",{class:"v"},String(val)))));
-  /* status card: the renewal steps for a member in this season, a plain heading otherwise */
-  const sw=box.querySelector(".p360-steps-wrap");sw.textContent="";
-  if(inCohort(o)){const s=stageOf(o),L=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in Process","Renewed"],at=L.indexOf(s);
-    sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),h("span",{class:"p360-sub"},s==="Lost"?"Marked lost":(s||""))));
-    if(s!=="Lost"){const g=h("div",{class:"p360-steps"});L.forEach((x,i)=>g.appendChild(h("div",{class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":"")},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x))));sw.appendChild(g);}}
-  else sw.appendChild(h("div",{class:"p360-head"},h("h3",null,isPro?"Sales":"Relationship")));
+  /* status card: the renewal path for a member in this season (click a step to set it), Sales for a prospect */
+  const sw=box.querySelector(".p360-steps-wrap");sw.textContent="";const tw=box.querySelector(".p360-touch-wrap");tw.textContent="";
+  if(inCohort(o)){const s=stageOf(o),L=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in Process","Renewed"],at=L.indexOf(s),hd=handling(o),nx=nextStep(o);
+    const right=s==="Lost"?h("span",{class:"p360-sub"},"Marked lost"):nx?h("span",{class:"p360-sub"},hd==="person"?"Next step: ":"Next email: ",h("b",null,nx.st.name+", "+dow(nx.d)+" "+fmtS(nx.d))):h("span",{class:"p360-sub"},s==="Renewed"?"Renewed for "+RY:hd==="person"?"Personal outreach, no automatic emails":hd==="hold"?"Automatic emails paused":"");
+    sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),right));
+    if(s!=="Lost"){const paid=s==="Renewed"&&!sov(o,"stage"),g=h("div",{class:"p360-steps"});
+      L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the "+RY+" stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>p360SetStage(box,x)},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x));
+        if(paid||!db||canWrite===false)b.disabled=true;g.appendChild(b);});sw.appendChild(g);}
+    const r=handReasons(o);
+    if(hd==="person"&&r.length){const c=h("div",{class:"p360-touch"});c.appendChild(p360Icon("person"));c.appendChild(h("div",null,h("b",null,"Personal touch. "),r.join(". ").replace(/\.\./g,".")+"."));tw.appendChild(c);}
+    else if(hd==="hold"){const c=h("div",{class:"p360-touch"});c.appendChild(p360Icon("flag"));c.appendChild(h("div",null,h("b",null,"On hold. "),"No automated emails go to this member until the hold is lifted."));tw.appendChild(c);}}
+  else if(isPro){const findSel=()=>[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>[...s.options].some(op=>/^1 - /.test(op.value))),sel=findSel();
+    const L0=sel?[...sel.options].map(op=>op.value).filter(x=>/^\d+ - /.test(x)):[],L=L0.length?L0:["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid"];
+    const cur=v.pstage||(sel?sel.value:""),at=L.indexOf(cur),won=/won/i.test(cur),lost=/lost/i.test(cur);
+    const right=lost?"Closed lost":won?"Closed won":/hold/i.test(cur)?"On hold":"";
+    sw.appendChild(h("div",{class:"p360-head"},h("h3",null,"Sales"),right?h("span",{class:"p360-sub"},right):null));
+    if(L.length&&!lost){const g=h("div",{class:"p360-steps",style:"grid-template-columns:repeat("+L.length+",minmax(0,1fr))"});
+      const short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting");
+      L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(won||i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the sales stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>{const s2=findSel();if(s2&&!s2.disabled&&s2.value!==x){s2.value=x;s2.dispatchEvent(new Event("change",{bubbles:true}));}}},h("i"),h("span",null,short(x)));
+        if(!db||canWrite===false)b.disabled=true;g.appendChild(b);});sw.appendChild(g);}
+    if(pipe.next)sw.appendChild(h("div",{class:"p360-line"},h("b",null,"Next step: "),pipe.next));}
+  else sw.appendChild(h("div",{class:"p360-head"},h("h3",null,"Relationship")));
   /* next open follow-up */
   const nw=box.querySelector(".p360-next-wrap");nw.textContent="";
   const fu=TP.filter(t=>t.org===o.k&&t.next&&t.next.text&&!t.next.done).sort((a,b)=>String(a.next.due||"9").localeCompare(String(b.next.due||"9")));
   if(fu.length){const t=fu[0],late=!!(t.next.due&&t.next.due<TODAY),cb=h("input",{type:"checkbox","aria-label":"Mark this follow-up done"});
     cb.addEventListener("change",()=>{if(cb.checked)fuDone(t,true);});
     nw.appendChild(h("section",{class:"p360-card p360-next"},cb,h("div",{class:"p360-next-main"},h("div",{class:"k"},"Next Up"+(fu.length>1?" · "+fu.length+" open":"")),h("div",{class:"t"},t.next.text)),
-      h("div",{class:"p360-next-side"+(late?" late":"")},h("b",null,t.next.due?(late?"Was due ":"Due ")+fmtS(t.next.due):"No date"),h("span",null,t.next.owner||""))));}
-  /* quick counts that open the tab they belong to */
-  const q=box.querySelector(".p360-quick");q.textContent="";
-  [["act","Payments and Activity","money"],["regs","Summit Registrations","engagement"],["mtg","Workgroup Meetings","engagement"],["dl","Connect and Downloads","engagement"]].forEach(([p,l,tab])=>{
-    if(!box.querySelector('[data-part="'+p+'"]'))return;q.appendChild(h("button",{type:"button",class:"p360-q",onclick:()=>p360Go(box,tab,p)},h("b",null,cnt(p)||"0"),h("span",null,l)));});
+      h("div",{class:"p360-next-side"+(late?" late":"")},h("b",null,t.next.due?(late?"Was due ":"Due ")+dow(t.next.due)+", "+fmtS(t.next.due):"No date"),h("span",null,t.next.owner||""))));}
+  /* three cards: money, benefits used, open deal */
+  const three=box.querySelector(".p360-three");three.textContent="";
+  { const c=h("section",{class:"p360-card"},h("h4",null,"Money"));
+    const act=box.querySelector('[data-part="act"]'),mb=act&&act.querySelector(".mixbar"),parts=[];
+    if(mb)String(mb.getAttribute("aria-label")||"").split(",").forEach(s=>{const m=s.trim().match(/^(.*\S)\s+(-?[\d.]+)$/);if(m)parts.push([m[1],Number(m[2])]);});
+    const tot=parts.reduce((a,p)=>a+p[1],0);
+    let lastDues=null;if(act)for(const tr of act.querySelectorAll("tbody tr")){const td=tr.children;if(td.length>=4&&/membership/i.test(td[2].textContent)&&/[1-9]/.test(td[3].textContent)){lastDues={d:td[0].textContent.trim(),w:td[1].textContent.trim(),n:td[3].textContent.trim()};break;}}
+    c.appendChild(h("div",{class:"p360-big"},tot?money(tot):"$0"));
+    c.appendChild(h("div",{class:"p360-line"},tot?"On record in the Financial System":"No payments on record"));
+    if(mb){const m2=mb.cloneNode(true);m2.className="p360-mixbar";c.appendChild(m2);}
+    if(lastDues)c.appendChild(h("div",{class:"p360-line"},"Last dues: ",h("b",null,lastDues.n),", "+lastDues.d));
+    if(!isPro&&F[(RY+" dues").toLowerCase()])c.appendChild(h("div",{class:"p360-kv"},h("span",null,RY+" dues"),h("b",null,F[(RY+" dues").toLowerCase()])));
+    if(act)c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"money","act")},"See payments"));
+    three.appendChild(c);}
+  { const c=h("section",{class:"p360-card"},h("h4",null,"Benefits Used"));let any=false;
+    box.querySelectorAll('[data-part="benefits"] .benrow').forEach(r=>{const l=(r.querySelector(".bn-l")||{}).textContent||"",vEl=r.querySelector(".bn-v");if(!vEl)return;
+      const main=[...vEl.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent).join("").trim(),m=main.match(/^(\d+)\s+of\s+(\d+)\s+left/i);
+      if(m&&/summit registrations|boot camp|certifications/i.test(l)){const left=Number(m[1]),all=Number(m[2]),used=all-left;any=true;
+        const lab=l.replace(/^Free\s+/i,"");c.appendChild(h("div",null,h("div",{class:"p360-kv"},h("span",null,lab),h("b",null,used+" of "+all)),h("div",{class:"p360-bar"},h("i",{class:used===0?"low":"",style:"width:"+Math.max(3,Math.round(100*used/Math.max(1,all)))+"%"}))));}
+      else if(/mismo connect/i.test(l)){const sm=(vEl.querySelector("small")||{}).textContent||"",pe=sm.match(/(\d[\d,]*)\s+people logged in/i),dl=sm.match(/(\d[\d,]*)\s+library downloads/i);
+        if(pe){any=true;c.appendChild(h("div",{class:"p360-kv"},h("span",null,"Connect logins"),h("b",null,pe[1]+" people")));}if(dl){any=true;c.appendChild(h("div",{class:"p360-kv"},h("span",null,"Library downloads"),h("b",null,dl[1])));}}});
+    if(!any)c.appendChild(h("div",{class:"p360-line"},isPro?"Not a member yet.":"No member benefits recorded for this level."));
+    if(box.querySelector('[data-part="benefits"]'))c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"engagement","benefits")},"See benefits"));
+    three.appendChild(c);}
+  { const c=h("section",{class:"p360-card"},h("h4",null,"Open Deal"));
+    if(pipe.forecast||v.pstage){c.appendChild(h("div",{class:"p360-line",style:"font-size:13.5px"},h("b",null,isPro?"New membership":"Sales pipeline")));
+      c.appendChild(h("div",{class:"p360-big"},pipe.forecast?money(pipe.forecast):"No amount"));
+      const ch=h("div",{class:"p360-chips"});if(v.pstage)ch.appendChild(h("span",{class:"p360-chip"},v.pstage));if(pipe.prob!=null&&pipe.prob!=="")ch.appendChild(h("span",{class:"p360-chip"},pipe.prob+"%"));c.appendChild(ch);
+      if(pipe.next)c.appendChild(h("div",{class:"p360-line clamp"},"Next: "+pipe.next));}
+    else c.appendChild(h("div",{class:"p360-line"},"No deal in the sales pipeline."));
+    if(box.querySelector('[data-part="deals"]'))c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"money","deals")},"Sales and renewals"));
+    three.appendChild(c);}
   /* key contacts */
   const pc=box.querySelector(".p360-people");pc.textContent="";
   const R=["Primary","Alternate","Billing","Marketing","Compliance"],rank=p=>{const r=(p.roles||[]).map(x=>R.indexOf(x)).filter(i=>i>=0);return r.length?Math.min(...r):9;};
   const ppl=(o.people||[]).filter(p=>p.name||p.email).slice().sort((a,b)=>rank(a)-rank(b));
-  pc.appendChild(h("div",{class:"p360-head"},h("h3",null,"Key Contacts"),ppl.length?h("button",{type:"button",class:"p360-link",onclick:()=>p360Go(box,"contacts","contacts")},ppl.length>3?"All "+ppl.length+" contacts":"Edit contacts"):null));
-  if(!ppl.length)pc.appendChild(h("div",{class:"hint"},"No contacts on file yet."));
-  ppl.slice(0,3).forEach(p=>pc.appendChild(h("div",{class:"p360-row"},h("div",{class:"p360-av","aria-hidden":"true"},p360Initials(p.name||p.email)),
-    h("div",{class:"p360-grow"},h("b",null,p.name||p.email),h("span",null,p.title||(p.name?p.email:"")||"")),
-    ...(p.roles||[]).slice(0,2).map(r=>h("span",{class:"p360-chip"},r)),p.email?h("a",{class:"p360-mail",href:"mailto:"+p.email,"aria-label":"Email "+(p.name||p.email)},"Email"):null)));
+  pc.appendChild(h("div",{class:"p360-head"},h("h3",null,"Key Contacts"),h("button",{type:"button",class:"p360-link",onclick:()=>p360Go(box,"contacts","contacts")},ppl.length>3?"All "+ppl.length+" contacts":ppl.length?"Edit contacts":"Add a contact")));
+  if(!ppl.length)pc.appendChild(h("div",{class:"p360-empty"},"No contacts on file yet."));
+  ppl.slice(0,3).forEach(p=>{const row=h("div",{class:"p360-row"},h("div",{class:"p360-av","aria-hidden":"true"},p360Initials(p.name||p.email)),
+      h("div",{class:"p360-grow"},h("b",null,p.name||p.email),h("span",null,p.title||(p.name?p.email:"")||"")),...(p.roles||[]).slice(0,2).map(r=>h("span",{class:"p360-chip"},r)));
+    if(p.email){const a=h("a",{class:"p360-mail",href:"mailto:"+p.email,"aria-label":"Email "+(p.name||p.email)});a.appendChild(p360Icon("mail"));row.appendChild(a);}
+    pc.appendChild(row);});
   /* recent conversations and notes */
   const rc=box.querySelector(".p360-recent");rc.textContent="";
   rc.appendChild(h("div",{class:"p360-head"},h("h3",null,"Recent Activity"),T.length?h("button",{type:"button",class:"p360-link",onclick:()=>p360Go(box,"activity","history")},T.length>3?"View all "+T.length:"Open activity"):null));
-  if(!T.length)rc.appendChild(h("div",{class:"hint"},"No conversations logged yet."));
-  T.slice(0,3).forEach(x=>rc.appendChild(h("div",{class:"p360-row top"},h("div",{class:"p360-dot","aria-hidden":"true"},(x.kind||"N").slice(0,1).toUpperCase()),
-    h("div",{class:"p360-grow"},h("b",null,(x.kind||"Note")+(x.who?" · "+x.who:"")+(x.d?" · "+fmtS(x.d):"")),h("span",{class:"clamp"},x.text)))));
+  if(!T.length)rc.appendChild(h("div",{class:"p360-empty"},"No conversations logged yet."));
+  const icon=k=>/call/i.test(k)?"call":/email/i.test(k)?"mail":/meeting/i.test(k)?"meet":/event|conversation/i.test(k)?"chat":"note";
+  T.slice(0,3).forEach(x=>{const ic=h("div",{class:"p360-ic"});ic.appendChild(p360Icon(icon(x.kind||"")));
+    rc.appendChild(h("div",{class:"p360-row top"},ic,h("div",{class:"p360-grow"},h("b",null,(x.kind||"Note")+" ",h("small",null,[x.who,x.d?p360D(x.d):""].filter(Boolean).join(" · "))),h("span",{class:"clamp"},x.text))));});
   const setN=(id,n)=>{const s=box.querySelector('[data-tabn="'+id+'"]');if(s)s.textContent=String(n);};
   setN("activity",T.length);setN("contacts",ppl.length);setN("issues",cnt("issues")||"0");
 }
