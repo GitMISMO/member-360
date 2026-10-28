@@ -1302,6 +1302,76 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-pick-row{display:flex;gap:8px;margin-top:8px}
 .p360-pick-row input{flex:1;min-width:0;height:38px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;padding:0 10px}
 .wf-row .tc-act select{width:auto;max-width:200px}
+/* Start a Call Block (Jonna, Oct 28, 2026) */
+.wf-h{flex-wrap:wrap}
+.wf-h .cb-start{margin:0 0 0 auto;display:inline-flex;align-items:center;gap:6px}
+.cb-dlg{width:min(720px,calc(100vw - 32px))}
+.cb-bar{height:6px;border-radius:3px;background:var(--rule);overflow:hidden;margin:0 0 14px}
+.cb-bar i{display:block;height:6px;background:var(--sky);border-radius:3px}
+.cb-why{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-bottom:14px}
+.cb-why p{margin:0;font-size:15.5px;line-height:1.55;color:var(--ink)}
+.cb-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.cb-facts div{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.cb-facts small{font-size:11.5px;color:var(--ink-3)}
+.cb-facts b{font-size:14px;color:var(--ink)}
+.cb-people{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.cb-person{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px}
+.cb-person input{accent-color:var(--sky);width:16px;height:16px;flex-shrink:0}
+.cb-person label{flex:1;min-width:0;display:flex;flex-direction:column;cursor:pointer}
+.cb-person label b{font-size:14px;color:var(--ink)}
+.cb-person label span{font-size:12.5px;color:var(--ink-3)}
+.cb-ph{font-size:13px;color:var(--ink-2);white-space:nowrap}
+.cb-lab{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+.cb-out{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.cb-o{height:40px;padding:0 14px;border-radius:9px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer}
+.cb-o[aria-pressed="true"]{background:var(--chip);border-color:var(--sky);box-shadow:inset 0 0 0 1px var(--sky);font-weight:600}
+.cb-o.cb-na{color:var(--ink-2);border-style:dashed}
+.cb-dlg textarea,.cb-fu input{width:100%;box-sizing:border-box;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;padding:8px 10px}
+.cb-fu{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:8px;margin:8px 0 14px}
+.cb-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cb-act .btn{margin:0}
+.cb-end{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 0}
+.cb-end b{font-size:18px;color:var(--ink)}
+.cb-end span{color:var(--ink-3)}
+@media (max-width:600px){.cb-facts{grid-template-columns:minmax(0,1fr)}.cb-fu{grid-template-columns:minmax(0,1fr)}}
+/* the line under the company name (Jonna, Oct 28, 2026) */
+.p360-namewrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.p360-namewrap .p360-name{flex:none}
+.p360-tags{display:flex;flex-wrap:wrap;gap:6px}
+.p360-tags:empty{display:none}
+.p360-tg{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--chip);color:var(--ink-2);white-space:nowrap}
+.p360-tg.lv{font-weight:600;color:var(--ink);box-shadow:inset 0 0 0 1px var(--border-strong)}
+.p360-tg.st::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:var(--ink-3);vertical-align:1px}
+.p360-tg.st.ok::before{background:var(--good)}
+.p360-tg.st.pro::before{background:var(--sky)}
+.p360-tg.id{font-family:var(--mono);font-size:11.5px}
+/* notes with formatting (Jonna, Oct 28, 2026) */
+.rt{border:1px solid var(--border-strong);border-radius:8px;background:var(--surface-2);overflow:hidden}
+.rt:focus-within{outline:2px solid var(--sky);outline-offset:1px}
+.rt-tb{display:flex;flex-wrap:wrap;gap:2px;padding:4px;border-bottom:1px solid var(--border);background:var(--surface)}
+.rt-b{min-width:32px;height:30px;padding:0 9px;border:0;border-radius:6px;background:none;color:var(--ink-2);font:inherit;font-size:13px;cursor:pointer}
+.rt-b:hover{background:var(--chip);color:var(--ink)}
+.rt-b[aria-pressed="true"]{background:var(--chip);color:var(--ink);box-shadow:inset 0 0 0 1px var(--sky)}
+.rt-bold{font-weight:700}
+.rt-italic{font-style:italic;font-family:Georgia,serif}
+.rt-underline{text-decoration:underline}
+.rt-removeFormat{margin-left:auto;font-size:12px}
+.rt-ed{min-height:84px;max-height:320px;overflow:auto;padding:8px 10px;color:var(--ink);font-size:14px;line-height:1.5;outline:none;white-space:pre-wrap;overflow-wrap:anywhere}
+.rt-ed:empty::before{content:attr(data-ph);color:var(--ink-3)}
+.rt-ed ul,.rt-ed ol,.hi .txt ul,.hi .txt ol{margin:4px 0;padding-left:22px}
+.rt-ed[contenteditable="false"]{opacity:.7}
+/* the reminder on the sales Next Step (Jonna, Oct 28, 2026) */
+.p360-remind{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.p360-rm-set{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.p360-rm-set .lab{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.p360-rm-set input,.p360-rm-set select{height:34px;width:auto;min-width:0}
+.p360-rm-set .btn{margin:0}
+.p360-rm-on{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);padding:6px 10px;border-radius:8px;background:var(--chip)}
+.p360-rm-on.late{color:var(--bad)}
+.p360-rm-on .px{margin-left:auto}
+.txt.rt-view{white-space:normal}
+
+.p360-remind .p360-rm-set input[type=date]{width:170px!important;flex:0 0 auto}.p360-remind .p360-rm-set select{width:auto!important}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -2847,12 +2917,12 @@ function p360Dress(o,box){
   if(P360.k!==o.k){P360.k=o.k;P360.tab="overview";}
   /* the name moves from the bar into the header, next to the owner */
   const pt=$("m360-pane-t");if(pt)pt.textContent="";const pn=$("m360-pane");if(pn)pn.setAttribute("aria-label",o.name);
-  const hero=h("div",{class:"p360-hero"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),h("h2",{class:"p360-name"},o.name),h("div",{class:"p360-owner"}));
+  const hero=h("div",{class:"p360-hero"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),h("div",{class:"p360-namewrap"},h("h2",{class:"p360-name"},o.name),h("div",{class:"p360-tags"})),h("div",{class:"p360-owner",title:"Click to change the owner"}));
   const act=h("div",{class:"p360-actions"});
   const lt=h("button",{type:"button",class:"btn",onclick:()=>p360LogPop(o)},p360Icon("plus"),"Log Touchpoint");act.appendChild(lt);
   if(btnrow){[...btnrow.children].forEach(b=>{if(b.tagName==="BUTTON"&&/email/i.test(b.textContent)){b.textContent="";b.appendChild(p360Icon("mail"));b.appendChild(document.createTextNode("Email"));}act.appendChild(b);});btnrow.remove();}
   if(db&&canWrite!==false&&typeof moveOpts==="function"&&typeof addPlan==="function"){const opts=moveOpts();opts[0]={v:"",l:"Plan for…"};
-    const ps=select(opts,"",{class:"p360-plan","aria-label":"Plan a touch for a day"});ps.addEventListener("change",()=>{const d=ps.value;ps.value="";if(d)addPlan(o,d,"");});act.appendChild(ps);}
+    const ps=select(opts,"",{class:"p360-plan","aria-label":"Plan a touch for a day",title:"Plan a touch with this company for a day. It shows on the Outreach Planner."});ps.addEventListener("change",()=>{const d=ps.value;ps.value="";if(d)addPlan(o,d,"");});act.appendChild(ps);}
   if(secs.issues)act.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>p360Go(box,"issues","issues")},p360Icon("flag"),"Log an Issue"));
   const bar=h("div",{class:"p360-tabs",role:"tablist","aria-label":"Record sections"}),panels={};
   P360_TABS.forEach(([id,label,parts])=>{const have=parts.filter(p=>secs[p]);if(id!=="overview"&&!have.length)return;
@@ -2884,6 +2954,15 @@ function p360Update(o,box){
     const OPTS=os?[...os.options].map(x=>[x.value,x.text]):[["","Unassigned"],["Amy Moses","Amy Moses"],["Brian Vieaux","Brian Vieaux"],["Kelly Bradshaw","Kelly Bradshaw"]];
     if(!(os&&os.disabled)&&db&&canWrite!==false){op.appendChild(p360Icon("down"));const pick=h("select",{"aria-label":"Change the owner"});OPTS.forEach(([val,txt])=>{const opt=document.createElement("option");opt.value=val;opt.textContent=txt;pick.appendChild(opt);});pick.value=os?os.value:own;
       pick.addEventListener("change",()=>{const s2=osel();if(s2&&s2.value!==pick.value){s2.value=pick.value;s2.dispatchEvent(new Event("change",{bubbles:true}));}});op.appendChild(pick);op.classList.add("can");}}
+  /* the line under the name: level, type and sector, status and company ID, as design A has it (Jonna, Oct 28, 2026) */
+  const tg=box.querySelector(".p360-tags");if(tg){tg.textContent="";const fd=re=>{for(const kk in F)if(re.test(kk)&&F[kk]&&!/^[—-]$/.test(F[kk]))return F[kk];return "";};
+    const secSel=[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>s.getAttribute("aria-label")==="Industry Sector"),sector=(secSel&&secSel.value)||fd(/sector/);
+    const typ=(Array.isArray(o.type)?o.type.join(", "):(typeof o.type==="string"?o.type:""))||fd(/^(organization |company |member )?type$/);
+    const lv=isPro?"":(o.level||fd(/^(membership )?level$/));
+    const tag=(cls,txt)=>{if(txt)tg.appendChild(h("span",{class:"p360-tg"+(cls?" "+cls:"")},txt));};
+    tag("lv",lv);tag("",[typ,sector].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(" · "));
+    tag("st "+(o.life==="Active"?"ok":isPro?"pro":"off"),o.life||"");
+    const cid=String(fd(/company id|aptify/)||o.cid||"").trim();if(/^[0-9]{4,}$/.test(cid))tag("id","ID "+cid);}
   /* header metrics */
   const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Lead Source",pipe.lead||o.source||"Not set"],["Last Touch",ltxt]]
     :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",ltxt]];
@@ -2894,7 +2973,7 @@ function p360Update(o,box){
     const right=s==="Lost"?h("span",{class:"p360-sub"},"Marked lost"):nx?h("span",{class:"p360-sub"},hd==="person"?"Next step: ":"Next email: ",h("b",null,nx.st.name+", "+dow(nx.d)+" "+fmtS(nx.d))):h("span",{class:"p360-sub"},s==="Renewed"?"Renewed for "+RY:hd==="person"?"Personal outreach, no automatic emails":hd==="hold"?"Automatic emails paused":"");
     sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),right));
     if(s!=="Lost"){const paid=s==="Renewed"&&!sov(o,"stage"),g=h("div",{class:"p360-steps"});
-      L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the "+RY+" stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>p360SetStage(box,x)},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x));
+      L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the "+RY+" stage to "+x,title:"Click to set the "+RY+" stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>p360SetStage(box,x)},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x));
         if(paid||!db||canWrite===false)b.disabled=true;g.appendChild(b);});sw.appendChild(g);}
     const r=handReasons(o);
     if(hd==="person"&&r.length){const c=h("div",{class:"p360-touch"});c.appendChild(p360Icon("person"));c.appendChild(h("div",null,h("b",null,"Personal touch. "),r.join(". ").replace(/\.\./g,".")+"."));tw.appendChild(c);}
@@ -2991,7 +3070,7 @@ function p360LogPop(o,m){
   if(save)save.addEventListener("click",()=>{if(!sum||!sum.value.trim())return;let n=0;const iv=setInterval(()=>{n++;if(!save.disabled&&!sum.value){clearInterval(iv);dl.close();}else if(n>60)clearInterval(iv);},250);});
   dl.addEventListener("close",()=>dl.remove());
   try{dl.showModal();}catch(e){dl.setAttribute("open","");}
-  setTimeout(()=>{if(sum)try{sum.focus();}catch(e){}},50);
+  setTimeout(()=>{const fe=body.querySelector(".rt-ed")||sum;if(fe)try{fe.focus();}catch(e){}},50);
 }
 const WF={day:""};
 function wfItems(){
@@ -3003,7 +3082,7 @@ function wfItems(){
   return out.filter(it=>BY[it.org]);
 }
 function wfDone(it){return it.kind==="fu"?!!it.t.next.done:planDone(it.p);}
-function wfWhy(it){const o=BY[it.org];if(it.kind==="fu")return it.t.next.text;try{const r=laneOf(o);if(r&&r.why)return r.why;}catch(e){}const L=LANE[it.p.lane];return L?L.sub:"";}
+function wfWhy(it){const o=BY[it.org];if(it.kind==="fu")return it.t.next.text;if(it.p.note)return it.p.note;try{const r=laneOf(o);if(r&&r.why)return r.why;}catch(e){}const L=LANE[it.p.lane];return L?L.sub:"";}
 function wfDrop(el,k){
   el.addEventListener("dragover",e=>{if(!dragData)return;e.preventDefault();el.classList.add("over");});
   el.addEventListener("dragleave",e=>{if(!el.contains(e.relatedTarget))el.classList.remove("over");});
@@ -3028,7 +3107,7 @@ function renderFocus(){
   if(nx){const o=BY[nx.org],isFu=nx.kind==="fu",L=isFu?null:LANE[nx.p.lane];
     const pp=(o.people||[]).filter(p=>p.email||p.name),pr=pp.find(p=>(p.roles||[]).includes("Primary"))||pp[0];
     const own=isFu?nx.t.next.owner:nx.p.owner;
-    const tag=isFu?"Follow-up":(L?L.name:"Planned touch"),when=nx.late?"Was due "+dow(nx.day)+", "+fmtS(nx.day):nx.day===TODAY?"Today":dow(nx.day)+", "+fmtS(nx.day);
+    const tag=isFu?"Follow-up":(nx.p.remind?"Reminder":(L?L.name:"Planned touch")),when=nx.late?"Was due "+dow(nx.day)+", "+fmtS(nx.day):nx.day===TODAY?"Today":dow(nx.day)+", "+fmtS(nx.day);
     const text=wfWhy(nx);
     const card=h("section",{class:"wf-up",style:"--lc:"+(isFu?"var(--sky)":(L?L.c:"var(--border-strong)"))});
     card.appendChild(h("div",{class:"wf-up-top"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),
@@ -3058,14 +3137,14 @@ function renderFocus(){
   const strip=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,wkOff===1?"Next Week":"This Week"),h("span",null,write?"Drop a card on a day":"")));
   const g=h("div",{class:"wf-days"});
   days.forEach(k=>{const its=all.filter(it=>it.day===k&&!it.late),dn=its.filter(wfDone).length,op=its.length-dn;
-    const b=h("button",{type:"button",class:"wf-dayb"+(k===TODAY?" today":"")+(k<TODAY?" past":"")+(WF.day===k?" on":""),"aria-pressed":String(WF.day===k),"aria-label":dow(k)+" "+fmtS(k)+": "+(op?op+" to do":dn?dn+" done":"nothing planned"),onclick:()=>{WF.day=WF.day===k?"":k;renderFocus();}},
+    const b=h("button",{type:"button",class:"wf-dayb"+(k===TODAY?" today":"")+(k<TODAY?" past":"")+(WF.day===k?" on":""),"aria-pressed":String(WF.day===k),title:"Click to see only this day. Drop a card here to plan it for this day.","aria-label":dow(k)+" "+fmtS(k)+": "+(op?op+" to do":dn?dn+" done":"nothing planned"),onclick:()=>{WF.day=WF.day===k?"":k;renderFocus();}},
       h("span",{class:"d"},dow(k).slice(0,3).toUpperCase()),h("b",null,String(Number(k.slice(8)))),h("span",{class:"c"+(op?"":dn?" ok":"")},op?op+" to do":dn?dn+" done":"—"));
     if(write)wfDrop(b,k);g.appendChild(b);});
   strip.appendChild(g);
   const late=open.filter(it=>it.late).length;if(late)strip.appendChild(h("div",{class:"wf-late"},late+(late===1?" item is":" items are")+" past due. They come first in your list."));
   side.appendChild(strip);
   /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
-  if(write)side.appendChild(h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drop an email from Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
+  if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drop an email from Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
   /* done this week */
   const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Done This Week"),h("span",null,done.length+" of "+(done.length+open.length))));
   if(!done.length)dc.appendChild(h("div",{class:"wf-empty"},"Nothing ticked off yet."));
@@ -3162,11 +3241,11 @@ function p360MailFill(box,o,m){
   if(date&&m.date)date.value=m.date;
   if(type&&[...type.options].some(x=>x.value==="Email"))type.value="Email";
   if(who){const ad=[m.from].concat(m.to||[]).map(a=>String(a||"").toLowerCase()),p=(o.people||[]).find(p=>p.email&&ad.includes(p.email.toLowerCase()));if(p)who.value=p.email;}
-  if(sum){sum.value=p360MailText(m);try{sum.focus();sum.setSelectionRange(0,0);sum.scrollTop=0;}catch(e){}}
+  if(sum){sum.value=p360MailText(m);sum.dispatchEvent(new Event("p360set"));try{sum.focus();sum.setSelectionRange(0,0);sum.scrollTop=0;}catch(e){}}
 }
 function p360DropZone(label,onMail){
   const inp=h("input",{type:"file",accept:".msg,.eml,message/rfc822",hidden:true,"aria-hidden":"true",tabindex:"-1"});
-  const z=h("div",{class:"p360-drop"});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
+  const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
     try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m){msg.textContent="That didn't look like an email. Drag it straight from Outlook, or use a .msg or .eml file.";return;}onMail(m);}
@@ -3205,6 +3284,160 @@ function p360MailPick(m,c){
   dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
 }
 {const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drop an email here to fill this in",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
+/* ---------- Start a Call Block: work through a list one company at a time, log each in a click or two, then the next (Jonna, Oct 28, 2026) ----------
+   The list is this week's planner items (late ones first) or one Who to Touch lane (first 25). Save and Next logs a touchpoint the same way
+   Log a Touchpoint does and ticks the planned touch or follow-up done. No Answer logs nothing and moves the company to the end, once. */
+const CB={q:[],i:0,n:0};
+function cbQueueWeek(){
+  return wfItems().filter(it=>!wfDone(it)).sort((a,b)=>(a.late?0:1)-(b.late?0:1)||String(a.day).localeCompare(String(b.day)))
+    .map(it=>({o:BY[it.org],it,why:wfWhy(it),tag:it.kind==="fu"?"Follow-up":(LANE[it.p.lane]?LANE[it.p.lane].name:"Planned touch")}));
+}
+function cbQueueLane(id){const S=LASTS||suggestions(),L=LANE[id];return (S[id]||[]).filter(x=>x&&x.o).slice(0,25).map(x=>({o:x.o,it:null,why:x.why||(L?L.sub:""),tag:L?L.name:""}));}
+function cbButton(){
+  const hd=document.querySelector("#wk-focus .wf-h");if(!hd||hd.querySelector(".cb-start")||!(db&&canWrite))return;
+  const b=h("button",{type:"button",class:"btn cb-start",title:"Go through your list one company at a time: call or email, log how it went in a click, then on to the next.",onclick:()=>cbOpen()});b.appendChild(p360Icon("call"));b.appendChild(document.createTextNode("Start a Call Block"));hd.appendChild(b);
+}
+function cbOpen(){
+  let dl=$("cb-dlg");if(dl)dl.remove();
+  dl=h("dialog",{id:"cb-dlg",class:"p360-dlg cb-dlg","aria-label":"Call Block"});const me=dl;
+  const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>me.close());
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Call Block"),h("h2",null,"What do you want to work through?")),x));
+  const b=h("div",{class:"p360-dlg-b"});dl.appendChild(b);
+  const opt=(label,sub,n,fn)=>{const bt=h("button",{type:"button",class:"p360-pick",disabled:!n},h("span",{class:"nm"},label),h("small",null,n?n+" "+sub:"nobody right now"));
+    bt.addEventListener("click",()=>{CB.q=fn();CB.i=0;CB.n=0;cbRender();});b.appendChild(bt);};
+  const wk=cbQueueWeek();opt(wkOff===1?"Next Week's List":"This Week's List","to do",wk.length,()=>wk);
+  const S=LASTS||suggestions();LANES.forEach(l=>{const n=(S[l.id]||[]).length;if(n)opt(l.name,"to touch",n,()=>cbQueueLane(l.id));});
+  b.appendChild(h("p",{class:"p360-pick-say",style:"margin:10px 0 0"},"A lane takes its first 25."));
+  dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
+}
+function cbRender(){
+  const dl=$("cb-dlg");if(!dl)return;
+  const b=dl.querySelector(".p360-dlg-b"),hd=dl.querySelector(".p360-dlg-h h2"),k=dl.querySelector(".p360-dlg-h .k");b.textContent="";
+  if(CB.i>=CB.q.length){k.textContent="Call Block";hd.textContent="All Done";
+    b.appendChild(h("div",{class:"cb-end"},h("b",null,CB.n?"You logged "+CB.n+(CB.n===1?" touch.":" touches."):"Nothing logged this time."),h("span",null,new Set(CB.q.map(z=>z.o.k)).size+" in this block"),h("button",{type:"button",class:"btn",onclick:()=>dl.close()},"Close")));return;}
+  const x=CB.q[CB.i],o=x.o;k.textContent="Call Block · "+(CB.i+1)+" of "+CB.q.length;hd.textContent=o.name;
+  b.appendChild(h("div",{class:"cb-bar"},h("i",{style:"width:"+Math.round(100*CB.i/CB.q.length)+"%"})));
+  b.appendChild(h("div",{class:"cb-why"},h("span",{class:"wf-tag"},x.tag||"Touch"),x.why?h("p",null,x.why):null));
+  const lt=lastTouch(o),isP=p=>(p.roles||[]).includes("Primary")?1:0;
+  const pp=(o.people||[]).filter(p=>p.email||p.name).slice().sort((p,q)=>isP(q)-isP(p));
+  b.appendChild(h("div",{class:"cb-facts"},h("div",null,h("small",null,"Level"),h("b",null,o.level||o.life||"Not recorded")),h("div",null,h("small",null,"Last Touch"),h("b",null,lt?p360D(lt):"None yet")),h("div",null,h("small",null,"Owner"),h("b",null,owner(o)||"Unassigned"))));
+  /* who: pick the contact this touch was with; call and email links where we have them */
+  let pick=pp[0]?(pp[0].email||pp[0].name):"";const cl=h("div",{class:"cb-people"});
+  pp.slice(0,4).forEach((p,i)=>{const id="cb-p-"+i,rb=h("input",{type:"radio",name:"cb-who",id,value:p.email||p.name});if(i===0)rb.checked=true;rb.addEventListener("change",()=>{pick=rb.value;});
+    const row=h("div",{class:"cb-person"},rb,h("label",{for:id},h("b",null,p.name||p.email),h("span",null,[(p.roles||[])[0],p.title].filter(Boolean).join(" · "))));
+    const ph=p.phone||p.mobile||"";if(ph){row.appendChild(h("span",{class:"cb-ph"},String(ph)));const a=h("a",{class:"p360-mail",href:"tel:"+String(ph).replace(/[^0-9+]/g,""),"aria-label":"Call "+(p.name||"")});a.appendChild(p360Icon("call"));row.appendChild(a);}
+    if(p.email){const a=h("a",{class:"p360-mail",href:"mailto:"+p.email,"aria-label":"Email "+(p.name||p.email)});a.appendChild(p360Icon("mail"));row.appendChild(a);}
+    cl.appendChild(row);});
+  if(!pp.length)cl.appendChild(h("div",{class:"wf-empty"},"No contacts on file. Open the record to add one."));
+  b.appendChild(cl);
+  /* how it went */
+  const OUT=[["Talked","Call"],["Left a Voicemail","Call"],["Sent an Email","Email"]];let out="";
+  const msg=h("span",{class:"hint"}),og=h("div",{class:"cb-out",role:"group","aria-label":"How did it go?"});
+  OUT.forEach(([l])=>{const bt=h("button",{type:"button",class:"cb-o","aria-pressed":"false"},l);bt.addEventListener("click",()=>{out=l;og.querySelectorAll(".cb-o").forEach(z=>z.setAttribute("aria-pressed",String(z===bt)));msg.textContent="";});og.appendChild(bt);});
+  const na=h("button",{type:"button",class:"cb-o cb-na"},"No Answer, Try Later");
+  na.addEventListener("click",()=>{if(!x.retry){x.retry=true;CB.q.push(x);}CB.i++;cbRender();});og.appendChild(na);
+  b.appendChild(h("div",{class:"cb-lab"},"How did it go?"));b.appendChild(og);
+  const note=h("textarea",{rows:"3",maxlength:"1000",placeholder:"A line or two on what was said (optional)","aria-label":"Notes"});b.appendChild(note);
+  const fx=h("input",{type:"text",maxlength:"240",placeholder:"Follow-up (optional), e.g. Send the renewal invoice","aria-label":"Follow-up"}),fd=h("input",{type:"date","aria-label":"Follow-up due"});
+  b.appendChild(h("div",{class:"cb-fu"},fx,fd));
+  const save=h("button",{type:"button",class:"btn"},"Save and Next"),skip=h("button",{type:"button",class:"btn ghost"},"Skip"),rec=h("button",{type:"button",class:"p360-link"},"Open the record");
+  skip.addEventListener("click",()=>{CB.i++;cbRender();});
+  rec.addEventListener("click",()=>{dl.close();openPane(o.k);});
+  save.addEventListener("click",async()=>{
+    if(!out){msg.textContent="Pick how it went first.";return;}
+    if(fx.value.trim()&&!fd.value){msg.textContent="Give the follow-up a due date.";fd.focus();return;}
+    if(blocked())return;save.disabled=true;msg.textContent="Saving…";
+    const type=OUT.find(z=>z[0]===out)[1];
+    const doc={org:o.k,date:TODAY,type,topic:inCohort(o)?"Renewal":(o.life==="Prospect"?"Membership":"Other"),contact:pick||"",sentiment:"Neutral",summary:(out+(note.value.trim()?". "+note.value.trim():"")).slice(0,1200),by:ME||"",at:new Date().toISOString()};
+    if(fx.value.trim())doc.next={text:fx.value.trim(),owner:who()||myName()||owner(o)||"",due:fd.value,done:false};
+    try{await db.collection("touchpoints").add(doc);CB.n++;
+      if(x.it){if(x.it.kind==="fu")fuDone(x.it.t,true);else markPlan(x.it.p,true,true);}
+      CB.i++;cbRender();}
+    catch(e){save.disabled=false;msg.textContent="";onWriteErr(e);}
+  });
+  b.appendChild(h("div",{class:"cb-act"},save,skip,rec,msg));
+}
+{const _rfc=renderFocus;renderFocus=function(){_rfc.apply(this,arguments);try{cbButton();}catch(e){console.error("call block",e);}};}
+
+/* ---------- notes with formatting in Log a Touchpoint: bold, italic, underline, bullets and numbered lists, like Word (Jonna, Oct 28, 2026) ----------
+   The summary is still saved as plain text (bullets become "•" lines) so every list, search and email keeps working;
+   the formatted version is saved beside it as html, cleaned to those few tags, and Conversation History shows it. */
+const RT_OK={B:1,STRONG:1,I:1,EM:1,U:1,UL:1,OL:1,LI:1,BR:1,P:1,DIV:1};
+function p360CleanHtml(html){
+  const doc=new DOMParser().parseFromString("<body>"+String(html||"")+"</body>","text/html"),out=document.createElement("div");
+  const walk=(src,dst)=>{src.childNodes.forEach(n=>{
+    if(n.nodeType===3){dst.appendChild(document.createTextNode(n.nodeValue));return;}
+    if(n.nodeType!==1)return;const t=n.tagName;
+    if(/^(SCRIPT|STYLE|META|LINK|HEAD|TITLE|XML|IFRAME|OBJECT|SVG|IMG)$/.test(t))return;
+    if(RT_OK[t]){const e=document.createElement(t==="STRONG"?"b":t==="EM"?"i":t.toLowerCase());walk(n,e);dst.appendChild(e);return;}
+    /* Word and Outlook mark bold, italic and underline with styles on spans: keep those, drop everything else */
+    const st=(n.getAttribute&&n.getAttribute("style"))||"";let d=dst;
+    if(/font-weight\s*:\s*(bold|[6-9]00)/i.test(st)){const e=document.createElement("b");d.appendChild(e);d=e;}
+    if(/font-style\s*:\s*italic/i.test(st)){const e=document.createElement("i");d.appendChild(e);d=e;}
+    if(/text-decoration[^;]*underline/i.test(st)){const e=document.createElement("u");d.appendChild(e);d=e;}
+    walk(n,d);});};
+  walk(doc.body,out);return out.innerHTML.replace(/(<br>\s*){3,}/g,"<br><br>");
+}
+function p360RtPlain(el){
+  let s="";
+  const walk=n=>{n.childNodes.forEach(c=>{
+    if(c.nodeType===3){s+=c.nodeValue;return;}if(c.nodeType!==1)return;const t=c.tagName;
+    if(t==="BR"){s+="\x0a";return;}
+    if(t==="LI"){const p=c.parentNode,i=[...p.children].indexOf(c)+1;if(s&&!/\x0a$/.test(s))s+="\x0a";s+=(p.tagName==="OL"?i+". ":"• ");walk(c);if(!/\x0a$/.test(s))s+="\x0a";return;}
+    const blk=/^(P|DIV|UL|OL)$/.test(t);if(blk&&s&&!/\x0a$/.test(s))s+="\x0a";walk(c);if(blk&&s&&!/\x0a$/.test(s))s+="\x0a";});};
+  walk(el);return s.replace(/\xa0/g," ").replace(/\x0a{3,}/g,"\x0a\x0a").trim();
+}
+function p360RtEditor(ta){
+  if(!ta||ta.dataset.rt)return null;ta.dataset.rt="1";
+  const ed=document.createElement("div");ed.className="rt-ed";ed.setAttribute("contenteditable",ta.disabled?"false":"true");
+  ed.setAttribute("role","textbox");ed.setAttribute("aria-multiline","true");ed.setAttribute("aria-label","Summary");ed.setAttribute("data-ph",ta.getAttribute("placeholder")||"");
+  const tb=h("div",{class:"rt-tb",role:"toolbar","aria-label":"Formatting"});
+  const sync=()=>{ta.value=p360RtPlain(ed);};
+  const state=()=>{tb.querySelectorAll(".rt-b").forEach(b=>{const c=b.dataset.cmd;let on=false;try{on=c!=="removeFormat"&&document.queryCommandState(c);}catch(e){}b.setAttribute("aria-pressed",String(!!on));});};
+  [["bold","B","Bold (Ctrl+B)"],["italic","I","Italic (Ctrl+I)"],["underline","U","Underline (Ctrl+U)"],["insertUnorderedList","• List","Bullets"],["insertOrderedList","1. List","Numbered list"],["removeFormat","Clear","Clear formatting"]].forEach(([cmd,lab,tip])=>{
+    const b=h("button",{type:"button",class:"rt-b rt-"+cmd,title:tip,"aria-label":tip,"aria-pressed":"false"},lab);b.dataset.cmd=cmd;
+    b.addEventListener("mousedown",e=>e.preventDefault());
+    b.addEventListener("click",()=>{ed.focus();try{document.execCommand(cmd,false,null);}catch(e){}sync();state();});tb.appendChild(b);});
+  ed.addEventListener("input",sync);ed.addEventListener("keyup",state);ed.addEventListener("mouseup",state);
+  ed.addEventListener("paste",e=>{const cd=e.clipboardData;if(!cd)return;e.preventDefault();const hh=cd.getData("text/html");
+    try{if(hh)document.execCommand("insertHTML",false,p360CleanHtml(hh));else document.execCommand("insertText",false,cd.getData("text/plain"));}catch(x){}sync();});
+  /* when something else fills the summary in (a dropped email), show it here */
+  ta.addEventListener("p360set",()=>{ed.textContent="";String(ta.value||"").split("\x0a").forEach((l,i)=>{if(i)ed.appendChild(document.createElement("br"));ed.appendChild(document.createTextNode(l));});});
+  const wrap=h("div",{class:"rt"},tb,ed);ta.parentNode.insertBefore(wrap,ta);ta.hidden=true;
+  if(ta.disabled)tb.hidden=true;
+  const fld=ta.closest(".fld"),lab=fld&&fld.querySelector("label");if(lab)lab.addEventListener("click",e=>{e.preventDefault();ed.focus();});
+  return ed;
+}
+{const _ffr=fillForm;fillForm=function(o,box){_ffr(o,box);try{const ta=box.querySelector(".formgrid textarea");if(ta)p360RtEditor(ta);}catch(e){console.error("notes editor",e);}};}
+
+/* ---------- a reminder date on the sales Next Step: it puts the next step on the Outreach Planner on that day (Jonna, Oct 28, 2026) ----------
+   Saved as a planned touch marked as a reminder, carrying the next step's text; it only counts as done by a touch logged on or after its day. */
+function p360RemindRow(o,c,dis){
+  const ta=c.querySelector('textarea[aria-label="Next Step"]');if(!ta)return;
+  const fld=ta.closest(".fld");if(!fld||fld.querySelector(".p360-remind"))return;
+  const row=h("div",{class:"p360-remind"});fld.appendChild(row);
+  const paint=()=>{row.textContent="";
+    PLANS.filter(p=>p.org===o.k&&p.remind&&!planDone(p)).sort((a,b)=>String(a.day).localeCompare(String(b.day))).forEach(p=>{const late=p.day<TODAY;
+      const x=dis?null:h("button",{type:"button",class:"px",title:"Take the reminder off","aria-label":"Take off the reminder for "+fmtS(p.day)},"×");
+      if(x)x.addEventListener("click",()=>{dropPlan(p);setTimeout(paint,400);});
+      row.appendChild(h("div",{class:"p360-rm-on"+(late?" late":"")},p360Icon("cal"),h("span",null,(late?"Reminder was due ":"Reminder set for ")+dow(p.day)+", "+fmtS(p.day)+(p.owner?" · "+p.owner.split(" ")[0]:"")),x));});
+    if(dis)return;
+    const d=h("input",{type:"date","aria-label":"Remind on"});d.min=TODAY;
+    const own=select(staffOpts("No Owner"),owner(o)||who()||myName()||"",{"aria-label":"Who to remind"});
+    const go=h("button",{type:"button",class:"btn ghost"},"Set Reminder");
+    go.addEventListener("click",async()=>{if(!d.value){d.focus();toast("Pick a date for the reminder.",true);return;}if(blocked())return;go.disabled=true;
+      const note=String(ta.value||"").trim()||"Follow up on the next step";
+      const doc={org:o.k,day:d.value,owner:own.value||"",lane:"",note:note.slice(0,240),remind:true,by:ME||"",at:d.value+"T12:00:00.000Z",made:new Date().toISOString()};
+      try{const ref=await db.collection("plans").add(doc);const id=ref&&ref.id||("tmp"+Date.now());if(!PLANS.some(x=>x.id===id))PLANS.push(Object.assign({id},doc));
+        renderThisWeek();toast("Reminder set for "+dow(d.value)+", "+fmtS(d.value)+". It shows on the Outreach Planner that day.");paint();}
+      catch(e){go.disabled=false;onWriteErr(e);}});
+    row.appendChild(h("div",{class:"p360-rm-set",title:"Pick a day and this next step shows on the Outreach Planner that day, so it isn't missed."},h("span",{class:"lab"},"Remind on"),d,own,go));};
+  paint();
+}
+{const _pc=pipeCtrls;pipeCtrls=function(o,c,dis){_pc(o,c,dis);try{p360RemindRow(o,c,dis);}catch(e){console.error("reminder",e);}};}
+/* Conversation History shows the formatted notes when there are some */
+function p360HistTxt(t){const d=h("div",{class:"txt"});if(t.html){d.innerHTML=p360CleanHtml(t.html);d.classList.add("rt-view");}else d.textContent=t.summary||"";return d;}
+
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
@@ -3922,8 +4155,9 @@ function fillForm(o,box){
     if(nx.value.trim()&&!nxd.value){msg.textContent="Give the next step a due date.";nxd.focus();return;}
     btn.disabled=true;msg.textContent="Saving…";
     const doc={org:o.k,date:date.value||TODAY,type:type.value,topic:topic.value,contact:who.value,sentiment:sent.value,summary:sum.value.trim(),by:ME||"",at:new Date().toISOString()};
+const hx=box.querySelector(".rt-ed");if(hx){const hh=p360CleanHtml(hx.innerHTML);if(/<(b|i|u|ul|ol)>/i.test(hh))doc.html=hh;}
     if(nx.value.trim())doc.next={text:nx.value.trim(),owner:nxo.value,due:nxd.value,done:false};
-    try{await db.collection("touchpoints").add(doc);sum.value="";nx.value="";nxd.value="";msg.textContent="";toast("Touchpoint saved"+(doc.next?" with a follow-up due "+fmtS(doc.next.due)+".":"."));
+    try{await db.collection("touchpoints").add(doc);sum.value="";if(hx)hx.innerHTML="";nx.value="";nxd.value="";msg.textContent="";toast("Touchpoint saved"+(doc.next?" with a follow-up due "+fmtS(doc.next.due)+".":"."));
       if(sent.value==="Concern"&&inCohort(o)&&!ov(o).personal)toast("Saved. Consider marking this member for personal outreach.");}
     catch(e){msg.textContent="";onWriteErr(e);}
     btn.disabled=false;
@@ -3951,7 +4185,7 @@ function fillHistory(o,box){
     if(i.kind==="here"){const t=i.t;const who=t.by?(NAMES[t.by]||"A colleague"):"Someone";
       list.appendChild(h("div",{class:"hi"},h("div",null,h("div",{class:"d"},fmt(t.date))),h("div",null,
         h("div",null,h("span",{class:"tag"},t.type),h("span",{class:"tag"},t.topic),t.sentiment&&t.sentiment!=="Neutral"?h("span",{class:"tag"},t.sentiment):null),
-        h("div",{class:"txt"},t.summary),
+        p360HistTxt(t),
         t.next?h("div",{class:"nx"},(t.next.done?"✓ Done: ":"Next: ")+t.next.text+(t.next.owner?" · "+t.next.owner:"")+(t.next.due?" · due "+fmtS(t.next.due):"")):null,
         h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:"")))));}
     else if(i.kind==="auto"){list.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
@@ -4515,7 +4749,7 @@ function planCard(item,withMove){
   cb.addEventListener("change",()=>{if(item.kind==="fu")fuDone(item.t,cb.checked);else markPlan(item.p,cb.checked);});
   const x=item.kind==="plan"?h("button",{type:"button",class:"px",title:"Take off the plan","aria-label":"Take "+o.name+" off the plan"},"×"):null;
   if(x)x.addEventListener("click",e=>{e.stopPropagation();dropPlan(item.p);});
-  const sub=item.kind==="fu"?item.t.next.text:(LANE[item.p.lane]?LANE[item.p.lane].name:"Planned touch");
+  const sub=item.kind==="fu"?item.t.next.text:(item.p.note?"Reminder: "+item.p.note:(LANE[item.p.lane]?LANE[item.p.lane].name:"Planned touch"));
   const nm=item.kind==="fu"?item.t.next.owner:item.p.owner;
   const c=h("div",{class:"pcard"+(done?" done":"")+(item.late?" is-late":""),style:"--lc:"+L.c,draggable:item.kind==="plan"?"true":null,tabindex:"0",role:"button","data-k":o.k},
     cb,h("div",{class:"pc-main"},h("b",null,o.name),h("span",{class:"pc-sub",title:(item.kind==="fu"?"Follow-up: ":"")+sub},(item.kind==="fu"?"Follow-up: ":"")+sub),item.late?h("span",{class:"late"},"Was due "+fmtS(item.day)):null),h("div",{class:"pc-side"},ownerBadge(nm),x));
