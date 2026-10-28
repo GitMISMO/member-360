@@ -1132,6 +1132,7 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .pc-main .late{color:var(--bad);font-weight:600}
 /* the company panel: actions, header metrics, tabs and an overview (Jonna, Oct 28, 2026, design A) */
 .headline .hl-date,.headline .hl-say{display:none}
+#m360-pane:has(.p360-hero) #m360-pane-t{visibility:hidden}
 .p360-hero{display:flex;gap:14px;align-items:center;margin:0 0 14px}
 .p360-badge{width:52px;height:52px;border-radius:12px;background:#14486e;color:#a9d8f3;font-weight:700;font-size:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .p360-name{flex:1;min-width:0;margin:0;font-size:22px;line-height:1.2;font-weight:600;letter-spacing:-.012em;color:var(--ink);overflow-wrap:anywhere}
@@ -1139,6 +1140,12 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-owner i{width:26px;height:26px;border-radius:50%;background:var(--c1);color:#fff;font-style:normal;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .p360-owner span{font-size:12px;line-height:1.25;color:var(--ink-3)}
 .p360-owner b{display:block;color:var(--ink);font-weight:600}
+.p360-owner{position:relative}
+.p360-owner.can{cursor:pointer}
+.p360-owner.can:hover{border-color:var(--border-strong)}
+.p360-owner.can:focus-within{outline:2px solid var(--sky);outline-offset:2px}
+.p360-owner > .p360-svg{color:var(--ink-3)}
+.p360-owner select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font:inherit}
 .p360-actions{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:center}
 .p360-actions .btn{margin:0;display:inline-flex;align-items:center;gap:6px}
 .p360-actions svg{width:14px;height:14px}
@@ -2742,7 +2749,7 @@ function renderProfile(o,box){
    Members, former members and prospects all get it. */
 const P360={k:null,tab:"overview"};
 const P360_TABS=[["overview","Overview",[]],["activity","Activity",["form","history","draft"]],["contacts","Contacts",["contacts"]],["money","Money",["timeline","iifs","act","deals","mhist"]],["engagement","Engagement",["regs","mtg","eng","dl","benefits"]],["issues","Issues",["issues"]]];
-const P360_IC={plus:'<path d="M12 5v14M5 12h14"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',call:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',meet:'<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M15 15c2.8 0 5 1.8 5.8 5"/>',note:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',flag:'<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',person:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'};
+const P360_IC={plus:'<path d="M12 5v14M5 12h14"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',call:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',meet:'<circle cx="9" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5M15 15c2.8 0 5 1.8 5.8 5"/>',note:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/>',chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',flag:'<path d="M4 22V4M4 4h13l-2 4 2 4H4"/>',person:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',down:'<path d="M6 9l6 6 6-6"/>'};
 function p360Icon(name){const s=h("span",{class:"p360-svg","aria-hidden":"true",style:"display:inline-flex"});s.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(P360_IC[name]||P360_IC.note)+'</svg>';return s;}
 function p360Initials(s){const w=String(s||"").replace(/[^A-Za-z0-9 ]/g," ").trim().split(/\s+/).filter(Boolean);return ((w[0]||"?")[0]+(w[1]?w[1][0]:"")).toUpperCase();}
 /* the year shows when it is not this year */
@@ -2750,11 +2757,12 @@ function p360D(d){d=String(d||"");return d.slice(0,4)===String(TODAY).slice(0,4)
 function p360Facts(box){const m={};box.querySelectorAll(".facts .fact").forEach(f=>{const k=f.children[0],v=f.children[1];if(k&&v)m[k.textContent.trim().toLowerCase()]=v.textContent.trim();});return m;}
 function p360Touches(o){const out=[];TP.forEach(t=>{if(t.org===o.k)out.push({d:t.date||"",kind:t.type||"Note",who:t.by?(NAMES[t.by]||""):"",text:t.summary||""});});
   (o.notes||[]).forEach(n=>out.push({d:n.d||"",kind:"Note",who:n.by||"",text:n.t||""}));return out.sort((a,b)=>String(b.d).localeCompare(String(a.d)));}
-function p360Go(box,tab,part){P360.tab=tab;
+function p360Go(box,tab,part,sub){P360.tab=tab;
   box.querySelectorAll(".p360-tab").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===tab)));
   box.querySelectorAll(".p360-panel").forEach(p=>{p.hidden=p.dataset.tab!==tab;});
   if(part){const s=box.querySelector('[data-part="'+part+'"]');if(s){const d=s.closest("details");if(d)d.open=true;
-    setTimeout(()=>{try{s.scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}if(part==="form"){const f=s.querySelector("textarea,input,select");if(f)try{f.focus({preventScroll:true});}catch(e){}}},40);}}}
+    const hh=sub?[...s.querySelectorAll("h4")].find(x=>x.textContent.trim()===sub):null,tg=hh||s;
+    setTimeout(()=>{try{tg.scrollIntoView({block:"start",behavior:"smooth"});}catch(e){}if(part==="form"){const f=s.querySelector("textarea,input,select");if(f)try{f.focus({preventScroll:true});}catch(e){}}},40);}}}
 /* set the stage with the record's own stage control, so saving, undo and automatic entries all work as they do there */
 function p360SetStage(box,stage){const sel=[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>[...s.options].some(op=>op.value==="Invoiced"));
   if(!sel||sel.disabled||sel.value===stage)return;sel.value=stage;sel.dispatchEvent(new Event("change",{bubbles:true}));}
@@ -2797,7 +2805,12 @@ function p360Update(o,box){
   const cnt=p=>{const c=box.querySelector('.cnt[data-cnt="'+p+'"]');return c?c.textContent.trim():"";};
   const ltxt=last&&last.d?p360D(last.d):(pipe.last?p360D(pipe.last):"None yet"),own=owner(o)||"";
   /* owner pill */
-  const op=box.querySelector(".p360-owner");if(op){op.textContent="";op.appendChild(h("i",{"aria-hidden":"true"},own?p360Initials(own):"?"));op.appendChild(h("span",null,"Owner",h("b",null,own||"Unassigned")));}
+  const op=box.querySelector(".p360-owner");if(op){op.textContent="";op.appendChild(h("i",{"aria-hidden":"true"},own?p360Initials(own):"?"));op.appendChild(h("span",null,"Owner",h("b",null,own||"Unassigned")));
+    /* click the owner to change it, through the record's own owner control */
+    const osel=()=>[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>[...s.options].some(x=>/Kelly Bradshaw/.test(x.value))),os=osel();op.classList.remove("can");
+    const OPTS=os?[...os.options].map(x=>[x.value,x.text]):[["","Unassigned"],["Amy Moses","Amy Moses"],["Brian Vieaux","Brian Vieaux"],["Kelly Bradshaw","Kelly Bradshaw"]];
+    if(!(os&&os.disabled)&&db&&canWrite!==false){op.appendChild(p360Icon("down"));const pick=h("select",{"aria-label":"Change the owner"});OPTS.forEach(([val,txt])=>{const opt=document.createElement("option");opt.value=val;opt.textContent=txt;pick.appendChild(opt);});pick.value=os?os.value:own;
+      pick.addEventListener("change",()=>{const s2=osel();if(s2&&s2.value!==pick.value){s2.value=pick.value;s2.dispatchEvent(new Event("change",{bubbles:true}));}});op.appendChild(pick);op.classList.add("can");}}
   /* header metrics */
   const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Lead Source",pipe.lead||o.source||"Not set"],["Last Touch",ltxt]]
     :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",ltxt]];
@@ -2843,7 +2856,7 @@ function p360Update(o,box){
     if(mb){const m2=mb.cloneNode(true);m2.className="p360-mixbar";c.appendChild(m2);}
     if(lastDues)c.appendChild(h("div",{class:"p360-line"},"Last dues: ",h("b",null,lastDues.n),", "+lastDues.d));
     if(!isPro&&F[(RY+" dues").toLowerCase()])c.appendChild(h("div",{class:"p360-kv"},h("span",null,RY+" dues"),h("b",null,F[(RY+" dues").toLowerCase()])));
-    if(act)c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"money","act")},"See payments"));
+    if(act)c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"money","act","Payments")},"See payments"));
     three.appendChild(c);}
   { const c=h("section",{class:"p360-card"},h("h4",null,"Benefits Used"));let any=false;
     box.querySelectorAll('[data-part="benefits"] .benrow').forEach(r=>{const l=(r.querySelector(".bn-l")||{}).textContent||"",vEl=r.querySelector(".bn-v");if(!vEl)return;
@@ -2886,7 +2899,7 @@ function p360Update(o,box){
 {const _rp=renderProfile;renderProfile=function(o,box){_rp(o,box);try{p360Dress(o,box);}catch(e){console.error("company panel",e);}};
  const _rf=refreshProfile;refreshProfile=function(o,box){_rf(o,box);try{p360Update(o,box);}catch(e){console.error("company panel",e);}};
  /* the line under the name is gone: the metrics carry it (Jonna, Oct 28, 2026) */
- const _pt=paneTitle;paneTitle=function(o){_pt(o);const s=$("m360-pane-sub");if(s)s.textContent="";};}
+ const _pt=paneTitle;paneTitle=function(o){_pt(o);const s=$("m360-pane-sub");if(s)s.textContent="";const t=$("m360-pane-t"),p=$("m360-pane");if(t&&p&&p.querySelector(".p360-hero"))t.textContent="";};}
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
