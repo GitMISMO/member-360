@@ -1293,6 +1293,7 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-drop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 14px;border:2px dashed var(--border-strong);border-radius:12px;color:var(--ink-2);font-size:13px;margin:0 0 12px;background:var(--surface-2)}
 .p360-drop .p360-svg{color:var(--accent)}
 .p360-drop.over{border-color:var(--sky);background:var(--chip);color:var(--ink)}
+.p360-drop:focus{outline:2px solid var(--sky);outline-offset:2px;border-color:var(--sky)}
 .wf-card .p360-drop{margin:0;justify-content:center;text-align:center;padding:20px 14px}
 .p360-pick-say{margin:0 0 12px;font-size:14px;color:var(--ink-2);line-height:1.5}
 .p360-pick{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;margin:0 0 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
@@ -3197,7 +3198,7 @@ function renderFocus(){
   const late=open.filter(it=>it.late).length;if(late)strip.appendChild(h("div",{class:"wf-late"},late+(late===1?" item is":" items are")+" past due. They come first in your list."));
 
   /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
-  if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drop an email from Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
+  if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drag an email from Outlook here, or click and paste (Ctrl+V)",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
   /* done this week */
   const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Done This Week"),h("span",null,done.length+" of "+(done.length+open.length))));
   if(!done.length)dc.appendChild(h("div",{class:"wf-empty"},"Nothing ticked off yet."));
@@ -3292,7 +3293,13 @@ async function p360ReadMail(dt){
   let subj="",from="";
   Object.entries(got).forEach(([k,v])=>{if(!/^\s*[\[{]/.test(v||""))return;try{const walk=o=>{if(!o||typeof o!=="object")return;for(const kk in o){const vv=o[kk];
     if(typeof vv==="string"){if(!subj&&/^(subject|conversationtopic|normalizedsubject)$/i.test(kk))subj=vv;if(!from&&/@/.test(vv)&&/(sender|from|email|address)/i.test(kk))from=vv.replace(/^.*<|>.*$/g,"");}else walk(vv);}};walk(JSON.parse(v));}catch(e){}});
-  if(text.trim()||subj){const a=text.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];return {subject:subj,body:/^\s*[\[{]/.test(text)?"":text,from:from||a[0]||"",fromName:"",to:from?a:a.slice(1),date:""};}
+  if(text.trim()||subj){const a=text.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];
+    /* copied or dragged text often starts with Outlook's From, Sent, To and Subject lines: use them, then drop them from the summary */
+    const hv=re=>{const m=text.match(re);return m?m[1].trim():"";},hs=hv(/^\s*Subject:\s*(.+)$/im),hf=hv(/^\s*From:\s*(.+)$/im),hd=hv(/^\s*(?:Sent|Date):\s*(.+)$/im);
+    let date="";if(hd){const d=new Date(hd.replace(/ at /i," "));if(!isNaN(d))date=p360Ymd(d);}
+    const ff=(hf.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/)||[])[0]||"",fn=hf.replace(/<.*>|\[.*\]/g,"").replace(/"/g,"").trim();
+    let body=/^\s*[\[{]/.test(text)?"":text;if(hs||hf)body=body.replace(/^(\s*(From|Sent|Date|To|Cc|Subject|Importance):.*\n)+/i,"");
+    return {subject:subj||hs,body,from:from||ff||a[0]||"",fromName:fn&&!/@/.test(fn)?fn:"",to:a.filter(x=>x!==(from||ff)),date};}
   return {none:true,types:types.filter(t=>t!=="Files").concat(files.length?["a file ("+files.map(x=>x.name||x.type||"no name").join(", ")+")"]:[])};
 }
 function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
@@ -3314,12 +3321,14 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent="Outlook didn't hand the email over"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Drag the email to your desktop first, then drag that saved file here. Or select the email's text and drag that.";return;}onMail(m);}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent="Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
   z.addEventListener("drop",e=>{z.classList.remove("over");if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();go(e.dataTransfer);});
   inp.addEventListener("change",()=>{if(inp.files.length)go({files:inp.files});inp.value="";});
+  /* or paste it: click the box and press Ctrl+V with an email (or its text) copied */
+  z.setAttribute("tabindex","0");z.addEventListener("paste",e=>{const cd=e.clipboardData;if(!cd)return;e.preventDefault();go(cd);});
   return z;
 }
 /* match an email to a company: a contact's exact address first, then the company's email domain */
@@ -3349,7 +3358,7 @@ function p360MailPick(m,c){
   b.appendChild(h("div",{class:"p360-pick-row"},inp,go,dlist));
   dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
 }
-{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drop an email here to fill this in",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
+{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drag an email here, or click here and paste it (Ctrl+V)",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
 /* ---------- Start a Call Block: work through a list one company at a time, log each in a click or two, then the next (Jonna, Oct 28, 2026) ----------
    The list is this week's planner items (late ones first) or one Who to Touch lane (first 25). Save and Next logs a touchpoint the same way
    Log a Touchpoint does and ticks the planned touch or follow-up done. No Answer logs nothing and moves the company to the end, once. */
