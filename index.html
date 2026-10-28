@@ -1229,6 +1229,79 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-details .facts{margin:0}
 @media (max-width:700px){.p360-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.p360-metric{border-bottom:1px solid var(--border)}.p360-three{grid-template-columns:minmax(0,1fr)}.p360-steps span{font-size:10.5px}.p360-owner span{display:none}}
 
+/* the Outreach Planner, design G (Jonna, Oct 27, 2026) */
+#wk-focus.wf{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin:6px 0 10px}
+#wk-focus[hidden],#wk-plan[hidden]{display:none}
+.wf-main{flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.wf-side{flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px}
+.wf-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wf-h h2{margin:0;font-size:17px;font-weight:600;color:var(--ink)}
+.wf-h h3{margin:0;font-size:15px;font-weight:600;color:var(--ink)}
+.wf-h > span{font-size:12.5px;color:var(--ink-3)}
+.wf-up{background:var(--surface);border:1px solid var(--border-strong);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;box-shadow:inset 0 4px 0 var(--lc)}
+.wf-up-top{display:flex;gap:14px;align-items:center}
+.wf-up-name{flex:1;min-width:0}
+.wf-up-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wf-org{border:0;background:none;padding:0;font:inherit;font-size:21px;font-weight:600;line-height:1.2;color:var(--ink);cursor:pointer;text-align:left}
+.wf-org:hover{text-decoration:underline}
+.wf-tag{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--chip);color:var(--ink-2)}
+.wf-when{font-size:12px;padding:2px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+.wf-when.late{color:var(--bad)}
+.wf-contact{font-size:13px;color:var(--ink-3);margin-top:3px}
+.wf-up-text{margin:0;font-size:15.5px;line-height:1.55;color:var(--ink)}
+.wf-up-act{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wf-up-act .btn{margin:0;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.wf-up-act .wf-done{margin-left:auto;color:var(--good)}
+.wf-clear{box-shadow:none;align-items:flex-start;gap:4px}
+.wf-clear b{font-size:16px;color:var(--ink)}
+.wf-clear span{font-size:13px;color:var(--ink-3)}
+.wf-list{display:flex;flex-direction:column;gap:8px}
+.wf-list .pcard.wf-row{margin:0}
+.wf-day{font-size:12px;color:var(--ink-3);white-space:nowrap}
+.wf-day.late{color:var(--bad);font-weight:600}
+.wf-filter{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink-2);padding:2px 2px 4px}
+.wf-empty{font-size:13px;color:var(--ink-3);padding:6px 2px}
+.wf-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.wf-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.wf-dayb{border:1px solid var(--border);background:var(--surface-2);border-radius:10px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font:inherit;color:var(--ink);min-width:0}
+.wf-dayb .d{font-size:10.5px;letter-spacing:.08em;color:var(--ink-3)}
+.wf-dayb b{font-size:17px;font-weight:600}
+.wf-dayb .c{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.wf-dayb .c.ok{color:var(--good)}
+.wf-dayb.today{border-color:var(--sky);box-shadow:inset 0 0 0 1px var(--sky)}
+.wf-dayb.past{opacity:.75}
+.wf-dayb.on{background:var(--chip);border-color:var(--sky)}
+.wf-dayb.over{outline:2px dashed var(--sky);outline-offset:2px}
+.wf-late{font-size:12.5px;color:var(--bad)}
+.wf-donerow{display:flex;gap:10px;align-items:center;border:0;background:none;padding:0;font:inherit;font-size:13px;color:var(--ink-2);text-align:left;cursor:pointer}
+.wf-donerow .ck{width:22px;height:22px;border-radius:50%;background:var(--chip);color:var(--good);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wf-donerow .ck svg{width:12px;height:12px}
+.wf-donerow .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wf-donerow b{color:var(--ink);font-weight:600}
+.wf-donerow .d{font-size:12px;color:var(--ink-3)}
+.wf-note{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:12px;background:var(--warn-soft);border:1px solid var(--warn);font-size:13px;line-height:1.5;color:var(--ink)}
+.wf-note b{color:var(--warn)}
+.wf-note .p360-svg{color:var(--warn);flex-shrink:0;margin-top:2px}
+@media (max-width:700px){.wf-up-act .wf-done{margin-left:0}.wf-up-top .p360-owner span{display:none}}
+.p360-dlg{border:1px solid var(--border-strong);border-radius:16px;background:var(--surface);color:var(--ink);padding:0;width:min(680px,calc(100vw - 32px));max-height:calc(100vh - 48px);box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.p360-dlg::backdrop{background:rgba(4,18,28,.55)}
+.p360-dlg-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 20px 12px;border-bottom:1px solid var(--rule)}
+.p360-dlg-h .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.p360-dlg-h h2{margin:2px 0 0;font-size:19px;font-weight:600;color:var(--ink)}
+.p360-dlg-x{width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--ink-2);font-size:20px;line-height:1;cursor:pointer;flex-shrink:0}
+.p360-dlg-b{padding:16px 20px 20px;overflow:auto}
+.p360-drop{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:12px 14px;border:2px dashed var(--border-strong);border-radius:12px;color:var(--ink-2);font-size:13px;margin:0 0 12px;background:var(--surface-2)}
+.p360-drop .p360-svg{color:var(--accent)}
+.p360-drop.over{border-color:var(--sky);background:var(--chip);color:var(--ink)}
+.wf-card .p360-drop{margin:0;justify-content:center;text-align:center;padding:20px 14px}
+.p360-pick-say{margin:0 0 12px;font-size:14px;color:var(--ink-2);line-height:1.5}
+.p360-pick{display:flex;align-items:center;gap:12px;width:100%;padding:10px 12px;margin:0 0 8px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.p360-pick:hover{border-color:var(--sky)}
+.p360-pick .nm{flex:1;font-weight:600}
+.p360-pick small{color:var(--ink-3)}
+.p360-pick-row{display:flex;gap:8px;margin-top:8px}
+.p360-pick-row input{flex:1;min-width:0;height:38px;border-radius:8px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--ink);font:inherit;padding:0 10px}
+.wf-row .tc-act select{width:auto;max-width:200px}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -2776,7 +2849,7 @@ function p360Dress(o,box){
   const pt=$("m360-pane-t");if(pt)pt.textContent="";const pn=$("m360-pane");if(pn)pn.setAttribute("aria-label",o.name);
   const hero=h("div",{class:"p360-hero"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),h("h2",{class:"p360-name"},o.name),h("div",{class:"p360-owner"}));
   const act=h("div",{class:"p360-actions"});
-  const lt=h("button",{type:"button",class:"btn",onclick:()=>p360Go(box,"activity","form")},p360Icon("plus"),"Log Touchpoint");act.appendChild(lt);
+  const lt=h("button",{type:"button",class:"btn",onclick:()=>p360LogPop(o)},p360Icon("plus"),"Log Touchpoint");act.appendChild(lt);
   if(btnrow){[...btnrow.children].forEach(b=>{if(b.tagName==="BUTTON"&&/email/i.test(b.textContent)){b.textContent="";b.appendChild(p360Icon("mail"));b.appendChild(document.createTextNode("Email"));}act.appendChild(b);});btnrow.remove();}
   if(db&&canWrite!==false&&typeof moveOpts==="function"&&typeof addPlan==="function"){const opts=moveOpts();opts[0]={v:"",l:"Plan for…"};
     const ps=select(opts,"",{class:"p360-plan","aria-label":"Plan a touch for a day"});ps.addEventListener("change",()=>{const d=ps.value;ps.value="";if(d)addPlan(o,d,"");});act.appendChild(ps);}
@@ -2900,6 +2973,238 @@ function p360Update(o,box){
  const _rf=refreshProfile;refreshProfile=function(o,box){_rf(o,box);try{p360Update(o,box);}catch(e){console.error("company panel",e);}};
  /* the line under the name is gone: the metrics carry it (Jonna, Oct 28, 2026) */
  const _pt=paneTitle;paneTitle=function(o){_pt(o);const s=$("m360-pane-sub");if(s)s.textContent="";const t=$("m360-pane-t"),p=$("m360-pane");if(t&&p&&p.querySelector(".p360-hero"))t.textContent="";};}
+/* ---------- the Outreach Planner, design G: Up Next, the week as a checklist and a week strip, with the Who to Touch cards below (Jonna, Oct 27, 2026) ----------
+   renderThisWeek still builds the day board, the tiles and the Who to Touch cards; this adds the focus area above them.
+   The day board shows only for Past Due. Planning, moving, dragging, ticking done and Not Now all use the planner's own functions. */
+P360_IC.check='<path d="M5 12l5 5 9-10"/>';P360_IC.cal='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>';
+/* Log Touchpoint pops out: the same form the record uses, in a window over the page; it closes itself once the touchpoint saves (Jonna, Oct 27, 2026) */
+function p360LogPop(o,m){
+  if(!o)return;let dl=$("p360-dlg");if(dl)dl.remove();
+  dl=h("dialog",{id:"p360-dlg",class:"p360-dlg","aria-label":"Log a touchpoint for "+o.name});
+  const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
+  const body=h("div",{class:"p360-dlg-b"});
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Log a Touchpoint"),h("h2",null,o.name)),x));dl.appendChild(body);
+  document.body.appendChild(dl);fillForm(o,body);
+  body.querySelectorAll("[id]").forEach(el=>{el.id="dlg-"+el.id;});body.querySelectorAll("label[for]").forEach(l=>l.setAttribute("for","dlg-"+l.getAttribute("for")));
+  if(m)try{p360MailFill(body,o,m);}catch(e){console.error("email fill",e);}
+  const sum=body.querySelector("textarea"),save=[...body.querySelectorAll("button")].find(b=>/Save Touchpoint/.test(b.textContent));
+  if(save)save.addEventListener("click",()=>{if(!sum||!sum.value.trim())return;let n=0;const iv=setInterval(()=>{n++;if(!save.disabled&&!sum.value){clearInterval(iv);dl.close();}else if(n>60)clearInterval(iv);},250);});
+  dl.addEventListener("close",()=>dl.remove());
+  try{dl.showModal();}catch(e){dl.setAttribute("open","");}
+  setTimeout(()=>{if(sum)try{sum.focus();}catch(e){}},50);
+}
+const WF={day:""};
+function wfItems(){
+  const ws=weekStart(wkOff),we=addDays(ws,6),fri=addDays(ws,4),w=who(),out=[];
+  TP.filter(t=>t.next&&t.next.text&&t.next.due&&(!w||t.next.owner===w)).forEach(t=>{const d=t.next.due;if(d>we)return;if(d<ws&&(t.next.done||wkOff))return;
+    out.push({kind:"fu",t,org:t.org,day:d>fri?fri:d,late:d<TODAY&&!t.next.done});});
+  if(!wkOff)PLANS.filter(p=>p.day<ws&&(!w||p.owner===w)&&!planDone(p)).forEach(p=>out.push({kind:"plan",p,org:p.org,day:p.day,late:true}));
+  weekPlans(ws).forEach(p=>out.push({kind:"plan",p,org:p.org,day:p.day>fri?fri:p.day,late:p.day<TODAY&&!planDone(p)}));
+  return out.filter(it=>BY[it.org]);
+}
+function wfDone(it){return it.kind==="fu"?!!it.t.next.done:planDone(it.p);}
+function wfWhy(it){const o=BY[it.org];if(it.kind==="fu")return it.t.next.text;try{const r=laneOf(o);if(r&&r.why)return r.why;}catch(e){}const L=LANE[it.p.lane];return L?L.sub:"";}
+function wfDrop(el,k){
+  el.addEventListener("dragover",e=>{if(!dragData)return;e.preventDefault();el.classList.add("over");});
+  el.addEventListener("dragleave",e=>{if(!el.contains(e.relatedTarget))el.classList.remove("over");});
+  el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("over");const d=dragData;dragData=null;if(!d)return;
+    if(d.kind==="new")addPlan(d.o,k,d.lane);else if(d.kind==="move"&&d.p.day!==k)movePlan(d.p,k);});
+}
+function renderFocus(){
+  const plan=$("wk-plan");if(!plan)return;
+  let box=$("wk-focus");
+  if(!box){box=h("div",{id:"wk-focus",class:"wf"});plan.parentNode.insertBefore(box,plan);}
+  const due=wkOff==="due";box.hidden=due;plan.hidden=!due;if(due)return;
+  box.textContent="";
+  const write=!!(db&&canWrite),ws=weekStart(wkOff),days=[0,1,2,3,4].map(i=>addDays(ws,i));
+  const all=wfItems(),rank=it=>it.late?0:1;
+  const open=all.filter(it=>!wfDone(it)).sort((a,b)=>rank(a)-rank(b)||String(a.day).localeCompare(String(b.day))||(a.kind==="fu"?0:1)-(b.kind==="fu"?0:1));
+  const done=all.filter(wfDone);
+  if(WF.day&&!days.includes(WF.day))WF.day="";
+  const main=h("div",{class:"wf-main"}),side=h("div",{class:"wf-side"});
+  /* Up Next: the first open item, late ones first */
+  const nx=open[0];
+  main.appendChild(h("div",{class:"wf-h"},h("h2",null,wkOff===1?"First Up Next Week":"Up Next"),h("span",null,(wkOff===1?"Next week":dow(TODAY)+", "+fmtS(TODAY))+" · "+(open.length?open.length+" to do":"all done"))));
+  if(nx){const o=BY[nx.org],isFu=nx.kind==="fu",L=isFu?null:LANE[nx.p.lane];
+    const pp=(o.people||[]).filter(p=>p.email||p.name),pr=pp.find(p=>(p.roles||[]).includes("Primary"))||pp[0];
+    const own=isFu?nx.t.next.owner:nx.p.owner;
+    const tag=isFu?"Follow-up":(L?L.name:"Planned touch"),when=nx.late?"Was due "+dow(nx.day)+", "+fmtS(nx.day):nx.day===TODAY?"Today":dow(nx.day)+", "+fmtS(nx.day);
+    const text=wfWhy(nx);
+    const card=h("section",{class:"wf-up",style:"--lc:"+(isFu?"var(--sky)":(L?L.c:"var(--border-strong)"))});
+    card.appendChild(h("div",{class:"wf-up-top"},h("div",{class:"p360-badge","aria-hidden":"true"},p360Initials(o.name)),
+      h("div",{class:"wf-up-name"},h("div",{class:"wf-up-row"},h("button",{type:"button",class:"wf-org",onclick:()=>openPane(o.k)},o.name),h("span",{class:"wf-tag"},tag),h("span",{class:"wf-when"+(nx.late?" late":"")},when)),
+        h("div",{class:"wf-contact"},pr?(pr.name||pr.email)+((pr.roles||[]).includes("Primary")?" · Primary contact":""):"No contact on file")),
+      own?h("div",{class:"p360-owner"},h("i",{"aria-hidden":"true"},p360Initials(own)),h("span",null,"Owner",h("b",null,own.split(" ")[0]))):null));
+    if(text)card.appendChild(h("p",{class:"wf-up-text"},text));
+    const act=h("div",{class:"wf-up-act"});
+    if(pr&&pr.email){const a=h("a",{class:"btn",href:"mailto:"+pr.email});a.appendChild(p360Icon("mail"));a.appendChild(document.createTextNode("Email "+((pr.name||"").split(" ")[0]||"Them")));act.appendChild(a);}
+    const lg=h("button",{type:"button",class:"btn ghost",onclick:()=>p360LogPop(o)});
+    lg.appendChild(p360Icon("plus"));lg.appendChild(document.createTextNode("Log Touchpoint"));act.appendChild(lg);
+    if(write){const mv=select(moveOpts(),"",{"aria-label":"Move "+o.name+" to another day",class:"p360-plan"});mv.addEventListener("change",()=>{if(mv.value)moveItem(nx,mv.value);});act.appendChild(mv);
+      const dn=h("button",{type:"button",class:"btn ghost wf-done",onclick:()=>{if(isFu)fuDone(nx.t,true);else markPlan(nx.p,true);}});
+      dn.appendChild(p360Icon("check"));dn.appendChild(document.createTextNode("Mark Done"));act.appendChild(dn);}
+    card.appendChild(act);main.appendChild(card);}
+  else main.appendChild(h("section",{class:"wf-up wf-clear"},h("b",null,wkOff===1?"Nothing planned for next week yet.":"Nothing left to do this week."),h("span",null,"Pick someone from Who to Touch below, or drag a card onto a day.")));
+  /* the rest of the week, as a checklist (the planner's own cards: tick, move, drag, take off) */
+  const rest=open.slice(1).filter(it=>!WF.day||it.day===WF.day);
+  const list=h("section",{class:"wf-list"});
+  if(WF.day)list.appendChild(h("div",{class:"wf-filter"},h("span",null,"Showing "+dow(WF.day)+", "+fmtS(WF.day)),h("button",{type:"button",class:"p360-link",onclick:()=>{WF.day="";renderFocus();}},"Show the whole week")));
+  rest.forEach(it=>{const c=planCard(it,write);if(!c)return;c.classList.add("wf-row");
+    const tm=h("span",{class:"wf-day"+(it.late?" late":"")},it.late?"Was due "+fmtS(it.day):it.day===TODAY?"Today":dow(it.day));
+    const sd=c.querySelector(".pc-side");if(sd)sd.insertBefore(tm,sd.firstChild);list.appendChild(c);});
+  if(!rest.length)list.appendChild(h("div",{class:"wf-empty"},WF.day?"Nothing else on this day.":"Nothing else planned. Add someone from Who to Touch below."));
+  main.appendChild(list);
+  /* the week strip: click a day to see only that day, drop a card on it to plan or move */
+  const strip=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,wkOff===1?"Next Week":"This Week"),h("span",null,write?"Drop a card on a day":"")));
+  const g=h("div",{class:"wf-days"});
+  days.forEach(k=>{const its=all.filter(it=>it.day===k&&!it.late),dn=its.filter(wfDone).length,op=its.length-dn;
+    const b=h("button",{type:"button",class:"wf-dayb"+(k===TODAY?" today":"")+(k<TODAY?" past":"")+(WF.day===k?" on":""),"aria-pressed":String(WF.day===k),"aria-label":dow(k)+" "+fmtS(k)+": "+(op?op+" to do":dn?dn+" done":"nothing planned"),onclick:()=>{WF.day=WF.day===k?"":k;renderFocus();}},
+      h("span",{class:"d"},dow(k).slice(0,3).toUpperCase()),h("b",null,String(Number(k.slice(8)))),h("span",{class:"c"+(op?"":dn?" ok":"")},op?op+" to do":dn?dn+" done":"—"));
+    if(write)wfDrop(b,k);g.appendChild(b);});
+  strip.appendChild(g);
+  const late=open.filter(it=>it.late).length;if(late)strip.appendChild(h("div",{class:"wf-late"},late+(late===1?" item is":" items are")+" past due. They come first in your list."));
+  side.appendChild(strip);
+  /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
+  if(write)side.appendChild(h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drop an email from Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
+  /* done this week */
+  const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Done This Week"),h("span",null,done.length+" of "+(done.length+open.length))));
+  if(!done.length)dc.appendChild(h("div",{class:"wf-empty"},"Nothing ticked off yet."));
+  done.slice(0,6).forEach(it=>{const o=BY[it.org],ck=h("span",{class:"ck"});ck.appendChild(p360Icon("check"));
+    dc.appendChild(h("button",{type:"button",class:"wf-donerow",onclick:()=>openPane(o.k)},ck,h("span",{class:"t"},h("b",null,o.name)," · "+(it.kind==="fu"?"follow-up":(LANE[it.p.lane]?LANE[it.p.lane].name.toLowerCase():"planned touch"))),h("span",{class:"d"},dow(it.day).slice(0,3))));});
+  if(done.length>6)dc.appendChild(h("div",{class:"wf-empty"},"and "+(done.length-6)+" more"));
+  side.appendChild(dc);
+  /* the next Summit and its unused free registrations */
+  try{const S=LASTS||suggestions(),bS=nextEvent("Summit"),bn=S&&S.benefits?S.benefits.filter(x=>x.gaps.some(q=>q.kind==="Summit")).length:0;
+    if(bS&&bn){const nt=h("section",{class:"wf-note"});nt.appendChild(p360Icon("cal"));nt.appendChild(h("div",null,h("b",null,bS.name+", "+fmtS(bS.date)+". "),bn+(bn===1?" member still has":" members still have")+" free registrations to use."));side.appendChild(nt);}}catch(e){}
+  box.appendChild(main);box.appendChild(side);
+}
+{const _rtw=renderThisWeek;renderThisWeek=function(){_rtw.apply(this,arguments);try{renderFocus();}catch(e){console.error("planner focus",e);}};}
+/* ---------- log an email by dropping it: an Outlook .msg, an .eml, or text dragged from an email (Jonna, Oct 27, 2026) ----------
+   In a record it fills in Log a Touchpoint. On the planner the system matches the company from the email addresses, then opens the same form.
+   Nothing is saved until Save Touchpoint is pressed, and the email file itself is not kept. */
+function p360Ymd(d){const p=x=>String(x).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+function p360Strip(html){if(!html)return "";const d=new DOMParser().parseFromString(String(html).replace(/<(br|[/]p|[/]div|[/]tr|[/]li)[^>]*>/gi,"$&\x0a"),"text/html");d.querySelectorAll("style,script,head").forEach(x=>x.remove());return (d.body?d.body.textContent:"").replace(/\xa0/g," ");}
+/* the Outlook file format: a small reader for the compound file a .msg is stored in */
+function p360Cfb(buf){
+  const dv=new DataView(buf),u32=o=>dv.getUint32(o,true),u16=o=>dv.getUint16(o,true),END=0xFFFFFFFA;
+  if(buf.byteLength<512||u32(0)!==0xE011CFD0||u32(4)!==0xE11AB1A1)throw new Error("not an Outlook file");
+  const ssz=1<<u16(30),msz=1<<u16(32),cutoff=u32(56),sec=id=>(id+1)*ssz;
+  const fatSecs=[];for(let i=0;i<109;i++){const v=u32(76+i*4);if(v<END)fatSecs.push(v);}
+  let dif=u32(68),nd=u32(72);const per=ssz/4-1;
+  while(nd-->0&&dif<END&&sec(dif)+ssz<=buf.byteLength){for(let i=0;i<per;i++){const v=u32(sec(dif)+i*4);if(v<END)fatSecs.push(v);}dif=u32(sec(dif)+per*4);}
+  const fat=[];fatSecs.forEach(s=>{if(sec(s)+ssz<=buf.byteLength)for(let i=0;i<ssz/4;i++)fat.push(u32(sec(s)+i*4));});
+  const chain=(start,tbl)=>{const out=[];let c=start,g=0;while(c<END&&c<tbl.length&&g++<200000){out.push(c);c=tbl[c];}return out;};
+  const readChain=start=>{const ch=chain(start,fat),u=new Uint8Array(ch.length*ssz);ch.forEach((s,i)=>{const o=sec(s);if(o<buf.byteLength)u.set(new Uint8Array(buf,o,Math.min(ssz,buf.byteLength-o)),i*ssz);});return u;};
+  const dirb=readChain(u32(48)),ddv=new DataView(dirb.buffer),ents=[];
+  for(let o=0;o+128<=dirb.length;o+=128){const nl=ddv.getUint16(o+64,true);let name="";for(let i=0;i<Math.min(31,Math.max(0,nl/2-1));i++)name+=String.fromCharCode(ddv.getUint16(o+i*2,true));
+    ents.push({name,type:dirb[o+66],l:ddv.getUint32(o+68,true),r:ddv.getUint32(o+72,true),c:ddv.getUint32(o+76,true),start:ddv.getUint32(o+116,true),size:ddv.getUint32(o+120,true)});}
+  const root=ents[0],mini=root?readChain(root.start):new Uint8Array(0);
+  const minifat=[];if(u32(64)>0){const mf=readChain(u32(60)),mdv=new DataView(mf.buffer);for(let i=0;i<mf.length/4;i++)minifat.push(mdv.getUint32(i*4,true));}
+  const data=e=>{if(e.size<cutoff){const ch=chain(e.start,minifat),u=new Uint8Array(e.size);let p=0;for(const s of ch){const n=Math.min(msz,e.size-p);if(n<=0)break;u.set(mini.subarray(s*msz,s*msz+n),p);p+=n;}return u;}return readChain(e.start).subarray(0,e.size);};
+  const kids=i=>{const out=[],st=[ents[i]&&ents[i].c],seen=new Set();while(st.length){const k=st.pop();if(k==null||k>=ents.length||seen.has(k))continue;seen.add(k);out.push(k);st.push(ents[k].l,ents[k].r);}return out;};
+  return {ents,data,kids};
+}
+function p360Msg(buf){
+  const f=p360Cfb(buf),top=f.kids(0),E=list=>list.map(i=>f.ents[i]);
+  const str=(list,tag)=>{const es=E(list),e16=es.find(e=>e.name==="__substg1.0_"+tag+"001F");
+    if(e16){const u=f.data(e16);let s="";for(let i=0;i+1<u.length;i+=2)s+=String.fromCharCode(u[i]|(u[i+1]<<8));return s.replace(/\x00+$/,"");}
+    const e8=es.find(e=>e.name==="__substg1.0_"+tag+"001E");if(e8)return new TextDecoder("windows-1252").decode(f.data(e8)).replace(/\x00+$/,"");return "";};
+  let body=str(top,"1000");
+  if(!body){const he=E(top).find(e=>e.name==="__substg1.0_10130102");if(he)body=p360Strip(new TextDecoder("utf-8").decode(f.data(he)));}
+  const to=[];top.filter(i=>f.ents[i].type===1&&/^__recip/.test(f.ents[i].name)).forEach(i=>{const k=f.kids(i),a=str(k,"39FE")||str(k,"3003");if(a)to.push(a);});
+  let date="";const pe=E(top).find(e=>e.name==="__properties_version1.0");
+  if(pe){const u=f.data(pe),dv=new DataView(u.buffer,u.byteOffset,u.byteLength);
+    for(let o=32;o+16<=u.length;o+=16){const type=dv.getUint16(o,true),id=dv.getUint16(o+2,true);
+      if(type===0x40&&(id===0x0039||id===0x0E06)){const ms=(dv.getUint32(o+12,true)*4294967296+dv.getUint32(o+8,true))/1e4-11644473600000;if(ms>0){date=p360Ymd(new Date(ms));if(id===0x0039)break;}}}}
+  return {subject:str(top,"0037"),body,from:str(top,"5D01")||str(top,"0C1F")||str(top,"0065"),fromName:str(top,"0C1A")||str(top,"0042"),to,date};
+}
+function p360QP(s){const out=[];s=s.replace(/=\x0d?\x0a/g,"");for(let i=0;i<s.length;i++){if(s[i]==="="&&/^[0-9A-F]{2}$/i.test(s.substr(i+1,2))){out.push(parseInt(s.substr(i+1,2),16));i+=2;}else out.push(s.charCodeAt(i)&255);}return new Uint8Array(out);}
+function p360Hdrs(t){const H={};t.replace(/\x0d?\x0a[ \x09]+/g," ").split(/\x0d?\x0a/).forEach(l=>{const m=l.match(/^([\w-]+):\s*(.*)$/);if(m&&!(m[1].toLowerCase() in H))H[m[1].toLowerCase()]=m[2];});return H;}
+function p360Split(t){const i=t.search(/\x0d?\x0a\x0d?\x0a/);return i<0?[t,""]:[t.slice(0,i),t.slice(i).replace(/^\x0d?\x0a\x0d?\x0a/,"")];}
+function p360EmlBody(H,raw){
+  const ct=H["content-type"]||"text/plain",cte=(H["content-transfer-encoding"]||"").toLowerCase(),cs=(ct.match(/charset="?([^";\s]+)/i)||[])[1]||"utf-8",bm=ct.match(/boundary="?([^";]+)"?/i);
+  if(/multipart/i.test(ct)&&bm){let html="";
+    for(const p of raw.split("--"+bm[1]).slice(1)){if(/^--/.test(p))break;const [hh,bb]=p360Split(p.replace(/^\x0d?\x0a/,"")),H2=p360Hdrs(hh),t2=H2["content-type"]||"text/plain";
+      if(/attachment/i.test(H2["content-disposition"]||""))continue;const b=p360EmlBody(H2,bb);
+      if((/text[/]plain/i.test(t2)||/multipart/i.test(t2))&&b.trim())return b;if(/text[/]html/i.test(t2)&&!html)html=b;}
+    return html;}
+  let bytes;
+  if(cte==="base64"){try{bytes=Uint8Array.from(atob(raw.replace(/\s+/g,"")),c=>c.charCodeAt(0));}catch(e){bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)&255);}}
+  else if(cte==="quoted-printable")bytes=p360QP(raw);else bytes=Uint8Array.from(raw,c=>c.charCodeAt(0)&255);
+  let t;try{t=new TextDecoder(cs).decode(bytes);}catch(e){t=new TextDecoder().decode(bytes);}
+  return /text[/]html/i.test(ct)?p360Strip(t):t;
+}
+function p360Eml(text){
+  const [head,rest]=p360Split(text),H=p360Hdrs(head);
+  const dec=s=>String(s||"").replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g,(m,cs,enc,t)=>{try{const b=enc.toUpperCase()==="B"?Uint8Array.from(atob(t),c=>c.charCodeAt(0)):p360QP(t.replace(/_/g," "));return new TextDecoder(cs).decode(b);}catch(e){return t;}});
+  const addrs=s=>String(s||"").match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];
+  let date="";const d=new Date(H.date||"");if(!isNaN(d))date=p360Ymd(d);
+  return {subject:dec(H.subject),body:p360EmlBody(H,rest),from:addrs(H.from)[0]||"",fromName:dec((H.from||"").replace(/<.*>/,"").replace(/"/g,"").trim()),to:addrs(H.to).concat(addrs(H.cc)),date};
+}
+async function p360ReadMail(dt){
+  const f=[...(dt.files||[])][0];
+  if(f){const buf=await f.arrayBuffer(),u=new Uint8Array(buf);if(u[0]===0xD0&&u[1]===0xCF)return p360Msg(buf);
+    let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));
+    if(!/^[\w-]+:/m.test(s.slice(0,2000)))return null;return p360Eml(s);}
+  const t=dt.getData?(dt.getData("text/plain")||""):"";
+  if(t.trim()){const a=t.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];return {subject:"",body:t,from:a[0]||"",fromName:"",to:a.slice(1),date:""};}
+  return null;
+}
+function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
+  const cut=b.search(/\x0a\s*(From:|-{3,}\s*Original Message|On .{5,90} wrote:)/i);if(cut>40)b=b.slice(0,cut);
+  b=b.replace(/[ \x09]+\x0a/g,"\x0a").replace(/\x0a{3,}/g,"\x0a\x0a").trim();
+  const head=(m.subject?"Email: "+m.subject:"Email")+((m.fromName||m.from)?" (from "+(m.fromName||m.from)+")":"");
+  return (head+(b?"\x0a"+b:"")).slice(0,1200);}
+/* fill in Log a Touchpoint from the email: date, type, the matching contact and a summary to edit */
+function p360MailFill(box,o,m){
+  const fl=box.querySelectorAll(".formgrid .fld"),g=i=>fl[i]&&fl[i].querySelector("input,select,textarea");
+  const date=g(0),type=g(1),who=g(3),sum=g(5);
+  if(date&&m.date)date.value=m.date;
+  if(type&&[...type.options].some(x=>x.value==="Email"))type.value="Email";
+  if(who){const ad=[m.from].concat(m.to||[]).map(a=>String(a||"").toLowerCase()),p=(o.people||[]).find(p=>p.email&&ad.includes(p.email.toLowerCase()));if(p)who.value=p.email;}
+  if(sum){sum.value=p360MailText(m);try{sum.focus();sum.setSelectionRange(0,0);sum.scrollTop=0;}catch(e){}}
+}
+function p360DropZone(label,onMail){
+  const inp=h("input",{type:"file",accept:".msg,.eml,message/rfc822",hidden:true,"aria-hidden":"true",tabindex:"-1"});
+  const z=h("div",{class:"p360-drop"});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
+  const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
+  const go=async dt=>{msg.textContent="Reading the email…";
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m){msg.textContent="That didn't look like an email. Drag it straight from Outlook, or use a .msg or .eml file.";return;}onMail(m);}
+    catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
+  z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
+  z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
+  z.addEventListener("drop",e=>{z.classList.remove("over");if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();go(e.dataTransfer);});
+  inp.addEventListener("change",()=>{if(inp.files.length)go({files:inp.files});inp.value="";});
+  return z;
+}
+/* match an email to a company: a contact's exact address first, then the company's email domain */
+const P360_FREE=/^(gmail|googlemail|yahoo|ymail|outlook|hotmail|live|msn|icloud|me|mac|aol|comcast|att|verizon|proton|protonmail)\./i;
+function p360MatchMail(m){
+  const from=String(m.from||"").toLowerCase(),ad=[from].concat((m.to||[]).map(a=>String(a).toLowerCase())).filter(a=>a&&!/@(mismo|mba)\.org$/.test(a));
+  const exact=new Map(),dom=new Set();
+  ORGS.forEach(o=>(o.people||[]).forEach(p=>{const e=String(p.email||"").toLowerCase();if(!e)return;
+    if(ad.includes(e))exact.set(o.k,(exact.get(o.k)||0)+(e===from?3:2));
+    const d=e.split("@")[1];if(d&&!P360_FREE.test(d)&&ad.some(a=>a.split("@")[1]===d))dom.add(o.k);}));
+  const ks=exact.size?[...exact.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]):[...dom];
+  return ks.map(k=>BY[k]).filter(Boolean);
+}
+function p360MailPick(m,c){
+  let dl=$("p360-dlg");if(dl)dl.remove();
+  dl=h("dialog",{id:"p360-dlg",class:"p360-dlg","aria-label":"Which company is this email with?"});
+  const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
+  const b=h("div",{class:"p360-dlg-b"}),me=dl;
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Log an Email"),h("h2",null,m.subject||"Which company is this with?")),x));dl.appendChild(b);
+  const who=[m.from].concat(m.to||[]).filter(a=>a&&!/@(mismo|mba)\.org$/i.test(a)).slice(0,3).join(", ");
+  b.appendChild(h("p",{class:"p360-pick-say"},c.length?"This email matches more than one company. Which one should it go on?":"No company matched "+(who||"this email")+". Pick the company:"));
+  c.slice(0,6).forEach(o=>b.appendChild(h("button",{type:"button",class:"p360-pick",onclick:()=>{me.close();p360LogPop(o,m);}},h("span",{class:"p360-av","aria-hidden":"true"},p360Initials(o.name)),h("span",{class:"nm"},o.name),h("small",null,o.life||""))));
+  const inp=h("input",{type:"text",placeholder:"Type a company name","aria-label":"Company"}),dlist=h("datalist",{id:"p360-orgs"});inp.setAttribute("list","p360-orgs");
+  ORGS.slice().sort((p,q)=>p.name.localeCompare(q.name)).forEach(o=>dlist.appendChild(h("option",{value:o.name})));
+  const go=h("button",{type:"button",class:"btn"},"Log It Here");
+  go.addEventListener("click",()=>{const v=inp.value.trim().toLowerCase(),o=ORGS.find(q=>q.name.toLowerCase()===v);if(!o){inp.focus();return;}me.close();p360LogPop(o,m);});
+  b.appendChild(h("div",{class:"p360-pick-row"},inp,go,dlist));
+  dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
+}
+{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drop an email here to fill this in",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
