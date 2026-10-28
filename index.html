@@ -1449,6 +1449,19 @@ html.olk.olk-ready #olk-wrap{display:flex;flex-direction:column;gap:10px;padding
 .olk-note{font-size:12px;color:var(--ink-3)}
 html.olk .hqpane{width:100vw!important}
 html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16px)}
+/* forward to log: how-to under the drop box and the tray of emails that need a company (Jonna, Oct 28, 2026) */
+.p360-drop{flex-wrap:wrap}
+.m360-help{flex-basis:100%;margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);font-size:12px;line-height:1.5;color:var(--ink-3);text-align:left}
+.m360-help b{color:var(--ink-2);font-weight:600}
+.m360-addr{font-weight:600;color:var(--ink);white-space:nowrap}
+.m360-copy{font-size:12px;padding:0 2px}
+.m360-tray{margin-top:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden}
+.m360-tray-h{padding:8px 10px;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface-2);border-bottom:1px solid var(--border)}
+.m360-ti{padding:8px 10px;border-top:1px solid var(--border)}
+.m360-ti:first-of-type{border-top:0}
+.m360-ts{font-size:13px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.m360-tm{font-size:12px;color:var(--ink-3);margin-top:2px}
+.m360-ta{display:flex;align-items:center;gap:10px;margin-top:6px}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3222,7 +3235,7 @@ function renderFocus(){
   const late=open.filter(it=>it.late).length;if(late)strip.appendChild(h("div",{class:"wf-late"},late+(late===1?" item is":" items are")+" past due. They come first in your list."));
 
   /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
-  if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drag an email from Outlook here, or click and paste (Ctrl+V)",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
+  if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drag an email from classic Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
   /* done this week */
   const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Done This Week"),h("span",null,done.length+" of "+(done.length+open.length))));
   if(!done.length)dc.appendChild(h("div",{class:"wf-empty"},"Nothing ticked off yet."));
@@ -3345,7 +3358,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sends the subject when you drag. For the whole email, use the Log to Member 360 button in Outlook.";}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"New Outlook and Outlook on the web can't drag a whole email in. Forward it to 360@mortgagebankers.org and it logs itself.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sent the subject. To log the whole email, forward it to 360@mortgagebankers.org.";}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
@@ -3382,7 +3395,7 @@ function p360MailPick(m,c){
   b.appendChild(h("div",{class:"p360-pick-row"},inp,go,dlist));
   dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
 }
-{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drag an email here, or click here and paste it (Ctrl+V)",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
+{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drag an email from classic Outlook here",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
 /* ---------- Start a Call Block: work through a list one company at a time, log each in a click or two, then the next (Jonna, Oct 28, 2026) ----------
    The list is this week's planner items (late ones first) or one Who to Touch lane (first 25). Save and Next logs a touchpoint the same way
    Log a Touchpoint does and ticks the planned touch or follow-up done. No Answer logs nothing and moves the company to the end, once. */
@@ -3610,6 +3623,118 @@ if(OLK){document.documentElement.classList.add("olk");
   const sc=document.createElement("script");sc.src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js";
   sc.onload=()=>{try{if(!history.pushState)history.pushState=_ps;if(!history.replaceState)history.replaceState=_rs;}catch(e){}try{Office.onReady(()=>olkStart());}catch(e){console.error("outlook",e);}};
   sc.onerror=()=>olkStart();document.head.appendChild(sc);}
+/* ---------- Forward to log: staff forward an email (or Cc/Bcc) to 360@mortgagebankers.org; a Power Automate flow on Jonna's mailbox
+   adds it to data/mailin; each person's Member 360 picks up their own emails, finds the company and logs the touchpoint (Jonna, Oct 28, 2026) ---------- */
+const M360_ADDR="360@mortgagebankers.org";
+const M360_RELAY="https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/member-360/data/mailin";
+const M360={busy:false,docs:{},timer:null,started:false};
+const M360_STAFF=/@(mismo|mba|mortgagebankers)\.org$/i;
+function m360Me(){try{return String((ResourcesSession.current()||{}).email||"").toLowerCase().split("@")[0];}catch(e){return "";}}
+function m360Local(a){const m=String(a||"").toLowerCase().match(/([a-z0-9._%+'-]+)@([a-z0-9.-]+)/);return m?m[1].split("+")[0]:"";}
+async function m360Rel(body){
+  const o={headers:{"Content-Type":"application/json",Authorization:"Bearer "+ResourcesSession.token()}};
+  if(body){o.method="PUT";o.body=JSON.stringify(body);}
+  const r=await fetch(M360_RELAY,o);if(!r.ok)throw new Error("mail-in "+r.status);return r.json();
+}
+/* the email's HTML as plain text, keeping names with their addresses */
+function m360Text(html){
+  let s=String(html||"");
+  s=s.replace(/<a[^>]*href="mailto:([^"]+)"[^>]*>([\s\S]*?)<[/]a>/gi,(x,e,t)=>{const tt=t.replace(/<[^>]+>/g,"").trim(),em=decodeURIComponent(String(e).split(String.fromCharCode(63))[0]);return tt&&tt.indexOf("@")<0?tt+" <"+em+">":(tt||em);});
+  const d=new DOMParser().parseFromString(s,"text/html");
+  d.querySelectorAll("style,script,head,title").forEach(e=>e.remove());
+  d.querySelectorAll("br").forEach(e=>e.replaceWith("\x0a"));
+  d.querySelectorAll("p,div,tr,li,h1,h2,h3,h4,h5,h6,table,hr").forEach(e=>e.appendChild(d.createTextNode("\x0a")));
+  return String(d.body?d.body.textContent:"").replace(/\xa0/g," ").replace(/\x0d/g,"").replace(/[ \x09]+\x0a/g,"\x0a").replace(/\x0a{3,}/g,"\x0a\x0a").trim();
+}
+const M360_EM=/[a-z0-9._%+'-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
+function m360Ymd(s){if(!s)return "";const d=new Date(String(s).replace(/^[A-Za-z]+,\s*/,""));if(isNaN(d))return "";const p=n=>String(n).padStart(2,"0");return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());}
+/* turn a mail-in entry into the same shape a dragged email has: from, to, date, subject, body */
+function m360Parse(d){
+  const text=m360Text(d.html),L=text.split("\x0a");
+  let i=-1;for(let k=0;k<L.length&&k<200;k++){if(/^\s*From:\s*\S/i.test(L[k])){const nx=L.slice(k+1,k+8).join("\x0a");if(/^\s*(Sent|Date):/im.test(nx)&&/^\s*Subject:/im.test(nx)){i=k;break;}}}
+  const recv=m360Ymd(d.received)||TODAY;
+  if(i<0){/* sent straight to 360@ or copied on an email to a member */
+    const to=String(d.to||"").match(M360_EM)||[];
+    return {from:String(d.from||""),fromName:"",to:to.filter(a=>!M360_STAFF.test(a)),date:recv,subject:String(d.subject||""),body:m360Strip(text),direct:true};}
+  const H={};let k=i;for(;k<L.length&&k<i+14;k++){const ln=L[k];if(!ln.trim()){if(H.subject!==undefined)break;continue;}const mm=ln.match(/^\s*(From|Sent|Date|To|Cc|Subject):\s*(.*)$/i);if(mm)H[mm[1].toLowerCase()]=mm[2].trim();else if(H.subject===undefined&&k>i){const last=Object.keys(H).pop();if(last)H[last]+=" "+ln.trim();}}
+  const fromS=H.from||"",fe=(fromS.match(M360_EM)||[""])[0],fn=fromS.replace(/<[^>]*>/g,"").replace(M360_EM,"").replace(/[()"\[\]]/g,"").trim();
+  const to=((H.to||"")+" "+(H.cc||"")).match(M360_EM)||[];
+  return {from:fe,fromName:fn&&fn.indexOf("@")<0?fn:"",to:to.filter(a=>!M360_STAFF.test(a)),date:m360Ymd(H.sent||H.date)||recv,subject:(H.subject||String(d.subject||"").replace(/^\s*(fw|fwd)\s*:\s*/i,"")).trim(),body:m360Strip(L.slice(k).join("\x0a"))};
+}
+/* drop the outside-email warning banner */
+function m360Strip(b){return String(b||"").replace(/(^|\x0a)\s*CAUTION:[^\x0a]*(\x0a[^\x0a]+)*/i,"$1").replace(/\x0a{3,}/g,"\x0a\x0a").trim().slice(0,6000);}
+function m360Doc(o,m){
+  const ad=[m.from].concat(m.to||[]).map(a=>String(a||"").toLowerCase()),p=(o.people||[]).find(p=>p.email&&ad.includes(p.email.toLowerCase()));
+  return {org:o.k,date:m.date||TODAY,type:"Email",topic:inCohort(o)?"Renewal":(o.life==="Prospect"?"Membership":"Other"),contact:p?p.email:"",sentiment:"Neutral",summary:p360MailText(m),by:ME||"",at:new Date().toISOString(),via:"forward"};
+}
+async function m360Run(){
+  if(M360.busy||!db||!canWrite||!ME||!(typeof ORGS!=="undefined"&&ORGS&&ORGS.length))return;
+  const me=m360Me();if(!me)return;
+  M360.busy=true;
+  try{
+    const r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};M360.docs=docs;
+    const mine=Object.keys(docs).filter(id=>{const d=docs[id];return d&&!d.st&&m360Local(d.from)===me&&M360_STAFF.test(String(d.from||""));});
+    if(mine.length&&r.sha){
+      const logged=[];
+      mine.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
+        const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
+        if(c.length===1){d.st="logged";d.org=c[0].k;logged.push([c[0],m,id]);}else{d.st="need";d.cands=c.slice(0,6).map(o=>o.k);}});
+      await m360Rel({content:{docs},sha:r.sha});
+      let ok=0;const fail=[];
+      for(const [o,m,id] of logged){try{await db.collection("touchpoints").add(m360Doc(o,m));ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}
+      if(fail.length){try{const r2=await m360Rel(null),d2=r2.data.docs;fail.forEach(id=>{if(d2[id]){d2[id].st="need";d2[id].cands=[docs[id].org];}});await m360Rel({content:{docs:d2},sha:r2.sha});M360.docs=d2;}catch(e){}}
+      const need=mine.length-ok;
+      if(ok)toast(ok===1?"Your forwarded email is logged on "+logged[0][0].name+".":ok+" forwarded emails are logged.");
+      if(need)toast((need===1?"A forwarded email needs":need+" forwarded emails need")+" a company. Pick it in the Outreach Planner, under Log an Email.");
+    }
+  }catch(e){console.error("mail-in",e);}
+  finally{M360.busy=false;m360Tray();}
+}
+function m360Mark(id,st){
+  (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();})();
+}
+/* forwarded emails that matched no company, or more than one, wait here */
+function m360Tray(){
+  const me=m360Me(),docs=M360.docs||{};
+  const list=Object.keys(docs).filter(id=>{const d=docs[id];return d&&d.st==="need"&&m360Local(d.from)===me;}).sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));
+  document.querySelectorAll(".m360-tray").forEach(e=>e.remove());
+  if(!list.length)return;
+  const zone=document.querySelector("#wk-focus .p360-drop");if(!zone)return;
+  const t=h("div",{class:"m360-tray"},h("div",{class:"m360-tray-h"},list.length===1?"1 forwarded email needs a company":list.length+" forwarded emails need a company"));
+  list.slice(0,8).forEach(id=>{const d=docs[id],m=d.m||{};
+    const pick=h("button",{type:"button",class:"btn small"},"Pick the Company");
+    pick.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
+    const skip=h("button",{type:"button",class:"p360-link",title:"Take it off this list. The email stays in Outlook."},"Not needed");
+    skip.addEventListener("click",()=>m360Mark(id,"skipped"));
+    t.appendChild(h("div",{class:"m360-ti"},h("div",{class:"m360-ts"},m.subject||d.subject||"(no subject)"),h("div",{class:"m360-tm"},[m.fromName||m.from||"",m.date?fmtS(m.date):""].filter(Boolean).join(" · ")),h("div",{class:"m360-ta"},pick,skip)));});
+  zone.after(t);
+}
+/* when the touchpoint for a tray email is saved, take it off the list */
+function m360Watch(id){
+  let n=0;const iv=setInterval(()=>{n++;const dl=document.getElementById("p360-dlg");
+    if(dl&&!dl.__m360&&dl.querySelector(".p360-dlg-b textarea")){dl.__m360=1;clearInterval(iv);const sum=dl.querySelector(".p360-dlg-b textarea");dl.addEventListener("close",()=>{if(!sum.value.trim())m360Mark(id,"logged");});}
+    else if(n>240)clearInterval(iv);},250);
+}
+/* how-to under every email drop box: classic Outlook drags, new Outlook and the web forward */
+function m360Help(){
+  const cp=h("button",{type:"button",class:"p360-link m360-copy",title:"Copy the address"},"Copy");
+  cp.addEventListener("click",e=>{e.stopPropagation();try{navigator.clipboard.writeText(M360_ADDR).then(()=>toast("Copied "+M360_ADDR),()=>{});}catch(x){}});
+  return h("div",{class:"m360-help"},
+    h("div",null,h("b",null,"Classic Outlook: "),"drag the email onto this box."),
+    h("div",null,h("b",null,"New Outlook or Outlook on the web: "),"forward the email to ",h("span",{class:"m360-addr"},M360_ADDR)," ",cp,". It logs itself in a minute or two. You can also Cc that address when you email a member."));
+}
+const _p360DropZone=p360DropZone;
+p360DropZone=function(label,onMail){const z=_p360DropZone(label,onMail);try{z.appendChild(m360Help());}catch(e){}return z;};
+const _renderFocusM360=renderFocus;
+renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360Tray();}catch(e){}return r;};
+function m360Start(){
+  if(M360.started)return;
+  if(!(db&&ME&&typeof ORGS!=="undefined"&&ORGS&&ORGS.length)){setTimeout(m360Start,1500);return;}
+  M360.started=true;m360Run();
+  M360.timer=setInterval(()=>{if(document.visibilityState==="visible")m360Run();},60000);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")m360Run();});
+}
+if(!(typeof OLK!=="undefined"&&OLK))setTimeout(m360Start,3000);
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
