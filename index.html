@@ -1389,6 +1389,42 @@ body.railmini .wf-dock{left:calc(var(--rail-mini) + 16px)}
 .wf-dock-d.today{border-color:var(--sky)}
 .wf-dock-d.past{opacity:.6}
 .wf-dock-d.over{background:var(--chip);border-color:var(--sky);border-style:solid}
+/* the day board, leveled up, and the week at the top of a Who to Touch list (Jonna, Oct 28, 2026) */
+#wk-plan .pday{min-height:190px;padding:12px;box-shadow:0 1px 2px rgba(6,32,47,.06)}
+#wk-plan .pd-h b{font-size:15px;letter-spacing:.02em}
+#wk-plan .pd-h em{font-style:normal;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--sky);color:#062033}
+#wk-plan .pd-n:empty{display:none}
+#wk-plan .pd-n.ok{color:var(--good)}
+#wk-plan .pd-prog{height:4px;border-radius:2px;background:var(--rule);overflow:hidden;margin:-2px 2px 2px}
+#wk-plan .pd-prog i{display:block;height:4px;background:var(--good);border-radius:2px}
+/* balance: the five days and the five number boxes stay in one row; the side cards sit two across when they drop under Up Next (Jonna, Oct 28, 2026) */
+@media (min-width:600px){#wk-plan.planner{grid-template-columns:repeat(var(--cols,5),minmax(118px,1fr))!important;overflow-x:auto;padding-bottom:4px}.headline .htiles{grid-template-columns:repeat(auto-fit,minmax(112px,1fr))!important}}
+#wk-plan .pcard{min-width:0}
+.wf-side{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));align-items:start}
+.wf-side .wf-note{grid-column:1/-1}
+#wk-plan .pday{padding:10px 8px}
+#wk-plan .pcard{display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:2px 6px;padding:8px 8px 6px;align-items:start}
+#wk-plan .pc-main b{overflow-wrap:break-word;word-break:normal}
+#wk-plan .pc-side{grid-column:1/-1;flex-direction:row!important;justify-content:space-between;align-items:center;margin-top:2px}
+#wk-plan .pc-main .tc-act select{width:100%}
+#wk-plan.planner{align-items:stretch}
+.wf-side{align-items:stretch}
+#wk-plan .pcard{border-radius:10px;transition:transform .12s,box-shadow .12s}
+#wk-plan .pcard:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,32,47,.12)}
+body.wf-drag #wk-plan .pday{border-style:dashed;border-color:var(--sky)}
+body.wf-drag #wk-plan .pday:not(.catch) .pd-list::after{content:"Drop here";display:block;margin-top:6px;padding:14px 8px;border:2px dashed var(--sky);border-radius:10px;text-align:center;font-size:12px;color:var(--ink-2)}
+body.wf-drag #wk-plan .pday .pd-empty{display:none}
+.wf-pbar{position:sticky;top:-16px;z-index:5;margin:-16px -16px 14px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 6px 14px rgba(6,32,47,.08)}
+.wf-pbar-k{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:8px}
+.wf-pbar-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.wf-pbar-d{border:2px dashed var(--border-strong);border-radius:10px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--surface-2);min-width:0;transition:transform .1s}
+.wf-pbar-d b{font-size:13px;color:var(--ink)}
+.wf-pbar-d span{font-size:11.5px;color:var(--ink-3)}
+.wf-pbar-d small{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.wf-pbar-d.today{border-color:var(--sky);border-style:solid}
+.wf-pbar-d.past{opacity:.6}
+.wf-pbar-d.over{background:var(--chip);border-color:var(--sky);border-style:solid;transform:scale(1.04)}
+body.wf-drag .wf-pbar-d{border-color:var(--sky)}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3174,7 +3210,8 @@ function renderFocus(){
     if(bS&&bn){const nt=h("section",{class:"wf-note"});nt.appendChild(p360Icon("cal"));nt.appendChild(h("div",null,h("b",null,bS.name+", "+fmtS(bS.date)+". "),bn+(bn===1?" member still has":" members still have")+" free registrations to use."));side.appendChild(nt);}}catch(e){}
   box.appendChild(main);box.appendChild(side);
   /* the day board: a count on each day */
-  plan.querySelectorAll(".pday").forEach(c=>{const h0=c.querySelector(".pd-h");if(!h0||h0.querySelector(".pd-n"))return;const n=c.querySelectorAll(".pcard:not(.done)").length;if(n)h0.appendChild(h("span",{class:"pd-n"},n+" to do"));});
+  plan.querySelectorAll(".pday").forEach(c=>{const h0=c.querySelector(".pd-h");if(!h0||h0.querySelector(".pd-n"))return;const tot=c.querySelectorAll(".pcard").length,dn=c.querySelectorAll(".pcard.done").length,op=tot-dn;
+    h0.appendChild(h("span",{class:"pd-n"+(tot&&!op?" ok":"")},tot?(op?op+" to do":"All done"):""));if(tot)h0.after(h("div",{class:"pd-prog"},h("i",{style:"width:"+Math.round(100*dn/tot)+"%"})));});
 }
 {const _rtw=renderThisWeek;renderThisWeek=function(){_rtw.apply(this,arguments);try{renderFocus();}catch(e){console.error("planner focus",e);}};}
 /* ---------- log an email by dropping it: an Outlook .msg, an .eml, or text dragged from an email (Jonna, Oct 27, 2026) ----------
@@ -3463,9 +3500,22 @@ function wfDock(on){let d=$("wf-dock");if(!on){if(d)d.remove();return;}if(d)retu
   d.appendChild(h("span",{class:"wf-dock-k"},"Drop on a day"));
   [0,1,2,3,4].forEach(i=>{const k=addDays(ws,i),t=h("div",{class:"wf-dock-d"+(k===TODAY?" today":"")+(k<TODAY?" past":"")},h("b",null,dow(k).slice(0,3)),h("span",null,fmtS(k)));wfDrop(t,k);d.appendChild(t);});
   document.body.appendChild(d);}
-document.addEventListener("dragstart",()=>{setTimeout(()=>{const v=$("v-week");if(typeof dragData!=="undefined"&&dragData&&v&&!v.hidden&&db&&canWrite)wfDock(true);},0);},true);
-document.addEventListener("dragend",()=>setTimeout(()=>wfDock(false),60),true);
-document.addEventListener("drop",()=>setTimeout(()=>wfDock(false),60),true);
+document.addEventListener("dragstart",()=>{setTimeout(()=>{const v=$("v-week");if(typeof dragData!=="undefined"&&dragData&&v&&!v.hidden&&db&&canWrite){document.body.classList.add("wf-drag");if(!document.querySelector("#m360-pane .wf-pbar"))wfDock(true);}},0);},true);
+document.addEventListener("dragend",()=>setTimeout(()=>{wfDock(false);document.body.classList.remove("wf-drag");},60),true);
+document.addEventListener("drop",()=>setTimeout(()=>{wfDock(false);document.body.classList.remove("wf-drag");},60),true);
+/* ---------- in a Who to Touch list, the week sits at the top of the panel: drag a card up onto a day (Jonna, Oct 28, 2026) ---------- */
+function wfPaneBar(){
+  const body=$("m360-pane-body");if(!body||!paneK||paneK.indexOf("lane:")!==0||!(db&&canWrite)||body.querySelector(".wf-pbar"))return;
+  const ws=weekStart(wkOff==="due"?0:wkOff),w=who();
+  const bar=h("div",{class:"wf-pbar",role:"region","aria-label":"Drag a card onto a day to plan it"});
+  bar.appendChild(h("div",{class:"wf-pbar-k"},(wkOff===1?"Next week":"This week")+": drag a card up onto a day"));
+  const row=h("div",{class:"wf-pbar-days"});
+  [0,1,2,3,4].forEach(i=>{const k=addDays(ws,i),n=PLANS.filter(p=>p.day===k&&(!w||p.owner===w)).length+TP.filter(t=>t.next&&t.next.due===k&&!t.next.done&&(!w||t.next.owner===w)).length;
+    const t=h("div",{class:"wf-pbar-d"+(k===TODAY?" today":"")+(k<TODAY?" past":""),title:"Drop a card here to plan it for "+dow(k)+", "+fmtS(k)},h("b",null,dow(k).slice(0,3)),h("span",null,fmtS(k)),h("small",null,n?n+" planned":"open"));
+    wfDrop(t,k);row.appendChild(t);});
+  bar.appendChild(row);body.insertBefore(bar,body.firstChild);
+}
+{const _rl=renderLane;renderLane=function(){_rl.apply(this,arguments);try{wfPaneBar();}catch(e){console.error("pane week",e);}};}
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
