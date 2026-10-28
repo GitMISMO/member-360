@@ -5306,16 +5306,15 @@ function openSquarePay(o){
         ["Special",sp.value],["Paid through Square",money(n)],["Date paid",fmt(dt.value)],
         ["Square reference",ref.value.trim()||"\u2014"],["Their contact",[cn.value.trim(),em].filter(Boolean).join(" \u00b7 ")||"\u2014"],
         ["Recorded by",myName()||sender.name]];
-      const tbl='<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:15px;color:#0d314c">'+
-        rows.map(r=>'<tr><td style="padding:7px 12px 7px 0;color:#5b7183;white-space:nowrap;vertical-align:top">'+escH(r[0])+'</td>'+
-        '<td style="padding:7px 0;font-weight:600">'+escH(r[1])+'</td></tr>').join("")+'</table>';
-      const inner='<p style="margin:0 0 16px;font-size:15px;line-height:1.55;color:#0d314c">'+escH(myName()||sender.name)+
-        ' has taken a Square payment for a membership special. Please set this company up in Aptify as a MISMO member at the Corporate level.</p>'+tbl+
-        (note.value.trim()?'<p style="margin:16px 0 0;font-size:15px;line-height:1.55;color:#0d314c">'+escH(note.value.trim())+'</p>':'')+
-        '<p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#5b7183">This payment was taken through Square, so it will not appear on the IIF invoice list or in the Financial System. Member 360 has already marked them as a '+escH(sp.value)+' member.</p>';
+      const html=internalEmail({tool:"Member 360",title:"Set Up a MISMO Member",sub:rec.name+" \u00b7 "+sp.value+" Special",
+        intro:"Hi Membership Team,<br>"+escH(myName()||sender.name)+" has taken a Square payment for a membership special. Please set this company up in Aptify as a MISMO member at the Corporate level.",
+        sections:[["The Payment",rows]],
+        done:["When It Is Done",(note.value.trim()?escH(note.value.trim())+"<br><br>":"")+"This payment was taken through Square, so it will not appear on the IIF invoice list or in the Financial System. Member 360 has already marked them as a "+escH(sp.value)+" member."],
+        cta:["https://resources.mismo.org/member-360/","Open Member 360"],
+        foot:'Sent by Member 360. Aptify remains the record.'});
       const nowId="sq"+Date.now().toString(36)+sender.key.slice(0,2);
       await db.doc("outbox/"+nowId).set({step:"square",stepName:"Square Special Payment",thru:"",test:false,
-        from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(inner),benefits:{},
+        from:sender.email,fromKey:sender.key,fromName:sender.name,html:html,benefits:{},
         recipients:[{to:to,name:"",org:rec.k,subject:"Set Up a MISMO Member: "+rec.name+" ("+sp.value+" Special)",
           fn:"",ln:"",co:escH(rec.name),lvl:"",type:"",ends:"",bk:"none"}],
         status:"queued",queuedAt:new Date().toISOString(),queuedBy:ME||""});
@@ -6835,6 +6834,30 @@ function bodyTokens(body,sender){
     if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 0;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>";
     return '<p style="margin:0 0 14px">'+lines.join("<br>")+"</p>";
   }).join("").replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return escH(sender.name);if(k==="Sender First Name")return escH(sender.name.split(" ")[0]);const key=MTOK[k];return key?"%%"+key+"%%":m;});
+}
+/* Jonna, Oct 28, 2026: staff-facing emails use the same look as the New Membership Application
+   notice — navy header with the tool's name, a details table, a "When It Is Done" box, a button
+   and a navy footer. emailShell above stays for the playbook emails that go to members. */
+function internalEmail(o){
+  const F='font-family:Arial,Helvetica,sans-serif';let h='';
+  h+='<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f1f6fa">';
+  h+='<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#f1f6fa"><tr><td align="center" style="padding:24px 12px">';
+  h+='<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #d5e2ed;border-radius:8px">';
+  h+='<tr><td style="background:#0d314c;padding:16px 32px;border-radius:7px 7px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#ffffff;border-radius:5px;padding:8px 12px"><img src="'+EMAIL_LOGO+'" alt="MISMO" width="132" style="display:block;border:0;outline:none;width:132px;height:auto"></td></tr></table></td><td valign="middle" align="right" style="'+F+';font-size:13px;font-weight:600;color:#a9d8f3">'+escH(o.tool||'Member 360')+'</td></tr></table></td></tr>';
+  h+='<tr><td style="height:3px;line-height:3px;font-size:0;background:#74bfeb">&nbsp;</td></tr>';
+  h+='<tr><td style="padding:24px 32px 4px;'+F+'"><div style="font-size:22px;line-height:1.25;font-weight:700;color:#0d314c">'+escH(o.title)+'</div>'+(o.sub?'<div style="font-size:13px;color:#6c899f;margin-top:4px">'+escH(o.sub)+'</div>':'')+'</td></tr>';
+  h+='<tr><td style="padding:12px 32px 4px;'+F+';font-size:15px;line-height:1.6;color:#0d314c">'+o.intro+'</td></tr>';
+  (o.sections||[]).forEach(([hd,rows])=>{
+    h+='<tr><td style="padding:4px 32px 8px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">';
+    h+='<tr><td colspan="2" style="padding:22px 0 6px;'+F+';font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#456179;border-bottom:2px solid #74bfeb">'+escH(hd)+'</td></tr>';
+    rows.forEach(([l,v])=>{h+='<tr><td valign="top" width="38%" style="padding:8px 14px 8px 0;'+F+';font-size:13px;line-height:1.5;color:#6c899f;border-bottom:1px solid #e5eef5">'+escH(l)+'</td><td valign="top" style="padding:8px 0;'+F+';font-size:13.5px;line-height:1.5;font-weight:600;color:#0d314c;border-bottom:1px solid #e5eef5">'+escH(v)+'</td></tr>';});
+    h+='</table></td></tr>';});
+  if(o.done){h+='<tr><td style="padding:22px 32px 6px;'+F+';font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#456179">'+escH(o.done[0])+'</td></tr><tr><td style="padding:6px 32px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #d5e2ed;border-left:4px solid #74bfeb;border-radius:6px;background:#f6fafd"><tr><td style="padding:14px 16px;'+F+';font-size:13.5px;line-height:1.55;color:#0d314c">'+o.done[1]+'</td></tr></table></td></tr>';}
+  if(o.cta){h+='<tr><td style="padding:16px 32px 26px"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#0d314c;border-radius:6px"><a href="'+o.cta[0]+'" style="display:inline-block;padding:11px 20px;'+F+';font-size:14px;font-weight:700;color:#ffffff;text-decoration:none">'+escH(o.cta[1])+'</a></td></tr></table></td></tr>';}
+  else h+='<tr><td style="padding:0 0 18px;font-size:0;line-height:0">&nbsp;</td></tr>';
+  h+='<tr><td style="background:#0d314c;padding:14px 32px;border-radius:0 0 7px 7px;'+F+';font-size:12px;line-height:1.5;color:#a9d8f3">'+(o.foot||'Sent by Member 360.')+'</td></tr>';
+  h+='</table></td></tr></table></body></html>';
+  return h;
 }
 /* MISMO's email shell: white card, the logo on white (it needs a light ground), a sky rule, navy ink */
 function emailShell(inner){
