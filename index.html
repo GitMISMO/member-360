@@ -3276,14 +3276,24 @@ function p360Eml(text){
   let date="";const d=new Date(H.date||"");if(!isNaN(d))date=p360Ymd(d);
   return {subject:dec(H.subject),body:p360EmlBody(H,rest),from:addrs(H.from)[0]||"",fromName:dec((H.from||"").replace(/<.*>/,"").replace(/"/g,"").trim()),to:addrs(H.to).concat(addrs(H.cc)),date};
 }
+/* read whatever Outlook hands over: a .msg or .eml file, the email's text or html, or (newer Outlook) a small description of the message.
+   The browser only lets us read the text formats during the drop, so they are all read at once. The last drop is kept for troubleshooting (Jonna, Oct 28, 2026) */
 async function p360ReadMail(dt){
-  const f=[...(dt.files||[])][0];
-  if(f){const buf=await f.arrayBuffer(),u=new Uint8Array(buf);if(u[0]===0xD0&&u[1]===0xCF)return p360Msg(buf);
+  const types=[...(dt.types||[])],files=[...(dt.files||[])],got={};
+  types.forEach(t=>{if(t!=="Files")try{got[t]=dt.getData(t)||"";}catch(e){}});
+  try{window.__p360MailDrop={types,files:files.map(f=>({name:f.name,type:f.type,size:f.size})),got:Object.fromEntries(Object.entries(got).map(([k,v])=>[k,String(v).slice(0,400)]))};localStorage.setItem("p360.lastMailDrop",JSON.stringify(window.__p360MailDrop));}catch(e){}
+  const f=files[0];
+  if(f){const buf=await f.arrayBuffer(),u=new Uint8Array(buf);if(u.length>8&&u[0]===0xD0&&u[1]===0xCF)return p360Msg(buf);
     let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));
-    if(!/^[\w-]+:/m.test(s.slice(0,2000)))return null;return p360Eml(s);}
-  const t=dt.getData?(dt.getData("text/plain")||""):"";
-  if(t.trim()){const a=t.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];return {subject:"",body:t,from:a[0]||"",fromName:"",to:a.slice(1),date:""};}
-  return null;
+    if(/^(from|subject|date|received|to|message-id|return-path|mime-version):/im.test(s.slice(0,20000)))return p360Eml(s);
+    if(/^text\//.test(f.type)||/\.txt$/i.test(f.name||""))return {subject:"",body:s,from:"",fromName:"",to:[],date:""};}
+  let text=got["text/plain"]||"";
+  if(!text.trim()&&got["text/html"])text=p360Strip(got["text/html"]);
+  let subj="",from="";
+  Object.entries(got).forEach(([k,v])=>{if(!/^\s*[\[{]/.test(v||""))return;try{const walk=o=>{if(!o||typeof o!=="object")return;for(const kk in o){const vv=o[kk];
+    if(typeof vv==="string"){if(!subj&&/^(subject|conversationtopic|normalizedsubject)$/i.test(kk))subj=vv;if(!from&&/@/.test(vv)&&/(sender|from|email|address)/i.test(kk))from=vv.replace(/^.*<|>.*$/g,"");}else walk(vv);}};walk(JSON.parse(v));}catch(e){}});
+  if(text.trim()||subj){const a=text.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];return {subject:subj,body:/^\s*[\[{]/.test(text)?"":text,from:from||a[0]||"",fromName:"",to:from?a:a.slice(1),date:""};}
+  return {none:true,types:types.filter(t=>t!=="Files").concat(files.length?["a file ("+files.map(x=>x.name||x.type||"no name").join(", ")+")"]:[])};
 }
 function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
   const cut=b.search(/\x0a\s*(From:|-{3,}\s*Original Message|On .{5,90} wrote:)/i);if(cut>40)b=b.slice(0,cut);
@@ -3304,7 +3314,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m){msg.textContent="That didn't look like an email. Drag it straight from Outlook, or use a .msg or .eml file.";return;}onMail(m);}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent="Outlook didn't hand the email over"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Drag the email to your desktop first, then drag that saved file here. Or select the email's text and drag that.";return;}onMail(m);}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
