@@ -2028,7 +2028,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     <div class="filters">
       <div class="chipset" id="mem-life"></div>
       <input type="search" id="mem-q" placeholder="Filter by company, Company ID or contact" aria-label="Filter members">
-      <select id="mem-sector" aria-label="Industry sector"><option value="">All Sectors</option><option>Tech Provider</option><option>Service Provider</option><option>Lender/Servicer</option><option value="GSE">GSE (incl. FHLBs)</option><option>Government Agency</option><option value="__none">No Sector</option></select>
+      <select id="mem-sector" aria-label="Industry sector"><option value="">All Sectors</option><option>Tech Provider</option><option>Service Provider</option><option>Lender/Servicer</option><option>Warehouse Lender</option><option value="GSE">GSE (incl. FHLBs)</option><option>Government Agency</option><option value="__none">No Sector</option></select>
       <select id="mem-review" aria-label="Data review">
         <option value="">All Records</option><option value="dup">Shared Company ID</option><option value="noid">No Company ID</option>
       </select>
@@ -2977,7 +2977,8 @@ function p360Dress(o,box){
   if(btnrow){[...btnrow.children].forEach(b=>{if(b.tagName==="BUTTON"&&/email/i.test(b.textContent)){b.textContent="";b.appendChild(p360Icon("mail"));b.appendChild(document.createTextNode("Email"));}act.appendChild(b);});btnrow.remove();}
   if(db&&canWrite!==false&&typeof moveOpts==="function"&&typeof addPlan==="function"){const opts=moveOpts();opts[0]={v:"",l:"Plan for…"};
     const ps=select(opts,"",{class:"p360-plan","aria-label":"Plan a touch for a day",title:"Plan a touch with this company for a day. It shows on the Outreach Planner."});ps.addEventListener("change",()=>{const d=ps.value;ps.value="";if(d)addPlan(o,d,"");});act.appendChild(ps);}
-  if(secs.issues)act.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>p360Go(box,"issues","issues")},p360Icon("flag"),"Log an Issue"));
+  /* the Participation and Activity snapshot in place of Log an Issue, which stays on the Issues tab (Jonna, Oct 28, 2026) */
+  if(secs.act)act.appendChild(h("button",{type:"button",class:"btn ghost",title:"Open the Participation and Activity snapshot for this company, ready to share or download as a PDF.",onclick:()=>p360Go(box,"money","act","Activity Snapshot")},p360Icon("chart"),"Activity Snapshot"));
   const bar=h("div",{class:"p360-tabs",role:"tablist","aria-label":"Record sections"}),panels={};
   P360_TABS.forEach(([id,label,parts])=>{const have=parts.filter(p=>secs[p]);if(id!=="overview"&&!have.length)return;
     const b=h("button",{type:"button",class:"p360-tab",role:"tab","data-tab":id,"aria-selected":"false",onclick:()=>p360Go(box,id)},label);
@@ -3109,7 +3110,7 @@ function p360Update(o,box){
 /* ---------- the Outreach Planner, design G: Up Next, the week as a checklist and a week strip, with the Who to Touch cards below (Jonna, Oct 27, 2026) ----------
    renderThisWeek still builds the day board, the tiles and the Who to Touch cards; this adds the focus area above them.
    The day board shows only for Past Due. Planning, moving, dragging, ticking done and Not Now all use the planner's own functions. */
-P360_IC.check='<path d="M5 12l5 5 9-10"/>';P360_IC.cal='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>';
+P360_IC.chart='<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>';P360_IC.check='<path d="M5 12l5 5 9-10"/>';P360_IC.cal='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>';
 /* Log Touchpoint pops out: the same form the record uses, in a window over the page; it closes itself once the touchpoint saves (Jonna, Oct 27, 2026) */
 function p360LogPop(o,m){
   if(!o)return;let dl=$("p360-dlg");if(dl)dl.remove();
@@ -3806,7 +3807,7 @@ function samePerson(p,name){
 }
 
 /* ---------- industry sector: the five categories on the 2027 Sponsorship Prospectus ---------- */
-const SECTORS=["Tech Provider","Service Provider","Lender/Servicer","GSE","Government Agency"];
+const SECTORS=["Tech Provider","Service Provider","Lender/Servicer","Warehouse Lender","GSE","Government Agency"];
 const SECTOR_LAB={"GSE":"GSE (incl. FHLBs)"};
 const GSE_RX=/fannie|freddie|federal home loan bank|\bfhlb|farmer mac|federal agricultural mortgage/i;
 const GOV_RX=/department|dept\b|division of|office of|commission|bureau|administration|agency|\bstate of\b|commonwealth|\bu\.?s\.?\b|federal housing|ginnie|\bhud\b|veterans affairs|usda|cfpb|fhfa|housing finance|housing development|regulat/i;
