@@ -1426,6 +1426,29 @@ body.wf-drag #wk-plan .pday .pd-empty{display:none}
 .wf-pbar-d.past{opacity:.6}
 .wf-pbar-d.over{background:var(--chip);border-color:var(--sky);border-style:solid;transform:scale(1.04)}
 body.wf-drag .wf-pbar-d{border-color:var(--sky)}
+/* Member 360 inside Outlook (Jonna, Oct 28, 2026) */
+#olk-wrap{display:none}
+html.olk.olk-ready header.hqtop,html.olk.olk-ready #rail,html.olk.olk-ready #rail-scrim,html.olk.olk-ready #main{display:none!important}
+html.olk.olk-ready body{padding:0!important}
+html.olk.olk-ready #olk-wrap{display:flex;flex-direction:column;gap:10px;padding:14px 14px 28px;max-width:640px}
+.olk-head{display:flex;justify-content:space-between;align-items:baseline}
+.olk-head b{font-size:16px;color:var(--ink)}
+.olk-head span{font-size:12px;color:var(--ink-3)}
+.olk-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.olk-card p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.5}
+.olk-subj{font-size:15px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.olk-meta{font-size:12.5px;color:var(--ink-3);margin-top:3px}
+.olk-lab{font-size:12px;font-weight:600;color:var(--ink-2);margin-top:4px}
+.olk-org{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.olk-org:hover{border-color:var(--sky)}
+.olk-org .nm{flex:1;min-width:0;display:flex;flex-direction:column;font-weight:600;overflow-wrap:anywhere}
+.olk-org small{font-weight:400;color:var(--ink-3);font-size:12px}
+.olk-org .go{font-size:12.5px;font-weight:600;color:var(--accent);white-space:nowrap}
+.olk-pick{align-self:flex-start;margin:0}
+.olk-open{align-self:flex-start}
+.olk-note{font-size:12px;color:var(--ink-3)}
+html.olk .hqpane{width:100vw!important}
+html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16px)}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3293,14 +3316,14 @@ async function p360ReadMail(dt){
   if(!text.trim()&&got["text/html"])text=p360Strip(got["text/html"]);
   let subj="",from="";
   Object.entries(got).forEach(([k,v])=>{if(!/^\s*[\[{]/.test(v||""))return;try{const walk=o=>{if(!o||typeof o!=="object")return;for(const kk in o){const vv=o[kk];
-    if(typeof vv==="string"){if(!subj&&/^(subject|conversationtopic|normalizedsubject)$/i.test(kk))subj=vv;if(!from&&/@/.test(vv)&&/(sender|from|email|address)/i.test(kk))from=vv.replace(/^.*<|>.*$/g,"");}else walk(vv);}};walk(JSON.parse(v));}catch(e){}});
+    if(Array.isArray(vv)&&/^subjects?$/i.test(kk)&&typeof vv[0]==="string"){if(!subj)subj=vv[0].trim();continue;}if(typeof vv==="string"){if(!subj&&/^(subject|conversationtopic|normalizedsubject)$/i.test(kk))subj=vv.trim();if(!from&&/@/.test(vv)&&/(sender|from|email|address)/i.test(kk))from=vv.replace(/^.*<|>.*$/g,"");}else walk(vv);}};walk(JSON.parse(v));}catch(e){}});
   if(text.trim()||subj){const a=text.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[];
     /* copied or dragged text often starts with Outlook's From, Sent, To and Subject lines: use them, then drop them from the summary */
     const hv=re=>{const m=text.match(re);return m?m[1].trim():"";},hs=hv(/^\s*Subject:\s*(.+)$/im),hf=hv(/^\s*From:\s*(.+)$/im),hd=hv(/^\s*(?:Sent|Date):\s*(.+)$/im);
     let date="";if(hd){const d=new Date(hd.replace(/ at /i," "));if(!isNaN(d))date=p360Ymd(d);}
     const ff=(hf.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/)||[])[0]||"",fn=hf.replace(/<.*>|\[.*\]/g,"").replace(/"/g,"").trim();
     let body=/^\s*[\[{]/.test(text)?"":text;if(hs||hf)body=body.replace(/^(\s*(From|Sent|Date|To|Cc|Subject|Importance):.*\n)+/i,"");
-    return {subject:subj||hs,body,from:from||ff||a[0]||"",fromName:fn&&!/@/.test(fn)?fn:"",to:a.filter(x=>x!==(from||ff)),date};}
+    return {partial:!body.trim()&&!(from||ff||a[0]),subject:subj||hs,body,from:from||ff||a[0]||"",fromName:fn&&!/@/.test(fn)?fn:"",to:a.filter(x=>x!==(from||ff)),date};}
   return {none:true,file:files.length>0&&!types.some(t=>t!=="Files"&&(got[t]||"").trim()),types:types.filter(t=>t!=="Files").concat(files.length?["a file ("+files.map(x=>x.name||x.type||"no name").join(", ")+")"]:[])};
 }
 function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
@@ -3322,7 +3345,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sends the subject when you drag. For the whole email, use the Log to Member 360 button in Outlook.";}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
@@ -3536,6 +3559,57 @@ function wfPaneBar(){
   bar.appendChild(row);body.insertBefore(bar,body.firstChild);
 }
 {const _rl=renderLane;renderLane=function(){_rl.apply(this,arguments);try{wfPaneBar();}catch(e){console.error("pane week",e);}};}
+/* ---------- Member 360 inside Outlook: opened with ?outlook=1 from the "Log to Member 360" button, the page reads the email that is open in Outlook
+   (or emails dragged into the panel), finds the company and opens Log a Touchpoint filled in. Nothing saves until Save Touchpoint (Jonna, Oct 28, 2026) ---------- */
+const OLK=/[?&]outlook=1/.test(location.search);
+const OLKS={m:null,busy:false};
+function olkReady(){return typeof ORGS!=="undefined"&&ORGS&&ORGS.length>0&&typeof BY!=="undefined";}
+function olkWrap(){let w=$("olk-wrap");if(!w){w=h("div",{id:"olk-wrap"});document.body.appendChild(w);}return w;}
+function olkRender(){
+  const w=olkWrap();w.textContent="";const m=OLKS.m;
+  w.appendChild(h("div",{class:"olk-head"},h("b",null,"Member 360"),h("span",null,"Log this email")));
+  if(!m){w.appendChild(h("div",{class:"olk-card"},h("p",null,OLKS.busy?"Reading the email…":"Open an email to log it here. You can also drag emails into this panel.")));return;}
+  const card=h("section",{class:"olk-card"});
+  card.appendChild(h("div",{class:"olk-subj"},m.subject||"(no subject)"));
+  card.appendChild(h("div",{class:"olk-meta"},[(m.fromName||m.from||""),m.date?fmtS(m.date):""].filter(Boolean).join(" · ")));
+  w.appendChild(card);
+  const c=p360MatchMail(m);
+  w.appendChild(h("div",{class:"olk-lab"},c.length?(c.length===1?"This email goes with":"This email matches more than one company"):"No company matched these email addresses"));
+  c.slice(0,6).forEach(o=>{const b=h("button",{type:"button",class:"olk-org",onclick:()=>p360LogPop(o,m)},h("span",{class:"p360-av","aria-hidden":"true"},p360Initials(o.name)),h("span",{class:"nm"},o.name,h("small",null,o.life||"")),h("span",{class:"go"},"Log It"));w.appendChild(b);});
+  w.appendChild(h("button",{type:"button",class:"btn ghost olk-pick",onclick:()=>p360MailPick(m,[])},c.length?"Log it on a different company":"Pick the company"));
+  if(c.length===1)w.appendChild(h("button",{type:"button",class:"p360-link olk-open",onclick:()=>openPane(c[0].k)},"Open "+c[0].name+" in Member 360"));
+  w.appendChild(h("div",{class:"olk-note"},"Tip: drag other emails into this panel to log them too."));
+}
+function olkItem(){
+  const it=Office.context.mailbox.item;if(!it){OLKS.m=null;olkRender();return;}
+  OLKS.busy=true;OLKS.m=null;olkRender();
+  const ad=x=>(x||[]).map(r=>r&&r.emailAddress).filter(Boolean);
+  const m={subject:it.subject||"",from:(it.from&&it.from.emailAddress)||"",fromName:(it.from&&it.from.displayName)||"",to:ad(it.to).concat(ad(it.cc)),date:it.dateTimeCreated?p360Ymd(new Date(it.dateTimeCreated)):"",body:""};
+  try{it.body.getAsync(Office.CoercionType.Text,r=>{m.body=r&&r.status===Office.AsyncResultStatus.Succeeded?String(r.value||""):"";OLKS.busy=false;OLKS.m=m;olkRender();});}
+  catch(e){OLKS.busy=false;OLKS.m=m;olkRender();}
+}
+async function olkFile(f){
+  const blob=f.fileContent instanceof Blob?f.fileContent:new Blob([f.fileContent]);const buf=await blob.arrayBuffer(),u=new Uint8Array(buf);
+  if(u.length>8&&u[0]===0xD0&&u[1]===0xCF)return p360Msg(buf);
+  let s="";for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return p360Eml(s);
+}
+function olkStart(){
+  if(!olkReady()){setTimeout(olkStart,500);return;}
+  document.documentElement.classList.add("olk-ready");
+  if(!(window.Office&&Office.context&&Office.context.mailbox)){const w=olkWrap();w.textContent="";w.appendChild(h("div",{class:"olk-head"},h("b",null,"Member 360"),h("span",null,"Log this email")));w.appendChild(h("div",{class:"olk-card"},h("p",null,"This view works inside Outlook, from the Log to Member 360 button.")));return;}
+  olkItem();
+  try{Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged,()=>olkItem());}catch(e){}
+  /* emails dragged into the panel arrive whole, as files (new Outlook and Outlook on the web) */
+  try{Office.context.mailbox.addHandlerAsync(Office.EventType.DragAndDropEvent,async ev=>{const d=ev&&ev.dragAndDropEventData;if(!d||d.type!=="drop")return;
+    const fs=(d.dataTransfer&&d.dataTransfer.files)||[];const f=fs.find?fs.find(x=>/\.(eml|msg)$/i.test(x.name||"")):fs[0];if(!f)return;
+    try{const m=await olkFile(f);OLKS.m=m;olkRender();const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);}catch(e){console.error("outlook drop",e);toast("Couldn't read that email.",true);}});}catch(e){}
+}
+if(OLK){document.documentElement.classList.add("olk");
+  /* office.js can blank history.pushState and replaceState: keep them */
+  const _ps=history.pushState,_rs=history.replaceState;
+  const sc=document.createElement("script");sc.src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js";
+  sc.onload=()=>{try{if(!history.pushState)history.pushState=_ps;if(!history.replaceState)history.replaceState=_rs;}catch(e){}try{Office.onReady(()=>olkStart());}catch(e){console.error("outlook",e);}};
+  sc.onerror=()=>olkStart();document.head.appendChild(sc);}
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
   d.appendChild(h("summary",null,title,cnt==null?null:h("span",{class:"cnt","data-cnt":part},String(cnt))));
