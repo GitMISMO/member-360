@@ -3301,7 +3301,7 @@ async function p360ReadMail(dt){
     const ff=(hf.match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/)||[])[0]||"",fn=hf.replace(/<.*>|\[.*\]/g,"").replace(/"/g,"").trim();
     let body=/^\s*[\[{]/.test(text)?"":text;if(hs||hf)body=body.replace(/^(\s*(From|Sent|Date|To|Cc|Subject|Importance):.*\n)+/i,"");
     return {subject:subj||hs,body,from:from||ff||a[0]||"",fromName:fn&&!/@/.test(fn)?fn:"",to:a.filter(x=>x!==(from||ff)),date};}
-  return {none:true,types:types.filter(t=>t!=="Files").concat(files.length?["a file ("+files.map(x=>x.name||x.type||"no name").join(", ")+")"]:[])};
+  return {none:true,file:files.length>0&&!types.some(t=>t!=="Files"&&(got[t]||"").trim()),types:types.filter(t=>t!=="Files").concat(files.length?["a file ("+files.map(x=>x.name||x.type||"no name").join(", ")+")"]:[])};
 }
 function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
   const cut=b.search(/\x0a\s*(From:|-{3,}\s*Original Message|On .{5,90} wrote:)/i);if(cut>40)b=b.slice(0,cut);
@@ -3312,7 +3312,7 @@ function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
 function p360MailFill(box,o,m){
   const fl=box.querySelectorAll(".formgrid .fld"),g=i=>fl[i]&&fl[i].querySelector("input,select,textarea");
   const date=g(0),type=g(1),who=g(3),sum=g(5);
-  if(date&&m.date)date.value=m.date;
+  if(date)date.value=m.date||TODAY;
   if(type&&[...type.options].some(x=>x.value==="Email"))type.value="Email";
   if(who){const ad=[m.from].concat(m.to||[]).map(a=>String(a||"").toLowerCase()),p=(o.people||[]).find(p=>p.email&&ad.includes(p.email.toLowerCase()));if(p)who.value=p.email;}
   if(sum){sum.value=p360MailText(m);sum.dispatchEvent(new Event("p360set"));try{sum.focus();sum.setSelectionRange(0,0);sum.scrollTop=0;}catch(e){}}
@@ -3322,7 +3322,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent="Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"Outlook didn't send the email's words"+(m&&m.types&&m.types.length?" (it sent: "+m.types.slice(0,3).join(", ")+")":"")+". Select the email's text and drag it here, or copy it and paste it here with Ctrl+V.";return;}onMail(m);}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
