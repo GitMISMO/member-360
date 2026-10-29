@@ -2444,13 +2444,13 @@ const STEPS_X=[{id:"ty",name:"Thank You for Renewing",manual:true,all:true,off:0
 function stepById(id){return STEPS.find(x=>x.id===id)||STEPS_X.find(x=>x.id===id);}
 function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:6px 0 22px"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#0d314c" style="background:#0d314c;border-radius:6px;padding:12px 24px;mso-padding-alt:12px 24px"><a href="%%meet%%" target="_blank" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:18px;color:#ffffff;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table></td></tr></table>';}
 /* each sender's own email signature, built the same way as resources.mismo.org/signature.html (Jonna, Oct 29, 2026) */
-const SENDER_SIG={amoses:{title:"VP, Strategic Growth",phone:"319.269.6576"},jcritchley:{title:"Director of Programs & Operations",phone:""}};
+const SENDER_SIG={amoses:{title:"VP, Strategic Growth",phones:[["319.269.6576","+13192696576"]]},jcritchley:{title:"Director of Programs & Operations",addr:"1919 M Street NW, 5th Floor | Washington, DC 20036",phones:[["TEL: (202) 557-2763","+12025572763"],["CELL: (520) 245-0356","+15202450356"]]}};
 function m360Sig(sender){if(!sender)return "";const k=sender.key||String(sender.email||"").split("@")[0],x=SENDER_SIG[k]||{},email=k?k+"@mismo.org":(sender.email||"");
   const font="font-family:Aptos,'Segoe UI',Arial,Helvetica,sans-serif;",t="mso-line-height-rule:exactly;line-height:14px;",a="color:#14486e;text-decoration:none;";
   let L='<div style="'+font+'font-size:14pt;font-weight:700;color:#0d314c;line-height:20px;">'+escH(sender.name||"")+'</div>';
   if(x.title)L+='<div style="'+font+t+'font-size:9pt;color:#0d314c;">'+escH(x.title)+'</div>';
-  L+='<div style="'+font+t+'font-size:9pt;color:#456179;">1919 M Street NW, 5th Floor | Washington, DC</div>';
-  let p='';if(x.phone){const dg=x.phone.split("").filter(c=>c>="0"&&c<="9").join("");p+='<a href="tel:+1'+dg+'" style="'+a+'">'+escH(x.phone)+'</a>&nbsp;&nbsp;|&nbsp;&nbsp;';}
+  L+='<div style="'+font+t+'font-size:9pt;color:#456179;">'+escH(x.addr||"1919 M Street NW, 5th Floor | Washington, DC")+'</div>';
+  let p='';(x.phones||[]).forEach(ph=>{p+='<a href="tel:'+ph[1]+'" style="'+a+'">'+escH(ph[0])+'</a>&nbsp;&nbsp;|&nbsp;&nbsp;';});
   p+='<a href="https://www.mismo.org" style="'+a+'font-weight:600;">MISMO.org</a>';
   L+='<div style="'+font+t+'font-size:9pt;color:#456179;">'+p+'</div>';
   if(email)L+='<div style="'+font+t+'font-size:9pt;"><a href="mailto:'+escH(email)+'" style="'+a+'">'+escH(email)+'</a></div>';
