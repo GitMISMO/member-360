@@ -6138,7 +6138,7 @@ function renderStats(){
    ["t-ln","Lender Members",K.Lender,cur?"Through the IIF \u00b7 "+n(A.filter(o=>kindIn(o,Y)==="Lender"&&lendPaid(o,Y)>=1000).length)+" paid $1,000+":"Through the IIF","var(--c2)",()=>A.filter(o=>kindIn(o,Y)==="Lender")],
    ["t-free","Free Members",K.Free,"Complimentary memberships","var(--c3)",()=>A.filter(o=>kindIn(o,Y)==="Free")],
    ["t-ch","Champions",champ,"Chair, Executive and Associate","var(--c4)",()=>A.filter(isChamp)],
-   ["t-cu","Credit Unions",cu,"Members that are credit unions","var(--c5)",()=>A.filter(o=>o.cu)]].forEach(t=>tb.appendChild(tile(t[0],t[1],t[2],t[3],t[4],t[5],"st-hl")));
+   ["t-cu","Credit Unions",cu,"Members that are credit unions","var(--c5)",()=>A.filter(o=>o.cu)]].forEach(t=>tb.appendChild(tile(t[0],t[1],t[2],t[3],t[4],t[5],"st-sppanel")));
   const TC={"Non-Lender":"var(--c1)","Lender":"var(--c2)","Free":"var(--c3)","Type Not Recorded":"var(--ink-3)"};
   const pickT=s=>openStat("type:"+s.k,s.l+" Members",null,()=>A.filter(o=>kindIn(o,Y)===s.k),"st-who");
   mix($("st-type"),Object.keys(K).filter(k=>K[k]).map(k=>({k:"type:"+k,l:k,v:K[k],c:TC[k]})).map(x=>Object.assign(x,{k:x.k})),s=>pickT({k:s.k.slice(5),l:s.l}),sel);
