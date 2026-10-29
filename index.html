@@ -2966,7 +2966,7 @@ function renderProfile(o,box){
   if(canEmail()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
     se.addEventListener("click",()=>{const nx=nextStep(o);openSend({stId:nx?nx.st.id:"r90",thru:o.thru||"",orgs:[o],pick:true});});
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},se));}
-  if(o.type==="Lender"&&canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
+  /* only on records marked with a special (TMC, Broker, ACUMA) (Jonna, Oct 28, 2026) */if(specialOf(o)&&canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
     sq.addEventListener("click",()=>openSquarePay(o));
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},sq));}
   box.appendChild(h("div",{"data-part":"ctrls"}));
