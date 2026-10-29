@@ -1462,6 +1462,18 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .m360-ts{font-size:13px;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
 .m360-tm{font-size:12px;color:var(--ink-3);margin-top:2px}
 .m360-ta{display:flex;align-items:center;gap:10px;margin-top:6px}
+.m360-help{display:block}
+.m360-help>summary{cursor:pointer;list-style:none;font-weight:600;color:var(--ink-2);user-select:none}
+.m360-help>summary::-webkit-details-marker{display:none}
+.m360-help>summary::before{content:"\25B8";display:inline-block;width:14px;color:var(--ink-3);transition:transform .15s}
+.m360-help[open]>summary::before{transform:rotate(90deg)}
+.m360-help[open]>summary{margin-bottom:4px}
+/* day board: one line per card, company name and owner tag */
+#wk-plan .pd-list .pcard{grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:6px;padding:6px 8px}
+#wk-plan .pd-list .pcard .pc-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+#wk-plan .pd-list .pcard .pc-sub,#wk-plan .pd-list .pcard .late{display:none}
+#wk-plan .pd-list .pcard .pc-side{grid-column:auto;margin-top:0;justify-content:flex-end;gap:4px}
+#wk-plan .pd-list .pcard input{margin:0}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3718,11 +3730,16 @@ function m360Watch(id){
 /* how-to under every email drop box: classic Outlook drags, new Outlook and the web forward */
 function m360Help(){
   const cp=h("button",{type:"button",class:"p360-link m360-copy",title:"Copy the address"},"Copy");
-  cp.addEventListener("click",e=>{e.stopPropagation();try{navigator.clipboard.writeText(M360_ADDR).then(()=>toast("Copied "+M360_ADDR),()=>{});}catch(x){}});
-  return h("div",{class:"m360-help"},
+  cp.addEventListener("click",e=>{e.stopPropagation();e.preventDefault();try{navigator.clipboard.writeText(M360_ADDR).then(()=>toast("Copied "+M360_ADDR),()=>{});}catch(x){}});
+  const sm=h("summary",{title:"Show how to log an email from each kind of Outlook"},"Using new Outlook or Outlook on the web?");
+  sm.addEventListener("click",e=>e.stopPropagation());
+  return h("details",{class:"m360-help"},sm,
     h("div",null,h("b",null,"Classic Outlook: "),"drag the email onto this box."),
     h("div",null,h("b",null,"New Outlook or Outlook on the web: "),"forward the email to ",h("span",{class:"m360-addr"},M360_ADDR)," ",cp,". It logs itself in a minute or two. You can also Cc that address when you email a member."));
 }
+/* day board: cards show just the company and the owner; the rest is on hover (Jonna, Oct 28, 2026) */
+const _planCardM360=planCard;
+planCard=function(item,withMove){const c=_planCardM360(item,withMove);try{if(c&&!withMove){const b=c.querySelector(".pc-main b"),s=c.querySelector(".pc-sub"),l=c.querySelector(".pc-main .late");c.title=[b?b.textContent:"",s?s.textContent:"",l?l.textContent:""].filter(Boolean).join(" · ");}}catch(e){}return c;};
 const _p360DropZone=p360DropZone;
 p360DropZone=function(label,onMail){const z=_p360DropZone(label,onMail);try{z.appendChild(m360Help());}catch(e){}return z;};
 const _renderFocusM360=renderFocus;
