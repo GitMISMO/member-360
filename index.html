@@ -1479,6 +1479,12 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 #wk-focus.wf{align-items:stretch}#wk-focus .wf-main>.wf-up{flex:1}#wk-focus .wf-side{align-content:start}
 .p360-drop.p360-drop-low{margin-top:14px}
 /* Activity page (Jonna, Oct 29, 2026) */
+/* Renewed: Send a Thank You (Jonna, Oct 29, 2026) */
+.ty-sect{margin:0 0 22px}
+.ty-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 18px}
+.ty-i{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;min-width:0}
+.ty-i .hint{margin:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ty-x{margin-left:auto;font-size:12px;white-space:nowrap}
 .act-list{margin-top:12px}
 .act-day{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
 .act-day:first-child{margin-top:4px}
@@ -3491,6 +3497,30 @@ function p360MailPick(m,c){
   dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
 }
 {const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;/* the email box sits at the bottom of the company pane: classic Outlook only (Jonna, Oct 28, 2026) */const z=p360DropZone("Drag an email from classic Outlook here",m=>{p360MailFill(box,o,m);const s=box.closest("details");if(s)s.open=true;try{box.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}});z.classList.add("p360-drop-low");box.appendChild(z);setTimeout(()=>{const pn=box.closest(".p360-panel");if(pn)pn.appendChild(z);},0);}catch(e){console.error("email drop",e);}};}
+/* Renewals: everyone who has renewed and hasn't had the Thank You for Renewing email, sent in one go (Jonna, Oct 29, 2026) */
+function tyList(){return ORGS.filter(o=>renewable(o)&&stageOf(o)==="Renewed"&&!ov(o).tySent&&(o.people||[]).some(p=>p.email)).sort((a,b)=>a.name.localeCompare(b.name));}
+function tyPanel(){
+  const note=$("ren-note");if(!note)return;let box=$("ren-ty");
+  if(!box){box=h("details",{class:"sect ty-sect",id:"ren-ty"});note.after(box);let op=true;try{op=localStorage.getItem("m360.tyOpen")!=="0";}catch(e){}box.open=op;
+    box.addEventListener("toggle",()=>{try{localStorage.setItem("m360.tyOpen",box.open?"1":"0");}catch(e){}});}
+  const list=tyList();box.textContent="";
+  box.appendChild(h("summary",null,"Renewed: Send a Thank You",h("span",{class:"cnt"},String(list.length))));
+  const sb=h("div",{class:"sbody"});box.appendChild(sb);
+  if(!list.length){sb.appendChild(h("div",{class:"empty"},"Everyone who has renewed has had the thank-you email."));return;}
+  sb.appendChild(h("div",{class:"psub",style:"margin:0 0 10px"},"These companies have renewed for "+RY+" and haven't had the Thank You for Renewing email yet. It goes to every contact at each company. Send them all at once, or take a company off the list if it isn't needed."));
+  const row=h("div",{class:"btnrow",style:"margin:0 0 12px"});
+  if(canSend()){const b=h("button",{type:"button",class:"btn"},"Send the Thank You to All "+n(list.length));b.addEventListener("click",()=>openSend({stId:"ty",thru:"",orgs:tyList(),pick:true}));row.appendChild(b);}
+  else row.appendChild(h("span",{class:"hint"},"Amy and Jonna can send these from here."));
+  sb.appendChild(row);
+  const ul=h("div",{class:"ty-list"});
+  list.forEach(o=>{const c=(o.people||[]).filter(p=>p.email).length;
+    const it=h("div",{class:"ty-i"},h("button",{type:"button",class:"p360-link",onclick:()=>openPane(o.k)},o.name),h("span",{class:"hint"},[o.level,c+(c===1?" contact":" contacts")].filter(Boolean).join(" · ")));
+    if(db&&canWrite){const x=h("button",{type:"button",class:"p360-link ty-x",title:"Take this company off the list without sending"},"Not Needed");
+      x.addEventListener("click",()=>{saveOv(o.k,{tySent:{at:new Date().toISOString(),by:ME||"",skipped:true}});tyPanel();toast(o.name+" is off the thank-you list.");try{pushUndo("Took "+o.name+" off the thank-you list",()=>{saveOv(o.k,{tySent:null});tyPanel();});}catch(e){}});it.appendChild(x);}
+    ul.appendChild(it);});
+  sb.appendChild(ul);
+}
+{const _rtTy=renderTiles;renderTiles=function(){const r=_rtTy.apply(this,arguments);try{tyPanel();}catch(e){console.error("thank-you list",e);}return r;};}
 /* ---------- Start a Call Block: work through a list one company at a time, log each in a click or two, then the next (Jonna, Oct 28, 2026) ----------
    The list is this week's planner items (late ones first) or one Who to Touch lane (first 25). Save and Next logs a touchpoint the same way
    Log a Touchpoint does and ticks the planned touch or follow-up done. No Answer logs nothing and moves the company to the end, once. */
@@ -3500,7 +3530,8 @@ function cbQueueWeek(){
     .map(it=>({o:BY[it.org],it,why:wfWhy(it),tag:it.kind==="fu"?"Follow-up":(LANE[it.p.lane]?LANE[it.p.lane].name:"Planned touch")}));
 }
 function cbQueueLane(id){const S=LASTS||suggestions(),L=LANE[id];return (S[id]||[]).filter(x=>x&&x.o).slice(0,25).map(x=>({o:x.o,it:null,why:x.why||(L?L.sub:""),tag:L?L.name:""}));}
-function cbButton(){
+/* Start a Call Block is switched off (Jonna, Oct 29, 2026) */
+function cbButton(){document.querySelectorAll('.cb-start').forEach(b=>b.remove());return;
   const hd=document.querySelector("#wk-focus .wf-h");if(!hd||hd.querySelector(".cb-start")||!(db&&canWrite))return;
   const b=h("button",{type:"button",class:"btn cb-start",title:"Go through your list one company at a time: call or email, log how it went in a click, then on to the next.",onclick:()=>cbOpen()});b.appendChild(p360Icon("call"));b.appendChild(document.createTextNode("Start a Call Block"));hd.appendChild(b);
 }
@@ -7560,7 +7591,7 @@ function openSend(opt){
           fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk};});
       const thru=opt.thru||"";
       const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
-      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;archiveOutbox();
+      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;archiveOutbox();if(st.id==="ty")[...new Set(rec.map(r=>r.org))].forEach(k=>{if(BY[k])saveOv(k,{tySent:{at:now.toISOString(),by:ME||"",batch:id}});});
         /* the planner moves on: each organization is marked as sent this step, as Mark as Sent did */
         const orgsDone=[...new Set(rec.map(r=>r.org))].filter(k=>BY[k]&&inCohort(BY[k]));
         const byThru={};orgsDone.forEach(k=>{const tt=BY[k].thru||END;(byThru[tt]=byThru[tt]||[]).push(k);});
