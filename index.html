@@ -1478,6 +1478,25 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .m360-fold{cursor:pointer;user-select:none}.m360-fold:focus-visible{outline:2px solid var(--sky);outline-offset:2px;border-radius:6px}.m360-caret{display:inline-block;width:0;height:0;margin-right:8px;border-left:5px solid var(--ink-3);border-top:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(90deg);transition:transform .15s;align-self:center}.m360-closed .m360-caret{transform:none}.wf-card.m360-closed .p360-drop{display:none}.m360-lw>.wf-card.m360-closed{flex:none}.wf-card.m360-closed>.wf-h{margin-bottom:0}.m360-fold h3{margin-right:auto}.wf-card.m360-closed{padding-top:10px;padding-bottom:10px;box-shadow:none}.wf-card.m360-closed h3{font-size:14px;color:var(--ink-2)}
 #wk-focus.wf{align-items:stretch}#wk-focus .wf-main>.wf-up{flex:1}#wk-focus .wf-side{align-content:start}
 .p360-drop.p360-drop-low{margin-top:14px}
+/* Activity page (Jonna, Oct 29, 2026) */
+.act-list{margin-top:12px}
+.act-day{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
+.act-day:first-child{margin-top:4px}
+.act-r{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:6px}
+.act-r.gone .act-m{opacity:.62}
+.act-r.hid{border-style:dashed;opacity:.75}
+.act-t{font-size:12px;color:var(--ink-3);white-space:nowrap;padding-top:2px}
+.act-l{font-size:14px;color:var(--ink);line-height:1.45}
+.act-l b{font-weight:600}
+.act-d{font-size:13px;color:var(--ink-2);margin-top:2px;overflow-wrap:anywhere}
+.act-s{display:inline-block;font-size:11px;font-weight:600;line-height:1.6;padding:0 8px;border-radius:999px;margin-left:8px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border);vertical-align:1px}
+.act-s.warn{background:rgba(217,119,6,.14);color:#b45309;border-color:rgba(217,119,6,.35)}
+.act-a{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.act-a .p360-link{white-space:nowrap}
+.act-empty{padding:28px;text-align:center;color:var(--ink-3)}
+.act-more{margin:12px auto 4px;display:block}
+.act-hidl{display:block;margin:12px auto 0;font-size:13px}
+@media(max-width:640px){.act-r{grid-template-columns:1fr;gap:4px}.act-a{justify-content:flex-start}}
 .m360-log{margin:8px 0 2px;font-size:12px}.m360-log-h{font-weight:600;color:var(--ink-2);margin-bottom:4px}.m360-lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--border)}.m360-lt{color:var(--ink-3);white-space:nowrap}.m360-ls{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}.m360-lr .p360-link,.m360-more{font-size:12px;padding:0}.m360-need{color:var(--warn);font-weight:600}.hi-rm{margin-left:10px;font-size:12px;padding:0}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
@@ -1884,6 +1903,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     <button type="button" data-hq="deals" title="Monthly Membership Report"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Monthly Report</span></button>
     <button type="button" data-hq="iif" title="IIF Cycle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg><span>IIF Cycle</span></button>
     <button type="button" data-hq="issues" title="Issues Log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.5"/></svg><span>Issues Log</span><em class="pip" id="pip-issues"></em></button>
+    <button type="button" data-hq="activity" title="Activity"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Activity</span></button>
     <button type="button" data-hq="plays" title="Playbooks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h12l4 4v12H4z"/><path d="M8 12h8M8 16h5"/></svg><span>Playbooks</span></button>
     <button type="button" data-hq="settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg><span>Settings</span></button>
   <button type="button" data-hq="help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.8 9.6a2.3 2.3 0 1 1 3 2.2c-.7.3-1.1.9-1.1 1.6v.3"/><circle cx="11.7" cy="16.9" r=".6"/></svg><span>Help</span></button>
@@ -2094,6 +2114,20 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   </section>
 
   <!-- Playbooks -->
+  <section class="view" id="v-activity" hidden>
+    <div class="vhead">
+      <div><h1>Activity</h1>
+      <div class="vsub">What the team saved, changed, removed or forwarded to 360@mismo.org, newest first. Remove takes a touchpoint off a company and Restore puts it back.</div></div>
+    </div>
+    <div class="filters" id="act-filters">
+      <input type="search" id="act-q" placeholder="Search activity and companies" aria-label="Search activity">
+      <select id="act-who" aria-label="Who"></select>
+      <select id="act-what" aria-label="What"></select>
+      <select id="act-days" aria-label="When"><option value="7">Last 7 Days</option><option value="30" selected>Last 30 Days</option><option value="90">Last 90 Days</option><option value="">All Time</option></select>
+    </div>
+    <div class="act-list" id="act-list"></div>
+  </section>
+
   <section class="view" id="v-issues" hidden>
     <div class="vhead">
       <div><h1>Issues Log</h1>
@@ -3760,8 +3794,176 @@ function m360Fold(){const f=document.getElementById("wk-focus");if(!f)return;con
 /* the side column (Start a Call Block down) lines up with the Up Next box beside it (Jonna, Oct 28, 2026) */
 function m360Level(){const F=document.getElementById("wk-focus");if(!F)return;const main=F.querySelector(".wf-main"),side=F.querySelector(".wf-side"),up=main&&main.querySelector(".wf-up");if(!main||!side||!up)return;const go=()=>{side.style.marginTop="";const mt=main.getBoundingClientRect(),st=side.getBoundingClientRect();if(!mt.height)return;if(Math.abs(st.top-mt.top)<4&&st.left>mt.left+40){const off=up.getBoundingClientRect().top-mt.top;if(off>0)side.style.marginTop=off+"px";}};go();if(!F.__m360ro&&window.ResizeObserver){F.__m360ro=new ResizeObserver(()=>{clearTimeout(F.__m360t);F.__m360t=setTimeout(()=>{try{m360Level();}catch(e){}},60);});F.__m360ro.observe(F);}}
 renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Fold();}catch(e){}try{m360Level();}catch(e){}try{m360Tray();}catch(e){}try{m360Log();}catch(e){}return r;};
-/* a short log of your own forwarded emails: when each arrived and where it went, with a link to the company (Jonna, Oct 29, 2026) */
-function m360Log(){document.querySelectorAll(".m360-log").forEach(e=>e.remove());const me=m360Me(),docs=M360.docs||{},cut=new Date(Date.now()-30*864e5).toISOString();const ids=Object.keys(docs).filter(id=>{const d=docs[id];return d&&m360Who(d)===me&&String(d.received||d.at||"")>=cut;}).sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));if(!ids.length)return;const z=document.querySelector("#wk-focus .wf-card .p360-drop"),card=z&&z.closest(".wf-card");if(!card)return;const hd=card.querySelector(".wf-h");const tpIds=new Set(TP.map(t=>t.id));const goOrg=k=>{openPane(k);setTimeout(()=>{const b=document.getElementById("m360-pane-body");if(b)try{p360Go(b,"activity","history");}catch(e){}},350);};const byName=nm=>{const o=ORGS.find(x=>x.name===nm);return o?o.k:"";};const box=h("div",{class:"m360-log"},h("div",{class:"m360-log-h"},"Your forwarded emails"));const row=d=>{const subj=(d.m&&d.m.subject)||d.subject||"(no subject)";const w=d.received?new Date(d.received).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";let st;const k=d.org||(d.orgName?byName(d.orgName):"");const o=k&&BY[k];if(d.st==="logged"&&o){const gone=d.tp&&!tpIds.has(d.tp);st=h("span",null,gone?"Removed from ":"Logged on ",h("button",{type:"button",class:"p360-link",title:"Open "+o.name+" at Conversation History",onclick:()=>goOrg(k)},o.name));}else if(d.st==="logged")st=h("span",null,"Logged");else if(d.st==="need")st=h("span",{class:"m360-need"},"Needs a company");else if(d.st==="skipped")st=h("span",null,"Not needed");else st=h("span",null,"Waiting");return h("div",{class:"m360-lr"},h("span",{class:"m360-lt"},w),h("span",{class:"m360-ls",title:subj},subj),st);};ids.slice(0,6).forEach(id=>box.appendChild(row(docs[id])));if(ids.length>6){const more=h("button",{type:"button",class:"p360-link m360-more"},"Show all "+ids.length);more.addEventListener("click",()=>{more.remove();ids.slice(6).forEach(id=>box.appendChild(row(docs[id])));});box.appendChild(more);}if(hd)hd.after(box);else card.prepend(box);}
+/* the forwarded-email log moved to the Activity page (Jonna, Oct 29, 2026) */
+function m360Log(){document.querySelectorAll(".m360-log").forEach(e=>e.remove());try{actRefresh();}catch(e){}}
+/* ---------- Activity page: what the team saved, changed, removed or forwarded, newest first, with Remove and Restore.
+   Saves and deletes are noted in actlog-YYYY-MM as they happen; touchpoints, forwarded emails, commitments, issues and
+   prospects show from their own records. Remove from List is per person (acthide). Nothing is deleted. (Jonna, Oct 29, 2026) ---------- */
+const ACTV={raw:{touchpoints:{},deals:{},issues:{},prospects:{},plans:{}},log:{},hide:{},recent:{},mins:[],lim:60,showHidden:false,tm:null,col:null,rawDoc:null,whoSig:""};
+const ACT_SKIP=/^(actlog|acthide|engage|aptify|regs|meetings|speakers|leaders|bootcamp|activity|outbox-|names|orgsdata|own-index|sync-state)/;
+const ACT_CTL=new RegExp("["+String.fromCharCode(0)+"-"+String.fromCharCode(31)+"]+","g");
+const ACT_RESTORE=/^(deals|plans|touchpoints|issues|prospects)$/;
+const ACT_WHAT=[["","Everything"],["tp","Touchpoints"],["mail","Forwarded Emails"],["plans","Outreach Planner"],["deal","Commitments"],["issue","Issues"],["prospect","Prospects"],["email","Member 360 Emails and Playbooks"],["setup","Company Details and Settings"],["gone","Removed and Deleted"]];
+function actMonth(d){const x=d||new Date();return "actlog-"+x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0");}
+function actTrim(o){try{let s=JSON.stringify(o||{});if(s.length>80000){const c=JSON.parse(s);delete c.html;s=JSON.stringify(c);}return JSON.parse(s);}catch(e){return null;}}
+/* every save and delete goes through here once */
+function actHook(D){
+  if(!D||D.__act)return;D.__act=1;
+  const col=D.collection,doc=D.doc;ACTV.col=c=>col.call(D,c);ACTV.rawDoc=p=>doc.call(D,p);
+  D.doc=function(p){return actWrapDoc(doc.call(D,p),String(p));};
+  D.collection=function(c){const r=col.call(D,c),a=r.add,dd=r.doc;
+    if(typeof a==="function")r.add=function(data){return a.call(r,data).then(res=>{try{actNote(c,res&&res.id,"add",data,null);}catch(e){console.error("activity",e);}return res;});};
+    if(typeof dd==="function")r.doc=function(id){const x=dd.call(r,id);return actWrapDoc(x,x.path||(c+"/"+id));};
+    return r;};
+  setTimeout(actSub,0);
+}
+function actWrapDoc(r,path){
+  const seg=String(path).split("/");if(seg.length!==2)return r;const c=seg[0],id=seg[1];
+  ["set","update","delete"].forEach(k=>{const f=r[k];if(typeof f!=="function")return;
+    r[k]=function(data){const prev=ACTV.raw[c]&&ACTV.raw[c][id]?actTrim(ACTV.raw[c][id]):null;return f.call(r,data).then(res=>{try{actNote(c,id,k,data,prev);}catch(e){console.error("activity",e);}return res;});};});
+  return r;
+}
+function actSub(){
+  const on=(c,fn)=>{try{ACTV.col(c).onSnapshot(s=>{try{fn(s);}catch(e){console.error("activity",e);}actRefresh();},e=>console.error("activity",c,e));}catch(e){console.error("activity",e);}};
+  ["touchpoints","deals","issues","prospects","plans"].forEach(c=>on(c,s=>{const m={};s.docs.forEach(d=>{m[d.id]=d.data();});ACTV.raw[c]=m;}));
+  const now=new Date();for(let y=2026,mo=9;y<now.getFullYear()||(y===now.getFullYear()&&mo<=now.getMonth());mo++){if(mo>11){mo=0;y++;}on(actMonth(new Date(y,mo,1)),s=>{s.docs.forEach(d=>{ACTV.log[d.id]=d.data();});});}
+  on("acthide",s=>{const m={};s.docs.forEach(d=>{m[d.id]=d.data();});ACTV.hide=m;});
+}
+function actOrgOf(c,id,b){if(c==="orgs")return id;if(c==="prospects")return "p"+id;if(b.org)return b.org;if(Array.isArray(b.orgs)&&b.orgs.length)return typeof b.orgs[0]==="string"?b.orgs[0]:(b.orgs[0]&&b.orgs[0].k)||"";return "";}
+function actLabel(c,kind,d,p,isNew){
+  const del=kind==="delete";
+  if(c==="touchpoints"){if(del)return "Deleted a touchpoint";if(d.archived===true)return "Removed a touchpoint";if(d.archived===false)return "Restored a touchpoint";if(d.next)return "Updated a next step";return "Edited a touchpoint";}
+  if(c==="plans"){if(del)return "Took a company off the planner";if(isNew)return "Planned outreach"+(d.day?" for "+fmtS(d.day):"");if(d.day&&d.day!==p.day)return "Moved planned outreach to "+fmtS(d.day);return "Updated planned outreach";}
+  if(c==="deals"){if(del)return "Deleted a commitment";if(d.archived===true)return "Archived a commitment";if(d.archived===false)return "Restored a commitment";return "Edited a commitment";}
+  if(c==="issues"){if(del)return "Deleted an issue";if(d.status&&d.status!==p.status)return "Set an issue to "+d.status;if(d.updates)return "Added an update to an issue";return "Edited an issue";}
+  if(c==="prospects")return del?"Deleted a prospect":"Edited a prospect";
+  if(c==="orgs")return "Updated company details";
+  if(c==="sends")return del?"Cleared a sent email":"Recorded a sent email";
+  if(c==="outbox")return del?"Took emails out of the queue":(isNew?"Queued Member 360 emails":"Updated queued emails");
+  if(c==="templates")return del?"Deleted a playbook email":"Saved a playbook email";
+  if(c==="settings")return "Changed settings";
+  if(c==="sync")return "Changed company name matching";
+  return (del?"Deleted ":"Saved ")+c;
+}
+function actDetail(c,b){
+  if(c==="touchpoints")return [b.type,b.topic].filter(Boolean).join(", ")+(b.summary?" · "+String(b.summary).replace(ACT_CTL," ").slice(0,110):"");
+  if(c==="deals")return [b.type,b.level,b.price?"$"+Math.round(Number(b.price)||0).toLocaleString():""].filter(Boolean).join(" · ");
+  if(c==="issues")return b.title||"";
+  if(c==="prospects")return b.name||"";
+  if(c==="plans")return b.note||"";
+  if(c==="outbox")return [b.stepName,Array.isArray(b.recipients)?b.recipients.length+" recipients":""].filter(Boolean).join(" · ");
+  if(c==="templates")return b.name||b.title||b.subject||"";
+  return "";
+}
+function actNote(c,id,kind,data,prev){
+  if(!ACTV.rawDoc||!id||ACT_SKIP.test(c))return;
+  if(c==="sync"&&id!=="aliases")return;
+  data=data||null;const isNew=!prev&&(kind==="add"||kind==="set");
+  if(isNew&&/^(touchpoints|deals|issues|prospects)$/.test(c))return; /* these show from their own records */
+  if(c==="issues"&&/^auto-/.test(id)&&!(data&&("status" in data||"updates" in data||"resolution" in data)))return;
+  const t=Date.now(),sig=c+"/"+id+"|"+kind+"|"+JSON.stringify(data||{}).slice(0,400);
+  if(ACTV.recent[sig]&&t-ACTV.recent[sig]<600000)return;ACTV.recent[sig]=t;
+  ACTV.mins=ACTV.mins.filter(x=>t-x<60000);if(ACTV.mins.length>=30)return;ACTV.mins.push(t);
+  const b=Object.assign({},prev||{},data||{}),k=actOrgOf(c,id,b),o=k&&BY[k];
+  const e={at:new Date().toISOString(),by:ME||"",byName:myName()||"",coll:c,doc:id,kind:kind,label:actLabel(c,kind,data||{},prev||{},isNew),detail:actDetail(c,b),org:k||"",orgName:o?o.name:String(b.orgName||b.name||""),fields:kind==="update"&&data?Object.keys(data).slice(0,12):[],auto:!!(b.auto||b.fromPay)};
+  if(kind==="delete"&&prev)e.snap=prev;
+  const lid=t.toString(36)+Math.random().toString(36).slice(2,6);
+  ACTV.log[lid]=e;actRefresh();
+  try{ACTV.rawDoc(actMonth()+"/"+lid).set(e).catch(err=>console.error("activity log",err));}catch(err){console.error("activity log",err);}
+}
+/* ---------- the list ---------- */
+function actRows(){
+  const rows=[],R=ACTV.raw,docs=(typeof M360!=="undefined"&&M360.docs)||{},fwd={};
+  Object.keys(docs).forEach(id=>{const d=docs[id];if(d&&d.tp)fwd[d.tp]=1;});
+  Object.keys(R.touchpoints).forEach(id=>{const t=R.touchpoints[id];if(!t||fwd[id])return;rows.push({key:"tp-"+id,type:"tp",at:t.at||(t.date?t.date+"T12:00:00":""),by:t.by||"",label:t.via==="forward"?"Forwarded an email that was logged":"Logged a touchpoint",detail:actDetail("touchpoints",t),org:t.org,t:Object.assign({id:id},t),gone:!!t.archived});});
+  Object.keys(docs).forEach(id=>{const d=docs[id];if(!d)return;const m=d.m||{};rows.push({key:"ml-"+id.split("/").pop(),type:"mail",at:d.received||d.at||"",byLocal:m360Who(d),label:"Forwarded an email to "+M360_ADDR,detail:m.subject||d.subject||"(no subject)",org:d.org||"",d:d,id:id});});
+  Object.keys(R.deals).forEach(id=>{const x=R.deals[id];if(!x||!x.at)return;rows.push({key:"dl-"+id,type:"deal",at:x.at,by:x.createdBy||x.by||"",auto:!!(x.auto||x.fromPay),label:x.backfill?"Filled in a commitment from a past payment":(x.fromPay?"Recorded a commitment from a payment":"Added a commitment"),detail:actDetail("deals",x),org:x.org,gone:!!x.archived});});
+  Object.keys(R.issues).forEach(id=>{const x=R.issues[id];if(!x||!x.title||!x.at)return;rows.push({key:"is-"+id,type:"issue",at:x.at,by:x.by||"",auto:/^auto-/.test(id),label:"Logged an issue",detail:x.title,org:actOrgOf("issues",id,x)});});
+  Object.keys(R.prospects).forEach(id=>{const x=R.prospects[id];if(!x||!x.at)return;rows.push({key:"pr-"+id,type:"prospect",at:x.at,by:x.by||"",byName:x.byName||"",label:"Added a prospect",detail:"",org:"p"+id,orgName:x.name||""});});
+  Object.keys(ACTV.log).forEach(id=>{const e=ACTV.log[id];if(!e||!e.at)return;rows.push({key:"log-"+id,type:"log",at:e.at,by:e.by||"",byName:e.byName||"",auto:!!e.auto,label:e.label||"Saved a change",detail:e.detail||(e.coll==="orgs"&&e.fields&&e.fields.length?"Changed "+e.fields.join(", "):""),org:e.org||"",orgName:e.orgName||"",e:e,id:id});});
+  rows.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  return rows;
+}
+function actLocalName(l){if(!l)return "";for(const k in NAMES){if(m360Local(k)===l&&NAMES[k])return NAMES[k];}return "";}
+function actWhoOf(r){
+  if(r.type==="mail"){const l=r.byLocal||"";if(l&&l===m360Me())return {id:"me",name:"You"};const nm=actLocalName(l);return {id:nm||l||"Someone",name:nm||l||"Someone"};}
+  if(r.by&&r.by===ME)return {id:"me",name:"You"};
+  const nm=(r.by&&NAMES[r.by])||r.byName||"";if(nm&&nm===myName())return {id:"me",name:"You"};if(nm)return {id:nm,name:nm};
+  if(r.auto)return {id:"Member 360",name:"Member 360"};
+  return {id:"Someone",name:"Someone"};
+}
+function actCat(r){if(r.type!=="log")return r.type;const c=r.e.coll;return c==="touchpoints"?"tp":c==="plans"?"plans":c==="deals"?"deal":c==="issues"?"issue":c==="prospects"?"prospect":/^(outbox|sends|templates)$/.test(c)?"email":"setup";}
+function actTpOf(r){if(r.type==="tp")return r.t;if(r.type==="mail"&&r.d.tp&&ACTV.raw.touchpoints[r.d.tp])return Object.assign({id:r.d.tp},ACTV.raw.touchpoints[r.d.tp]);return null;}
+function actGone(r){if(r.type==="log")return r.e.kind==="delete"||/^(Removed|Deleted|Archived|Took)/.test(r.e.label||"");const tp=actTpOf(r);if(tp)return !!tp.archived;return !!r.gone;}
+function actHk(key){return (key+"--"+(m360Me()||"me")).replace(/[^a-zA-Z0-9-]/g,"-").slice(0,120);}
+function actHidden(key){const x=ACTV.hide[actHk(key)];return !!(x&&x.hidden);}
+function actDay(at){if(!at)return "Earlier";const d=new Date(at);if(isNaN(d))return "Earlier";const s=ymd(d);if(s===TODAY)return "Today";if(s===addDays(TODAY,-1))return "Yesterday";const o={weekday:"long",month:"long",day:"numeric"};if(d.getFullYear()!==new Date().getFullYear())o.year="numeric";return d.toLocaleDateString("en-US",o);}
+function actTime(r){const at=String(r.at||"");if(!at||at.slice(10)==="T12:00:00")return "";const d=new Date(at);return isNaN(d)?"":d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
+function actGoOrg(k,hist){openPane(k);if(hist)setTimeout(()=>{const b=document.getElementById("m360-pane-body");if(b)try{p360Go(b,"activity","history");}catch(e){}},350);}
+function actStatus(r,gone,hid){
+  let t="",cls="act-s";
+  if(r.type==="mail"){const d=r.d;if(gone)t="Removed";else if(d.st==="logged")t="Logged";else if(d.st==="need"){t="Needs a company";cls+=" warn";}else if(d.st==="skipped")t="Not needed";else t="Waiting";}
+  else if(r.type==="tp"&&gone)t="Removed";
+  else if(r.type==="deal"&&gone)t="Archived";
+  else if(r.type==="log"&&r.e.kind==="delete"&&ACTV.raw[r.e.coll]&&ACTV.raw[r.e.coll][r.e.doc])t="Restored";
+  if(hid)t=(t?t+" · ":"")+"Off your list";
+  return t?h("span",{class:cls},t):null;
+}
+function actActions(r,gone,hid){
+  const out=[];if(!db||!canWrite)return out;
+  const btn=(t,ti,fn,cls)=>h("button",{type:"button",class:cls||"p360-link",title:ti,onclick:fn},t);
+  const admin=!!(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin());
+  const tp=actTpOf(r);
+  if(tp){if(tp.by===ME||admin){if(tp.archived)out.push(btn("Restore","Put this touchpoint back on the company's Conversation History",()=>actRestoreTp(tp.id)));else out.push(btn("Remove","Take this touchpoint off the company's Conversation History. You can restore it here.",()=>m360RmTp(tp)));}return out;}
+  if(r.type==="mail"&&(r.byLocal===m360Me()||admin)){const d=r.d;
+    if(d.st==="need"){out.push(btn("Pick the Company","Choose which company this email goes on",()=>{p360MailPick(d.m||{},(d.cands||[]).map(x=>BY[x]).filter(Boolean));m360Watch(r.id);},"btn small"));out.push(btn("Not Needed","Take it off the list. The email stays in Outlook.",()=>m360Mark(r.id,"skipped")));return out;}
+    if(d.st==="skipped"){out.push(btn("Bring Back","Put this email back on the list so you can pick a company",()=>m360Mark(r.id,"need")));return out;}}
+  if(r.type==="log"&&r.e.kind==="delete"&&r.e.snap&&ACT_RESTORE.test(r.e.coll)&&!(ACTV.raw[r.e.coll]&&ACTV.raw[r.e.coll][r.e.doc]))out.push(btn("Restore","Bring back what was deleted",()=>actRestoreDel(r.e)));
+  out.push(hid?btn("Put Back","Show this in your Activity list again",()=>actHide(r.key,false)):btn("Remove from List","Take this off your Activity list. The record itself doesn't change.",()=>actHide(r.key,true)));
+  return out;
+}
+async function actRestoreTp(id){if(blocked())return;try{await db.doc("touchpoints/"+id).update({archived:false,restoredAt:new Date().toISOString(),restoredBy:ME||""});toast("Touchpoint restored.");}catch(e){onWriteErr(e);}}
+async function actRestoreDel(e){if(blocked())return;if(!confirm("Bring this back?"+(e.detail?" "+e.detail:"")))return;try{await db.doc(e.coll+"/"+e.doc).set(e.snap);toast("Restored.");}catch(x){onWriteErr(x);}}
+function actHide(key,on){if(blocked())return;const hk=actHk(key);ACTV.hide[hk]={key:key,hidden:on};renderActivity();
+  try{ACTV.rawDoc("acthide/"+hk).set({key:key,hidden:on,at:new Date().toISOString(),by:ME||""}).catch(onWriteErr);}catch(e){onWriteErr(e);}
+  if(on)toast("Taken off your Activity list.");}
+function actRow(r){
+  const w=actWhoOf(r),k=r.org&&BY[r.org]?r.org:"",o=k?BY[k]:null,gone=actGone(r),hid=actHidden(r.key);
+  const lab=r.label.charAt(0).toLowerCase()+r.label.slice(1);
+  const line=h("div",{class:"act-l"},h("b",null,w.name)," "+lab);
+  if(o){line.appendChild(document.createTextNode(" · "));line.appendChild(h("button",{type:"button",class:"p360-link",title:"Open "+o.name,onclick:()=>actGoOrg(k,actCat(r)==="tp"||r.type==="mail")},o.name));}
+  else if(r.orgName)line.appendChild(document.createTextNode(" · "+r.orgName));
+  const st=actStatus(r,gone,hid);if(st)line.appendChild(st);
+  const m=h("div",{class:"act-m"},line);if(r.detail)m.appendChild(h("div",{class:"act-d"},r.detail));
+  const a=h("div",{class:"act-a"});actActions(r,gone,hid).forEach(b=>a.appendChild(b));
+  return h("div",{class:"act-r"+(gone?" gone":"")+(hid?" hid":"")},h("div",{class:"act-t"},actTime(r)),m,a);
+}
+function renderActivity(){
+  const box=document.getElementById("act-list");if(!box)return;
+  const q=document.getElementById("act-q"),ws=document.getElementById("act-who"),wt=document.getElementById("act-what"),wd=document.getElementById("act-days");
+  if(!box.__wired){box.__wired=1;wt.innerHTML="";ACT_WHAT.forEach(x=>wt.appendChild(h("option",{value:x[0]},x[1])));
+    const go=()=>{ACTV.lim=60;renderActivity();};q.addEventListener("input",go);ws.addEventListener("change",go);wt.addEventListener("change",go);wd.addEventListener("change",go);}
+  const all=actRows();
+  const names=[...new Set(all.map(r=>actWhoOf(r).id).filter(x=>x&&x!=="me"))].sort(),sig=names.join("|");
+  if(sig!==ACTV.whoSig||!ws.options.length){ACTV.whoSig=sig;const cur=ws.value;ws.innerHTML="";[["","Everyone"],["me","You"]].concat(names.map(n=>[n,n])).forEach(x=>ws.appendChild(h("option",{value:x[0]},x[1])));ws.value=[...ws.options].some(op=>op.value===cur)?cur:"";}
+  const who=ws.value,what=wt.value,days=wd.value,qq=String(q.value||"").trim().toLowerCase();
+  const cut=days?new Date(Date.now()-Number(days)*864e5).toISOString():"";
+  let hid=0;
+  const rows=all.filter(r=>{
+    if(cut&&String(r.at)<cut)return false;
+    if(who&&actWhoOf(r).id!==who)return false;
+    if(what==="gone"){if(!actGone(r))return false;}else if(what&&actCat(r)!==what)return false;
+    if(qq){const o=r.org&&BY[r.org];if([r.label,r.detail,o?o.name:r.orgName,actWhoOf(r).name].join(" ").toLowerCase().indexOf(qq)<0)return false;}
+    if(actHidden(r.key)&&!ACTV.showHidden){hid++;return false;}
+    return true;});
+  box.innerHTML="";
+  if(!rows.length)box.appendChild(h("div",{class:"act-empty"},all.length?"Nothing matches these filters.":"No activity yet."));
+  let day="";
+  rows.slice(0,ACTV.lim).forEach(r=>{const d=actDay(r.at);if(d!==day){day=d;box.appendChild(h("div",{class:"act-day"},d));}box.appendChild(actRow(r));});
+  if(rows.length>ACTV.lim){const mb=h("button",{type:"button",class:"btn ghost act-more"},"Show "+Math.min(100,rows.length-ACTV.lim)+" More");mb.addEventListener("click",()=>{ACTV.lim+=100;renderActivity();});box.appendChild(mb);}
+  if(hid||ACTV.showHidden){const tg=h("button",{type:"button",class:"p360-link act-hidl"},ACTV.showHidden?"Hide what you took off your list":"Show "+hid+" item"+(hid===1?"":"s")+" you took off your list");tg.addEventListener("click",()=>{ACTV.showHidden=!ACTV.showHidden;renderActivity();});box.appendChild(tg);}
+}
+function actRefresh(){clearTimeout(ACTV.tm);ACTV.tm=setTimeout(()=>{const v=document.getElementById("v-activity");if(v&&!v.hidden)renderActivity();},250);}
 /* take a touchpoint off the record: it is kept with archived set, never deleted (Jonna, Oct 29, 2026) */
 async function m360RmTp(t){if(blocked())return;const o=BY[t.org];if(!confirm("Remove this touchpoint"+(o?" from "+o.name:"")+"? It comes off the record. Nothing else changes."))return;try{await db.doc("touchpoints/"+t.id).update({archived:true,archivedAt:new Date().toISOString(),archivedBy:ME||""});toast("Touchpoint removed.");try{pushUndo("Removed a touchpoint",()=>db.doc("touchpoints/"+t.id).update({archived:false}));}catch(e){}}catch(e){onWriteErr(e);}}
 function m360Start(){
@@ -6839,6 +7041,7 @@ function show(tab){
   if(tab==="deals")renderDeals();
   if(tab==="settings")renderSettings();
   if(tab==="issues")renderIssues();
+  if(tab==="activity")renderActivity();
   window.scrollTo(0,0);
 }
 function openOrg(k){openPane(k);}
@@ -7538,7 +7741,7 @@ async function boot(){
 
   if(!window.claude||!window.claude.use){$("savebanner").hidden=false;return;}
   const [d0,u0,s0,dl0]=await Promise.all([claude.use("db"),claude.use("user"),claude.use("sample"),claude.use("downloads")]);
-  db=d0;userCap=u0;sampleCap=s0;dl=dl0;
+  db=d0;try{actHook(d0);}catch(e){console.error("activity",e);}userCap=u0;sampleCap=s0;dl=dl0;
   if(userCap){try{ME=await userCap.id();}catch(e){}if(ME){try{const ps=await userCap.profiles([ME]);NAMES[ME]=(ps[ME]&&ps[ME].name)||"";}catch(e){}}try{const c=await userCap.can("data.write");canWrite=c===null?null:c;}catch(e){canWrite=null;}}
   if(!db||canWrite===false){$("savebanner").hidden=false;}
   if(paneK&&BY[paneK])renderProfile(BY[paneK],$("m360-pane-body"));
