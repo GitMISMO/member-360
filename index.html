@@ -3501,7 +3501,7 @@ function p360MailPick(m,c){
 function tyList(){return ORGS.filter(o=>renewable(o)&&stageOf(o)==="Renewed"&&!ov(o).tySent&&(o.people||[]).some(p=>p.email)).sort((a,b)=>a.name.localeCompare(b.name));}
 function tyPanel(){
   const note=$("ren-note");if(!note)return;let box=$("ren-ty");
-  if(!box){box=h("details",{class:"sect ty-sect",id:"ren-ty"});note.after(box);let op=true;try{op=localStorage.getItem("m360.tyOpen")!=="0";}catch(e){}box.open=op;
+  if(!box){box=h("details",{class:"sect ty-sect",id:"ren-ty"});note.after(box);box.open=false;
     box.addEventListener("toggle",()=>{try{localStorage.setItem("m360.tyOpen",box.open?"1":"0");}catch(e){}});}
   const list=tyList();box.textContent="";
   box.appendChild(h("summary",null,"Renewed: Send a Thank You",h("span",{class:"cnt"},String(list.length))));
