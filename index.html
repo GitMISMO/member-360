@@ -1475,6 +1475,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 #wk-plan .pd-list .pcard .pc-side{grid-column:auto;margin-top:0;justify-content:flex-end;gap:4px}
 #wk-plan .pd-list .pcard input{margin:0}
 .m360-lw{display:flex;flex-direction:column;gap:10px;min-width:0}.m360-lw>.wf-card{flex:1}.cb-start.cb-side{width:100%;justify-content:center;margin:0}
+.m360-fold{cursor:pointer;user-select:none}.m360-fold:focus-visible{outline:2px solid var(--sky);outline-offset:2px;border-radius:6px}.m360-caret{display:inline-block;width:0;height:0;margin-right:8px;border-left:5px solid var(--ink-3);border-top:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(90deg);transition:transform .15s;align-self:center}.m360-closed .m360-caret{transform:none}.wf-card.m360-closed .p360-drop{display:none}.m360-lw>.wf-card.m360-closed{flex:none}.wf-card.m360-closed>.wf-h{margin-bottom:0}.m360-fold h3{margin-right:auto}.wf-card.m360-closed{padding-top:10px;padding-bottom:10px;box-shadow:none}.wf-card.m360-closed h3{font-size:14px;color:var(--ink-2)}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3749,7 +3750,9 @@ p360DropZone=function(label,onMail){const z=_p360DropZone(label,onMail);try{z.ap
 const _renderFocusM360=renderFocus;
 /* Start a Call Block sits above Log an Email (Jonna, Oct 28, 2026) */
 function m360CbMove(){const f=document.getElementById("wk-focus");if(!f)return;const z=f.querySelector(".wf-card .p360-drop"),card=z&&z.closest(".wf-card"),bs=[...f.querySelectorAll(".cb-start")];if(!card||!bs.length)return;const b=bs.find(x=>!x.classList.contains("cb-side"))||bs[0];bs.forEach(x=>{if(x!==b)x.remove();});b.classList.add("cb-side");let w=card.parentNode;if(!w.classList.contains("m360-lw")){w=h("div",{class:"m360-lw"});card.parentNode.insertBefore(w,card);w.appendChild(card);}w.insertBefore(b,card);}
-renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Tray();}catch(e){}return r;};
+/* Log an Email folds away; most people forward from new Outlook. Starts closed, remembers per person (Jonna, Oct 28, 2026) */
+function m360Fold(){const f=document.getElementById("wk-focus");if(!f)return;const z=f.querySelector(".wf-card .p360-drop"),card=z&&z.closest(".wf-card");if(!card||card.__m360f)return;card.__m360f=1;const hd=card.querySelector(".wf-h");if(!hd)return;let open=false;try{open=localStorage.getItem("m360.logEmailOpen")==="1";}catch(e){}const set=o=>{card.classList.toggle("m360-closed",!o);hd.setAttribute("aria-expanded",o?"true":"false");try{localStorage.setItem("m360.logEmailOpen",o?"1":"0");}catch(e){}};hd.classList.add("m360-fold");hd.setAttribute("role","button");hd.setAttribute("tabindex","0");hd.title="Show or hide the email drop box";hd.insertBefore(h("span",{class:"m360-caret","aria-hidden":"true"}),hd.firstChild);const sub=hd.querySelector("span:not(.m360-caret)");if(sub)sub.textContent="For classic Outlook";hd.addEventListener("click",()=>set(card.classList.contains("m360-closed")));hd.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();set(card.classList.contains("m360-closed"));}});card.classList.toggle("m360-closed",!open);hd.setAttribute("aria-expanded",open?"true":"false");}
+renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Fold();}catch(e){}try{m360Tray();}catch(e){}return r;};
 function m360Start(){
   if(M360.started)return;
   if(!(db&&ME&&typeof ORGS!=="undefined"&&ORGS&&ORGS.length)){setTimeout(m360Start,1500);return;}
