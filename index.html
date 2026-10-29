@@ -2998,7 +2998,7 @@ function renderProfile(o,box){
   if(o.auto)F("Source","Added automatically from a Financial System payment. Add contacts and the Company ID in Aptify.");
   if(renewable(o))facts.appendChild(h("div",{class:"fact"},h("label",null,RY+" Dues"),h("div",{"data-part":"dues"},"\u2014")));
   box.appendChild(facts);
-  if(canEmail()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
+  if(canSend()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
     se.addEventListener("click",()=>{const nx=nextStep(o);openSend({stId:nx?nx.st.id:"r90",thru:o.thru||"",orgs:[o],pick:true});});
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},se));}
   /* only on records marked with a special (TMC, Broker, ACUMA) (Jonna, Oct 28, 2026) */if(specialOf(o)&&canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
@@ -5015,7 +5015,7 @@ function renderWeek(){
       rec.forEach(([o,p])=>{const nm=splitName(p.name);rows.push([p.email,nm[0],nm[1],o.name,o.cid,p.roles.join("; "),o.level,o.type,fmt(o.thru),g.st.name,benefitsText(o)]);});
       offer("member360-"+slug+"-"+g.d+".csv",csv(rows));});
     /* send it from Member 360, from the person pressing the button (Jonna, Oct 24, 2026) */
-    const b0=canEmail()?h("button",{type:"button",class:"btn",style:"min-width:max-content",disabled:!g.auto.length&&!g.person},"Choose Recipients and Send"):null;
+    const b0=canSend()?h("button",{type:"button",class:"btn",style:"min-width:max-content",disabled:!g.auto.length&&!g.person},"Choose Recipients and Send"):null;
     if(b0)b0.addEventListener("click",()=>{const others=renewalGroup().filter(o=>handling(o)==="person"&&(o.thru||END)===g.thru&&nextStep(o)&&nextStep(o).st.id===g.st.id);
       openSend({stId:g.st.id,thru:g.thru,orgs:g.auto,extra:others});});
     if(b0)b1.className="btn ghost";
@@ -7352,6 +7352,10 @@ async function archiveOutbox(){try{if(!db||!canWrite)return;const ids=Object.key
 function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLowerCase():"";}
 function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
 function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
+/* emails and campaigns go out only from Amy and Jonna, and either can pick whose voice (Send As) it goes out in (Jonna, Oct 29, 2026) */
+const SEND_AS=["amoses","jcritchley"],SEND_NO="Sending emails from Member 360 is set up for Amy and Jonna.";
+function canSend(){const s=mySender();return canEmail()&&!!s&&SEND_AS.includes(s.key);}
+function sendAsList(){return SEND_AS.map(k=>({key:k,name:SENDERS[k],email:k+"@mismo.org"}));}
 function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 /* the template's merge fields -> the flow's tokens (each recipient's value is filled in by the flow) */
 const MTOK={"First Name":"fn","Last Name":"ln","Company":"co","Membership Level":"lvl","Member Type":"type","Membership Ends":"ends","Level Benefits":"ben"};
@@ -7424,9 +7428,9 @@ function batchWord(b){const s=MAILED[b.id];
 function batchLine(b){const t=new Date(b.queuedAt);return h("div",{class:"hint",style:"margin-top:6px"},
   h("b",null,(b.test?"Test · ":"")+(b.fromName||"")+" · "+t.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})),
   " · "+n(b.recipients.length)+" email"+(b.recipients.length===1?"":"s")+" · "+batchWord(b));}
-/* Send Me a Test on a playbook card: goes only to the person pressing it, filled in with a real member as the sample; nothing is marked sent */ async function playTest(st,btn){const sender=mySender();if(!canEmail()){toast("Sending works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}const se=document.getElementById("tpl-s-"+st.id),be=document.getElementById("tpl-b-"+st.id),sv=tplOf(st);const t={subject:se?se.value:sv.subject,body:be?be.value:sv.body};if(!t.subject.trim()||!t.body.trim()){toast("This email has no wording yet.",true);return;}const br=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);if(br){toast("Fill in "+br.slice(0,3).join(", ")+(br.length>3?" and the rest":"")+" first.",true);return;}let o=null,p=null;for(const g of ORGS){const ps=(g.people||[]).filter(x=>x&&x.email);if(!ps.length)continue;if(!o){o=g;p=ps[0];}if(g.level){o=g;p=ps[0];break;}}if(!o){toast("No member with an email on file to fill the sample in with.",true);return;}btn.disabled=true;try{const v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);const bk=(o.level||"none").replace(/[^A-Za-z0-9]/g,"")||"none";const doc={step:st.id,stepName:st.name,thru:"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test of "+st.name+" is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}btn.disabled=false;} /* the Send pane: choose who gets it, see it as they will, press Send */
+/* Send Me a Test on a playbook card: goes only to the person pressing it, filled in with a real member as the sample; nothing is marked sent */ async function playTest(st,btn){const sender=mySender();if(!canSend()){toast(SEND_NO,true);return;}const se=document.getElementById("tpl-s-"+st.id),be=document.getElementById("tpl-b-"+st.id),sv=tplOf(st);const t={subject:se?se.value:sv.subject,body:be?be.value:sv.body};if(!t.subject.trim()||!t.body.trim()){toast("This email has no wording yet.",true);return;}const br=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);if(br){toast("Fill in "+br.slice(0,3).join(", ")+(br.length>3?" and the rest":"")+" first.",true);return;}let o=null,p=null;for(const g of ORGS){const ps=(g.people||[]).filter(x=>x&&x.email);if(!ps.length)continue;if(!o){o=g;p=ps[0];}if(g.level){o=g;p=ps[0];break;}}if(!o){toast("No member with an email on file to fill the sample in with.",true);return;}btn.disabled=true;try{const v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);const bk=(o.level||"none").replace(/[^A-Za-z0-9]/g,"")||"none";const doc={step:st.id,stepName:st.name,thru:"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test of "+st.name+" is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}btn.disabled=false;} /* the Send pane: choose who gets it, see it as they will, press Send */
 function openSend(opt){
-  const sender=mySender();if(!canEmail()){toast("Sending works on resources.mismo.org for Amy, Kelly, Brian and Jonna.",true);return;}
+  const me=mySender();if(!canSend()){toast(SEND_NO,true);return;}let sender=me;
   const body=$("m360-pane-body");paneK="__send";markSel();
   let st=STEPS.find(x=>x.id===opt.stId)||STEPS[0];
   const chosen=new Map();   /* "k|email" -> {o,p} */
@@ -7437,7 +7441,7 @@ function openSend(opt){
   const paint=()=>{
     $("m360-pane-t").textContent="Send: "+st.name;
     $("m360-pane-sub").textContent="From "+sender.name+" ("+sender.email+") · through Outlook";
-    body.textContent="";
+    body.textContent="";const sa=h("select",{id:"snd-as"});sendAsList().forEach(x=>sa.appendChild(h("option",{value:x.key,selected:x.key===sender.key},x.name+(x.key===me.key?" (You)":""))));sa.addEventListener("change",()=>{sender=sendAsList().find(x=>x.key===sa.value)||me;paint();});body.appendChild(h("div",{class:"fld",style:"margin-bottom:12px;max-width:340px"},h("label",{for:"snd-as"},"Send As"),sa,h("div",{class:"hint",style:"margin-top:4px"},"Goes out from "+sender.email+", signed by "+sender.name+".")));
     if(opt.pick){const sel=h("select",{id:"snd-step"});STEPS.forEach(x=>sel.appendChild(h("option",{value:x.id,selected:x.id===st.id},x.name)));
       sel.addEventListener("change",()=>{st=STEPS.find(x=>x.id===sel.value);chosen.clear();orgsIn.slice().forEach(k=>recipients(BY[k],st).forEach(p=>chosen.set(k+"|"+p.email.toLowerCase(),{o:BY[k],p})));paint();});
       body.appendChild(h("div",{class:"fld",style:"margin-bottom:12px;max-width:340px"},h("label",{for:"snd-step"},"Email"),sel));}
@@ -7489,17 +7493,17 @@ function openSend(opt){
     /* send */
     let armedAt=0;
     function count(){const c=chosen.size,orgs=new Set([...chosen.values()].map(x=>x.o.k)).size;
-      send.textContent=armedAt?"Press Again to Send "+n(c):"Send "+n(c)+" Email"+(c===1?"":"s")+" From Me";send.disabled=!c||!!prob;
-      note.textContent=c?"to "+n(orgs)+" organization"+(orgs===1?"":"s")+". Each goes to one person, from your Outlook.":"";
+      send.textContent=armedAt?"Press Again to Send "+n(c):"Send "+n(c)+" Email"+(c===1?"":"s")+(sender.key===me.key?" From Me":" as "+sender.name.split(" ")[0]);send.disabled=!c||!!prob;
+      note.textContent=c?"to "+n(orgs)+" organization"+(orgs===1?"":"s")+". Each goes to one person, from "+sender.email+".":"";
       W.sm.textContent="Who Gets It: "+n(c)+" "+(c===1?"Person":"People")+" at "+n(orgs)+" Organization"+(orgs===1?"":"s");drawPv();}
     /* a test goes only to the person pressing it, filled in as the first person ticked; nothing is marked sent */
     test.addEventListener("click",async()=>{const first=[...chosen.values()][0];if(!first){toast("Tick at least one person first.",true);return;}
       test.disabled=true;const {o,p}=first;const t=tplOf(st),v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);
       const bk=(o.level||"none").replace(/[^A-Za-z]/g,"")||"none";
       const doc={step:st.id,stepName:st.name,thru:opt.thru||"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},
-        recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],
-        status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};
-      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}
+        recipients:[{to:me.email,name:me.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],
+        status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
+      try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test is on the way to "+me.email+", from "+sender.name+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}
       test.disabled=false;});
     send.addEventListener("click",async()=>{
       if(!armedAt){armedAt=Date.now();count();setTimeout(()=>{armedAt=0;if(document.body.contains(send))count();},4000);return;}
@@ -7511,7 +7515,7 @@ function openSend(opt){
         return {to:p.email,name:p.name||"",org:o.k,subject:fillPlain(t.subject,v,sender).slice(0,250),
           fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk};});
       const thru=opt.thru||"";
-      const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};
+      const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
       try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;archiveOutbox();
         /* the planner moves on: each organization is marked as sent this step, as Mark as Sent did */
         const orgsDone=[...new Set(rec.map(r=>r.org))].filter(k=>BY[k]&&inCohort(BY[k]));
