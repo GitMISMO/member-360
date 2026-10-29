@@ -1477,6 +1477,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .m360-lw{display:flex;flex-direction:column;gap:10px;min-width:0}.m360-lw>.wf-card{flex:1}.cb-start.cb-side{width:100%;justify-content:center;margin:0}
 .m360-fold{cursor:pointer;user-select:none}.m360-fold:focus-visible{outline:2px solid var(--sky);outline-offset:2px;border-radius:6px}.m360-caret{display:inline-block;width:0;height:0;margin-right:8px;border-left:5px solid var(--ink-3);border-top:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(90deg);transition:transform .15s;align-self:center}.m360-closed .m360-caret{transform:none}.wf-card.m360-closed .p360-drop{display:none}.m360-lw>.wf-card.m360-closed{flex:none}.wf-card.m360-closed>.wf-h{margin-bottom:0}.m360-fold h3{margin-right:auto}.wf-card.m360-closed{padding-top:10px;padding-bottom:10px;box-shadow:none}.wf-card.m360-closed h3{font-size:14px;color:var(--ink-2)}
 #wk-focus.wf{align-items:stretch}#wk-focus .wf-main>.wf-up{flex:1}#wk-focus .wf-side{align-content:start}
+.p360-drop.p360-drop-low{margin-top:14px}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3410,7 +3411,7 @@ function p360MailPick(m,c){
   b.appendChild(h("div",{class:"p360-pick-row"},inp,go,dlist));
   dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
 }
-{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;box.insertBefore(p360DropZone("Drag an email from classic Outlook here",m=>p360MailFill(box,o,m)),box.firstChild);}catch(e){console.error("email drop",e);}};}
+{const _ff=fillForm;fillForm=function(o,box){_ff(o,box);try{const t=box.querySelector("textarea");if(!t||t.disabled)return;/* the email box sits at the bottom of the company pane: classic Outlook only (Jonna, Oct 28, 2026) */const z=p360DropZone("Drag an email from classic Outlook here",m=>{p360MailFill(box,o,m);const s=box.closest("details");if(s)s.open=true;try{box.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}});z.classList.add("p360-drop-low");box.appendChild(z);setTimeout(()=>{const pn=box.closest(".p360-panel");if(pn)pn.appendChild(z);},0);}catch(e){console.error("email drop",e);}};}
 /* ---------- Start a Call Block: work through a list one company at a time, log each in a click or two, then the next (Jonna, Oct 28, 2026) ----------
    The list is this week's planner items (late ones first) or one Who to Touch lane (first 25). Save and Next logs a touchpoint the same way
    Log a Touchpoint does and ticks the planned touch or follow-up done. No Answer logs nothing and moves the company to the end, once. */
@@ -3765,6 +3766,8 @@ function m360Start(){
   M360.timer=setInterval(()=>{if(document.visibilityState==="visible")m360Run();},60000);
   document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")m360Run();});
 }
+/* clicking the left menu with a company open closes the company and shows where you went (Jonna, Oct 28, 2026) */
+document.addEventListener("click",e=>{const b=e.target&&e.target.closest&&e.target.closest("aside#rail a, aside#rail button");if(!b||!document.body.classList.contains("paneon"))return;if(/(^|[ ])(railhide|railfind-b|railq-x|theme-btn)([ ]|$)/.test(b.className))return;const x=document.getElementById("m360-pane-x");if(x)x.click();},true);
 if(!(typeof OLK!=="undefined"&&OLK))setTimeout(m360Start,3000);
 function sect(title,part,cnt){
   const d=h("details",{class:"sect"});
@@ -4588,8 +4591,8 @@ function renderTiles(){
     ["Payment in Process",pip_,"Paying now, so no outreach","var(--good)",{stage:"Payment in Process"}],
     ["Lost",lost_,"Not renewing","var(--bad)",{stage:"Lost"}],
     ["Still to Renew",todo.length,"Not paid, paying or lost yet","var(--c1)",{stage:"open"}],
-    ["Personal Outreach",th.person,"Still to renew, routed to a person","var(--warn)",{stage:"open",auto:"person"}],
-    ["Automatic Emails",th.auto,"Still to renew, reminders on schedule","var(--c2)",{stage:"open",auto:"auto"}],
+    
+    
     ["On Hold",th.hold,"Still to renew, emails paused","var(--ink-3)",{stage:"open",auto:"hold"}],
     ["Free Members",free.length,(freeSet?n(freeSet)+" set up for "+RY+" · ":"")+"Complimentary: the membership team sets these up, no invoice","var(--c3)",{stage:"free"}],
     ["Already Covered",cov,"Paid through "+RY+" before the season","var(--c4)",{stage:"covered"}]];
