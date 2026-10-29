@@ -2442,7 +2442,7 @@ const STEPS=[
 /* emails sent by hand, outside the renewal series (Jonna, Oct 29, 2026) */
 const STEPS_X=[{id:"ty",name:"Thank You for Renewing",manual:true,all:true,off:0,to:["Primary","Alternate","Billing"],when:"Sent by hand after a company renews",what:"Thanks the company for renewing, shares its membership badge, and offers a membership engagement meeting."}];
 function stepById(id){return STEPS.find(x=>x.id===id)||STEPS_X.find(x=>x.id===id);}
-function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px"><tr><td style="background:#0d314c;border-radius:6px"><a href="%%meet%%" style="display:inline-block;padding:11px 20px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table>';}
+function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px"><tr><td style="background:#0d314c;border-radius:6px"><a href="%%meet%%" style="display:inline-block;padding:11px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table>';}
 /* the button's link: a short page (meet.html) that lists the company's contacts to tick, then emails scheduling@mismo.org with the sender copied.
    The contacts travel in the link itself, so the public page holds no member data (Jonna, Oct 29, 2026) */
 function m360MeetUrl(o,sender){if(!o)return "";const p=(o.people||[]).filter(x=>x.email).slice(0,25).map(x=>[x.name||"",x.email]);
@@ -7484,15 +7484,17 @@ function internalEmail(o){
   return h;
 }
 /* MISMO's email shell: white card, the logo on white (it needs a light ground), a sky rule, navy ink */
-function emailShell(inner){
+function emailShell(inner,label){
+  /* the same branded frame as the CMS, Summit HQ and Member 360's staff emails: navy header with the logo on a white tab, a sky rule, navy footer (Jonna, Oct 29, 2026) */
   const F='font-family:Arial,Helvetica,sans-serif';
   return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'+
   '<body style="margin:0;padding:0;background:#f1f6fa">'+
-  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f6fa"><tr><td align="center" style="padding:24px 12px">'+
-  '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #d5e2ed;border-radius:8px">'+
-  '<tr><td style="padding:22px 32px 18px"><img src="'+EMAIL_LOGO+'" width="190" height="29" alt="MISMO" style="display:block;border:0;outline:none;width:190px;height:auto"></td></tr>'+
+  '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;background:#f1f6fa"><tr><td align="center" style="padding:24px 12px">'+
+  '<table role="presentation" width="640" cellpadding="0" cellspacing="0" style="width:100%;max-width:640px;background:#ffffff;border:1px solid #d5e2ed;border-radius:8px">'+
+  '<tr><td style="background:#0d314c;padding:16px 32px;border-radius:7px 7px 0 0"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td valign="middle"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#ffffff;border-radius:5px;padding:8px 12px"><img src="'+EMAIL_LOGO+'" alt="MISMO" width="132" style="display:block;border:0;outline:none;width:132px;height:auto"></td></tr></table></td><td valign="middle" align="right" style="'+F+';font-size:13px;font-weight:600;color:#a9d8f3">'+escH(label||'Membership')+'</td></tr></table></td></tr>'+
   '<tr><td style="height:3px;line-height:3px;font-size:0;background:#74bfeb">&nbsp;</td></tr>'+
   '<tr><td style="padding:26px 32px 14px;'+F+';font-size:15px;line-height:1.6;color:#0d314c">'+inner+'</td></tr>'+
+  '<tr><td style="padding:0 0 12px;font-size:0;line-height:0">&nbsp;</td></tr>'+
   '<tr><td style="background:#0d314c;padding:14px 32px;border-radius:0 0 7px 7px;'+F+';font-size:12px;line-height:1.5;color:#a9d8f3">MISMO &middot; Mortgage Industry Standards Maintenance Organization &middot; '+
   '<a href="https://www.mismo.org" style="color:#ffffff;text-decoration:underline">mismo.org</a></td></tr>'+
   '</table></td></tr></table></body></html>';
