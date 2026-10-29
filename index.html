@@ -3373,7 +3373,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"New Outlook and Outlook on the web can't drag a whole email in. Forward it to 360@mortgagebankers.org and it logs itself.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sent the subject. To log the whole email, forward it to 360@mortgagebankers.org.";}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"New Outlook and Outlook on the web can't drag a whole email in. Forward it to 360@mismo.org and it logs itself.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sent the subject. To log the whole email, forward it to 360@mismo.org.";}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
@@ -3638,9 +3638,9 @@ if(OLK){document.documentElement.classList.add("olk");
   const sc=document.createElement("script");sc.src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js";
   sc.onload=()=>{try{if(!history.pushState)history.pushState=_ps;if(!history.replaceState)history.replaceState=_rs;}catch(e){}try{Office.onReady(()=>olkStart());}catch(e){console.error("outlook",e);}};
   sc.onerror=()=>olkStart();document.head.appendChild(sc);}
-/* ---------- Forward to log: staff forward an email (or Cc/Bcc) to 360@mortgagebankers.org; a Power Automate flow on Jonna's mailbox
+/* ---------- Forward to log: staff forward an email (or Cc/Bcc) to 360@mismo.org; a Power Automate flow on Jonna's mailbox
    adds it to data/mailin; each person's Member 360 picks up their own emails, finds the company and logs the touchpoint (Jonna, Oct 28, 2026) ---------- */
-const M360_ADDR="360@mortgagebankers.org";
+const M360_ADDR="360@mismo.org";
 const M360_RELAY="https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/member-360/data/mailin";
 const M360={busy:false,docs:{},timer:null,started:false};
 const M360_STAFF=/@(mismo|mba|mortgagebankers)\.org$/i;
@@ -3666,10 +3666,10 @@ function m360Ymd(s){if(!s)return "";const d=new Date(String(s).replace(/^[A-Za-z
 /* turn a mail-in entry into the same shape a dragged email has: from, to, date, subject, body */
 function m360Parse(d){
   const text=m360Text(d.html),L=text.split("\x0a");
-  let i=-1;for(let k=0;k<L.length&&k<200;k++){if(/^\s*From:\s*\S/i.test(L[k])){const nx=L.slice(k+1,k+8).join("\x0a");if(/^\s*(Sent|Date):/im.test(nx)&&/^\s*Subject:/im.test(nx)){i=k;break;}}}
+  let i=-1;const fwd=M360_STAFF.test(String(d.from||""));for(let k=0;fwd&&k<L.length&&k<200;k++){if(/^\s*From:\s*\S/i.test(L[k])){const nx=L.slice(k+1,k+8).join("\x0a");if(/^\s*(Sent|Date):/im.test(nx)&&/^\s*Subject:/im.test(nx)){i=k;break;}}}
   const recv=m360Ymd(d.received)||TODAY;
   if(i<0){/* sent straight to 360@ or copied on an email to a member */
-    const to=String(d.to||"").match(M360_EM)||[];
+    const to=(String(d.to||"")+";"+String(d.cc||"")).match(M360_EM)||[];
     return {from:String(d.from||""),fromName:"",to:to.filter(a=>!M360_STAFF.test(a)),date:recv,subject:String(d.subject||""),body:m360Strip(text),direct:true};}
   const H={};let k=i;for(;k<L.length&&k<i+14;k++){const ln=L[k];if(!ln.trim()){if(H.subject!==undefined)break;continue;}const mm=ln.match(/^\s*(From|Sent|Date|To|Cc|Subject):\s*(.*)$/i);if(mm)H[mm[1].toLowerCase()]=mm[2].trim();else if(H.subject===undefined&&k>i){const last=Object.keys(H).pop();if(last)H[last]+=" "+ln.trim();}}
   const fromS=H.from||"",fe=(fromS.match(M360_EM)||[""])[0],fn=fromS.replace(/<[^>]*>/g,"").replace(M360_EM,"").replace(/[()"\[\]]/g,"").trim();
@@ -3682,13 +3682,15 @@ function m360Doc(o,m){
   const ad=[m.from].concat(m.to||[]).map(a=>String(a||"").toLowerCase()),p=(o.people||[]).find(p=>p.email&&ad.includes(p.email.toLowerCase()));
   return {org:o.k,date:m.date||TODAY,type:"Email",topic:inCohort(o)?"Renewal":(o.life==="Prospect"?"Membership":"Other"),contact:p?p.email:"",sentiment:"Neutral",summary:p360MailText(m),by:ME||"",at:new Date().toISOString(),via:"forward"};
 }
+/* who logged it: the staff sender, or for an email dragged into the 360 mailbox, the staff person it was sent to */
+function m360Who(d){const f=String(d.from||"");if(M360_STAFF.test(f))return m360Local(f);const a=(String(d.to||"")+";"+String(d.cc||"")).match(M360_EM)||[];const s=a.find(x=>M360_STAFF.test(x)&&!/^360@/i.test(x));return s?m360Local(s):"";}
 async function m360Run(){
   if(M360.busy||!db||!canWrite||!ME||!(typeof ORGS!=="undefined"&&ORGS&&ORGS.length))return;
   const me=m360Me();if(!me)return;
   M360.busy=true;
   try{
     const r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};M360.docs=docs;
-    const mine=Object.keys(docs).filter(id=>{const d=docs[id];return d&&!d.st&&m360Local(d.from)===me&&M360_STAFF.test(String(d.from||""));});
+    const mine=Object.keys(docs).filter(id=>{const d=docs[id];return d&&!d.st&&m360Who(d)===me;});
     if(mine.length&&r.sha){
       const logged=[];
       mine.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
@@ -3711,7 +3713,7 @@ function m360Mark(id,st){
 /* forwarded emails that matched no company, or more than one, wait here */
 function m360Tray(){
   const me=m360Me(),docs=M360.docs||{};
-  const list=Object.keys(docs).filter(id=>{const d=docs[id];return d&&d.st==="need"&&m360Local(d.from)===me;}).sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));
+  const list=Object.keys(docs).filter(id=>{const d=docs[id];return d&&d.st==="need"&&m360Who(d)===me;}).sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));
   document.querySelectorAll(".m360-tray").forEach(e=>e.remove());
   if(!list.length)return;
   const zone=document.querySelector("#wk-focus .p360-drop");if(!zone)return;
@@ -3738,7 +3740,7 @@ function m360Help(){
   sm.addEventListener("click",e=>e.stopPropagation());
   return h("details",{class:"m360-help"},sm,
     h("div",null,h("b",null,"Classic Outlook: "),"drag the email onto this box."),
-    h("div",null,h("b",null,"New Outlook or Outlook on the web: "),"forward the email to ",h("span",{class:"m360-addr"},M360_ADDR)," ",cp,". It logs itself in a minute or two. You can also Cc that address when you email a member."));
+    h("div",null,h("b",null,"New Outlook or Outlook on the web: "),"forward the email to ",h("span",{class:"m360-addr"},M360_ADDR)," ",cp,", or Cc or Bcc that address when you email a member. It logs itself in a minute or two."));
 }
 /* day board: cards show just the company and the owner; the rest is on hover (Jonna, Oct 28, 2026) */
 const _planCardM360=planCard;
