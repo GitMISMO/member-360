@@ -2442,7 +2442,13 @@ const STEPS=[
 /* emails sent by hand, outside the renewal series (Jonna, Oct 29, 2026) */
 const STEPS_X=[{id:"ty",name:"Thank You for Renewing",manual:true,all:true,off:0,to:["Primary","Alternate","Billing"],when:"Sent by hand after a company renews",what:"Thanks the company for renewing, shares its membership badge, and offers a membership engagement meeting."}];
 function stepById(id){return STEPS.find(x=>x.id===id)||STEPS_X.find(x=>x.id===id);}
-function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px"><tr><td style="background:#0d314c;border-radius:6px"><a href="mailto:schedule@mismo.org?cc='+encodeURIComponent((sender&&sender.email)||"")+'&amp;subject='+encodeURIComponent("Membership Engagement Meeting")+'" style="display:inline-block;padding:11px 20px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table>';}
+function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px"><tr><td style="background:#0d314c;border-radius:6px"><a href="%%meet%%" style="display:inline-block;padding:11px 20px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table>';}
+/* the button's link: a short page (meet.html) that lists the company's contacts to tick, then emails scheduling@mismo.org with the sender copied.
+   The contacts travel in the link itself, so the public page holds no member data (Jonna, Oct 29, 2026) */
+function m360MeetUrl(o,sender){if(!o)return "";const p=(o.people||[]).filter(x=>x.email).slice(0,25).map(x=>[x.name||"",x.email]);
+  const j=JSON.stringify({c:o.name,s:sender?sender.email:"",n:sender?sender.name:"",p:p});
+  return "https://resources.mismo.org/member-360/meet.html#"+btoa(unescape(encodeURIComponent(j))).split("+").join("-").split("/").join("_").replace(/=+$/,"");}
+function m360MeetMap(keys,sender){const m={};[...new Set(keys)].forEach(k=>{if(BY[k])m[k]=m360MeetUrl(BY[k],sender);});return m;}
 const RULES=[
   {k:"level",label:"Executive or Chair level",hint:"Top-tier members always hear from a person."},
   {k:"vip",label:"VIP or Senior Advisor on file",hint:"A contact is marked VIP or Senior Advisor (tick the role on the contact)."},
@@ -5564,7 +5570,7 @@ function renderPlays(){
       st.manual?null:h("div",{class:"fact"},h("label",null,"For Dec 31 Memberships"),h("div",null,fmt(addDays(END,st.off)))),
       h("div",{class:"fact"},h("label",null,"Goes To"),h("div",null,st.all?"Every contact at the company with an email":st.to.join(" and ")+" contacts")),
       h("div",{class:"fact"},h("label",null,"Purpose"),h("div",null,st.what)),
-      (st.manual?h("div",{class:"fact"},h("label",null,"If They Want a Meeting"),h("div",null,"The Schedule a Meeting button opens an email to schedule@mismo.org with the sender copied, so the meeting can be set up.")):h("div",{class:"fact"},h("label",null,"Skipped When"),h("div",null,"Renewed, lost, payment in process, on hold, or routed to a person")))));
+      (st.manual?h("div",{class:"fact"},h("label",null,"If They Want a Meeting"),h("div",null,"The Schedule a Meeting button opens a short page where they tick who from their company should be invited and say when works. It then opens an email to scheduling@mismo.org, with the sender copied, so the meeting can be set up.")):h("div",{class:"fact"},h("label",null,"Skipped When"),h("div",null,"Renewed, lost, payment in process, on hold, or routed to a person")))));
     const subj=h("input",{type:"text",id:"tpl-s-"+st.id,value:tp.subject||"",disabled:dis});
     const body=h("textarea",{id:"tpl-b-"+st.id,rows:"9",disabled:dis});body.value=tp.body||"";
     const save=h("button",{type:"button",class:"btn",disabled:dis},"Save Wording");
@@ -5573,7 +5579,7 @@ function renderPlays(){
       const b={subject:subj.value.trim(),body:body.value,updatedAt:new Date().toISOString(),updatedBy:ME||""};
       try{await db.doc("templates/"+st.id).set(b);TPL[st.id]=b;toast(st.name+" wording saved.");}catch(e){onWriteErr(e);}save.disabled=false;});
     sb.appendChild(h("div",{class:"formgrid"},h("div",{class:"fld wide"},h("label",{for:subj.id},"Subject Line"),subj),h("div",{class:"fld wide"},h("label",{for:body.id},"Email Body"),body)));
-    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Put {{Schedule Meeting Button}} on a line of its own to add the button that writes to schedule@mismo.org. Text in [brackets] has to be replaced before the email can be sent."));
+    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Put {{Schedule Meeting Button}} on a line of its own to add the button that lets them request a meeting through scheduling@mismo.org. Text in [brackets] has to be replaced before the email can be sent."));
     const prow=h("div",{class:"btnrow"},save);{const ptest=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");ptest.addEventListener("click",()=>playTest(st,ptest));prow.appendChild(ptest);}prow.appendChild(who);sb.appendChild(prow);
     d.appendChild(sb);box.appendChild(d);
   });
@@ -7492,7 +7498,7 @@ function emailShell(inner){
   '</table></td></tr></table></body></html>';
 }
 function previewHtml(html,v){return html.replace(/%%fn%%/g,escH(v.fn)).replace(/%%ln%%/g,escH(v.ln)).replace(/%%co%%/g,escH(v.co)).replace(/%%lvl%%/g,escH(v.lvl))
-  .replace(/%%type%%/g,escH(v.type)).replace(/%%ends%%/g,escH(v.ends)).replace(/%%ben%%/g,v.benH);}
+  .replace(/%%type%%/g,escH(v.type)).replace(/%%ends%%/g,escH(v.ends)).replace(/%%ben%%/g,v.benH).split("%%meet%%").join(v.meet||"#");}
 function batchesFor(stId,thru){return Object.keys(OUTBOX).map(id=>Object.assign({id},OUTBOX[id])).filter(b=>b.step===stId&&(!thru||b.thru===thru)).sort((a,b)=>String(b.queuedAt).localeCompare(String(a.queuedAt)));}
 function batchWord(b){const s=MAILED[b.id];
   if(s&&s.status==="sent")return n(s.sent||b.recipients.length)+" sent"+(s.failed&&s.failed.length?", "+n(s.failed.length)+" didn't go":"");
@@ -7503,7 +7509,7 @@ function batchWord(b){const s=MAILED[b.id];
 function batchLine(b){const t=new Date(b.queuedAt);return h("div",{class:"hint",style:"margin-top:6px"},
   h("b",null,(b.test?"Test · ":"")+(b.fromName||"")+" · "+t.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})),
   " · "+n(b.recipients.length)+" email"+(b.recipients.length===1?"":"s")+" · "+batchWord(b));}
-/* Send Me a Test on a playbook card: goes only to the person pressing it, filled in with a real member as the sample; nothing is marked sent */ async function playTest(st,btn){const sender=mySender();if(!canSend()){toast(SEND_NO,true);return;}const se=document.getElementById("tpl-s-"+st.id),be=document.getElementById("tpl-b-"+st.id),sv=tplOf(st);const t={subject:se?se.value:sv.subject,body:be?be.value:sv.body};if(!t.subject.trim()||!t.body.trim()){toast("This email has no wording yet.",true);return;}const br=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);if(br){toast("Fill in "+br.slice(0,3).join(", ")+(br.length>3?" and the rest":"")+" first.",true);return;}let o=null,p=null;for(const g of ORGS){const ps=(g.people||[]).filter(x=>x&&x.email);if(!ps.length)continue;if(!o){o=g;p=ps[0];}if(g.level){o=g;p=ps[0];break;}}if(!o){toast("No member with an email on file to fill the sample in with.",true);return;}btn.disabled=true;try{const v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);const bk=(o.level||"none").replace(/[^A-Za-z0-9]/g,"")||"none";const doc={step:st.id,stepName:st.name,thru:"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test of "+st.name+" is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}btn.disabled=false;} /* the Send pane: choose who gets it, see it as they will, press Send */
+/* Send Me a Test on a playbook card: goes only to the person pressing it, filled in with a real member as the sample; nothing is marked sent */ async function playTest(st,btn){const sender=mySender();if(!canSend()){toast(SEND_NO,true);return;}const se=document.getElementById("tpl-s-"+st.id),be=document.getElementById("tpl-b-"+st.id),sv=tplOf(st);const t={subject:se?se.value:sv.subject,body:be?be.value:sv.body};if(!t.subject.trim()||!t.body.trim()){toast("This email has no wording yet.",true);return;}const br=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);if(br){toast("Fill in "+br.slice(0,3).join(", ")+(br.length>3?" and the rest":"")+" first.",true);return;}let o=null,p=null;for(const g of ORGS){const ps=(g.people||[]).filter(x=>x&&x.email);if(!ps.length)continue;if(!o){o=g;p=ps[0];}if(g.level){o=g;p=ps[0];break;}}if(!o){toast("No member with an email on file to fill the sample in with.",true);return;}btn.disabled=true;try{const v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);const bk=(o.level||"none").replace(/[^A-Za-z0-9]/g,"")||"none";const doc={meet:{[o.k]:m360MeetUrl(o,sender)},step:st.id,stepName:st.name,thru:"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},recipients:[{to:sender.email,name:sender.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],status:"queued",queuedAt:now.toISOString(),queuedBy:ME||""};await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test of "+st.name+" is on the way to "+sender.email+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}btn.disabled=false;} /* the Send pane: choose who gets it, see it as they will, press Send */
 function openSend(opt){
   const me=mySender();if(!canSend()){toast(SEND_NO,true);return;}let sender=me;
   const body=$("m360-pane-body");paneK="__send";markSel();
@@ -7562,7 +7568,7 @@ function openSend(opt){
       if(!arr.length){pvSubj.textContent="Choose at least one person to see the email.";pv.srcdoc="";return;}
       arr.forEach(({o,p},i)=>pvSel.appendChild(h("option",{value:String(i)},(p.name||p.email)+" · "+o.name)));
       const one=()=>{const {o,p}=arr[Number(pvSel.value)||0];const v=recVals(o,p);const t=tplOf(st);
-        pvSubj.textContent="Subject: "+fillPlain(t.subject,v,sender);pv.srcdoc=previewHtml(emailShell(bodyTokens(t.body,sender)),v);};
+        pvSubj.textContent="Subject: "+fillPlain(t.subject,v,sender);pv.srcdoc=previewHtml(emailShell(bodyTokens(t.body,sender)),Object.assign({},v,{meet:m360MeetUrl(o,sender)}));};
       pvSel.onchange=one;one();};
     P.sb.appendChild(h("div",{class:"fld",style:"max-width:420px"},h("label",{for:"snd-pv"},"Preview For"),pvSel));P.sb.appendChild(pvSubj);P.sb.appendChild(pv);
     /* send */
@@ -7575,7 +7581,7 @@ function openSend(opt){
     test.addEventListener("click",async()=>{const first=[...chosen.values()][0];if(!first){toast("Tick at least one person first.",true);return;}
       test.disabled=true;const {o,p}=first;const t=tplOf(st),v=recVals(o,p),now=new Date(),id="t"+now.getTime().toString(36)+sender.key.slice(0,2);
       const bk=(o.level||"none").replace(/[^A-Za-z]/g,"")||"none";
-      const doc={step:st.id,stepName:st.name,thru:opt.thru||"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},
+      const doc={meet:{[o.k]:m360MeetUrl(o,sender)},step:st.id,stepName:st.name,thru:opt.thru||"",test:true,from:sender.email,fromKey:sender.key,fromName:sender.name,html:emailShell(bodyTokens(t.body,sender)),benefits:{[bk]:v.benH},
         recipients:[{to:me.email,name:me.name,org:o.k,subject:"[Test] "+fillPlain(t.subject,v,sender).slice(0,240),fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk}],
         status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
       try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;toast("A test is on the way to "+me.email+", from "+sender.name+", filled in as "+(p.name||p.email)+".");}catch(e){onWriteErr(e);}
@@ -7590,7 +7596,7 @@ function openSend(opt){
         return {to:p.email,name:p.name||"",org:o.k,subject:fillPlain(t.subject,v,sender).slice(0,250),
           fn:escH(v.fn),ln:escH(v.ln),co:escH(v.co),lvl:escH(v.lvl),type:escH(v.type),ends:escH(v.ends),bk};});
       const thru=opt.thru||"";
-      const doc={step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
+      const doc={meet:html.indexOf("%%meet%%")>=0?m360MeetMap(rec.map(r=>r.org),sender):{},step:st.id,stepName:st.name,thru,from:sender.email,fromKey:sender.key,fromName:sender.name,html,benefits,recipients:rec,status:"queued",queuedAt:now.toISOString(),queuedBy:ME||"",queuedKey:me.key};
       try{await db.doc("outbox/"+id).set(doc);OUTBOX[id]=doc;archiveOutbox();if(st.id==="ty")[...new Set(rec.map(r=>r.org))].forEach(k=>{if(BY[k])saveOv(k,{tySent:{at:now.toISOString(),by:ME||"",batch:id}});});
         /* the planner moves on: each organization is marked as sent this step, as Mark as Sent did */
         const orgsDone=[...new Set(rec.map(r=>r.org))].filter(k=>BY[k]&&inCohort(BY[k]));

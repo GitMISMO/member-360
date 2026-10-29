@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Schedule a Membership Engagement Meeting · MISMO</title>
+<style>
+:root{--navy:#0d314c;--sky:#74bfeb;--bg:#f1f6fa;--card:#ffffff;--ink:#0d314c;--ink2:#3d5a70;--ink3:#6b8193;--line:#d5e2ed;--field:#f7fafc;--ok:#1f7a4d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Arial,Helvetica,sans-serif}
+.wrap{max-width:640px;margin:0 auto;padding:24px 16px 48px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.top{padding:22px 32px 18px}
+.top img{display:block;width:190px;height:auto}
+.rule{height:3px;background:var(--sky)}
+.body{padding:26px 32px 30px}
+h1{font-size:24px;line-height:1.25;margin:0 0 8px;color:var(--navy)}
+.lead{margin:0 0 22px;color:var(--ink2)}
+h2{font-size:15px;margin:22px 0 8px;color:var(--navy)}
+.hint{font-size:13px;color:var(--ink3);margin:0 0 8px}
+.people{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.person{display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.person:first-child{border-top:0}
+.person input{width:18px;height:18px;flex:none;accent-color:var(--navy)}
+.person b{font-weight:600;display:block}
+.person span{font-size:13px;color:var(--ink3);overflow-wrap:anywhere}
+.empty{padding:12px;color:var(--ink3);font-size:14px}
+.add{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.add input{flex:1 1 180px}
+input[type=text],input[type=email],textarea{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{min-height:84px;resize:vertical}
+input:focus,textarea:focus,button:focus-visible{outline:2px solid var(--sky);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:8px}
+.btn{background:var(--navy);color:#fff;border:0;padding:12px 22px;font-weight:700}
+.btn:hover{background:#174a70}
+.ghost{background:#fff;color:var(--navy);border:1px solid var(--line);padding:10px 16px;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:14px;color:var(--ink2)}
+.row input{width:18px;height:18px;accent-color:var(--navy)}
+.go{margin-top:24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.msg{font-size:14px;color:#a33a1a}
+.done{display:none;margin-top:22px;padding:16px 18px;border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:8px;background:#f5fbf7}
+.done p{margin:0 0 10px}
+.done pre{white-space:pre-wrap;font:13px/1.5 Arial,Helvetica,sans-serif;background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:8px 0 10px;max-height:220px;overflow:auto}
+.foot{text-align:center;font-size:12px;color:var(--ink3);margin-top:18px}
+@media(max-width:480px){.top,.body{padding-left:20px;padding-right:20px}h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<div class="top"><img src="mismo-logo-email.png" alt="MISMO" width="190" height="29"></div>
+<div class="rule"></div>
+<div class="body">
+<h1>Schedule a Membership Engagement Meeting</h1>
+<p class="lead" id="lead">Tell us who should be in the meeting and when works for you. Our scheduling team will send the invite.</p>
+
+<h2>Who Should Be Invited</h2>
+<p class="hint">Tick everyone who should get the invite.</p>
+<div class="people" id="people"></div>
+<div class="add">
+<input type="text" id="an" placeholder="Name" aria-label="Name of someone else to invite">
+<input type="email" id="ae" placeholder="Email address" aria-label="Email of someone else to invite">
+<button type="button" class="ghost" id="addb">Add</button>
+</div>
+
+<h2>Days and Times That Work</h2>
+<textarea id="when" placeholder="For example: Tuesday or Thursday afternoons, Eastern time"></textarea>
+
+<h2>Anything We Should Know?</h2>
+<textarea id="note" placeholder="Topics you'd like to cover (optional)"></textarea>
+
+<label class="row"><input type="checkbox" id="cc" checked> Copy the people I picked on the email</label>
+
+<div class="go">
+<button type="button" class="btn" id="send">Email Our Scheduling Team</button>
+<span class="msg" id="msg" role="status"></span>
+</div>
+
+<div class="done" id="done">
+<p><b>Your email should be open and ready to go.</b> Press Send in your email to finish, and we'll be in touch with an invite.</p>
+<p class="hint">If no email opened, copy this and send it to <b>scheduling@mismo.org</b>:</p>
+<pre id="copytext"></pre>
+<button type="button" class="ghost" id="copyb">Copy</button>
+</div>
+</div>
+</div>
+<p class="foot">MISMO · Questions? Reply to the email you received from us.</p>
+</div>
+<script>
+(function(){
+  var TO="scheduling@mismo.org",NL=String.fromCharCode(13,10);
+  var d={c:"",s:"",n:"",p:[]};
+  try{var h=location.hash.slice(1);if(h){var b=h.split("-").join("+").split("_").join("/");while(b.length%4)b+="=";d=Object.assign(d,JSON.parse(decodeURIComponent(escape(atob(b)))));}}catch(e){}
+  var $=function(id){return document.getElementById(id);};
+  var people=(d.p||[]).filter(function(x){return x&&x[1];}).map(function(x){return {name:String(x[0]||""),email:String(x[1]),on:false};});
+  if(d.c){$("lead").textContent="Tell us who from "+d.c+" should be in the meeting and when works for you. Our scheduling team will send the invite.";document.title="Schedule a Membership Engagement Meeting · "+d.c;}
+  function draw(){
+    var box=$("people");box.textContent="";
+    if(!people.length){var e=document.createElement("div");e.className="empty";e.textContent="Add the people who should be invited below.";box.appendChild(e);return;}
+    people.forEach(function(p,i){
+      var l=document.createElement("label");l.className="person";
+      var c=document.createElement("input");c.type="checkbox";c.checked=p.on;c.addEventListener("change",function(){p.on=c.checked;});
+      var t=document.createElement("div");var nb=document.createElement("b");nb.textContent=p.name||p.email;t.appendChild(nb);
+      if(p.name){var em=document.createElement("span");em.textContent=p.email;t.appendChild(em);}
+      l.appendChild(c);l.appendChild(t);box.appendChild(l);
+    });
+  }
+  function okEmail(s){var a=s.indexOf("@"),b=s.lastIndexOf(".");return a>0&&b>a+1&&b<s.length-1&&s.indexOf(" ")<0;}
+  $("addb").addEventListener("click",function(){
+    var n=$("an").value.trim(),e=$("ae").value.trim().toLowerCase();
+    if(!okEmail(e)){$("msg").textContent="Add a complete email address for the person you're adding.";$("ae").focus();return;}
+    var f=people.filter(function(p){return p.email.toLowerCase()===e;})[0];
+    if(f)f.on=true;else people.push({name:n,email:e,on:true});
+    $("an").value="";$("ae").value="";$("msg").textContent="";draw();$("an").focus();
+  });
+  $("ae").addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();$("addb").click();}});
+  $("send").addEventListener("click",function(){
+    var picked=people.filter(function(p){return p.on;});
+    if(!picked.length){$("msg").textContent="Tick at least one person to invite.";return;}
+    $("msg").textContent="";
+    var subj="Membership Engagement Meeting"+(d.c?": "+d.c:"");
+    var lines=["Hello MISMO scheduling team,","","We'd like to set up a membership engagement meeting"+(d.c?" for "+d.c:"")+".","","Please invite:"];
+    picked.forEach(function(p){lines.push("- "+(p.name?p.name+" <"+p.email+">":p.email));});
+    var w=$("when").value.trim(),nt=$("note").value.trim();
+    lines.push("","Days and times that work: "+(w||"Any time; please suggest a few options."));
+    if(nt)lines.push("","Notes: "+nt);
+    if(d.n)lines.push("","(Requested after "+d.n+"'s thank-you email.)");
+    var body=lines.join(NL);
+    var cc=[];if(d.s)cc.push(d.s);if($("cc").checked)picked.forEach(function(p){cc.push(p.email);});
+    var url="mailto:"+TO+"?subject="+encodeURIComponent(subj)+(cc.length?"&cc="+encodeURIComponent(cc.join(",")):"")+"&body="+encodeURIComponent(body);
+    $("copytext").textContent="To: "+TO+NL+(cc.length?"Cc: "+cc.join(", ")+NL:"")+"Subject: "+subj+NL+NL+body;
+    $("done").style.display="block";
+    location.href=url;
+  });
+  $("copyb").addEventListener("click",function(){var t=$("copytext").textContent;try{navigator.clipboard.writeText(t).then(function(){$("copyb").textContent="Copied";},function(){});}catch(e){}});
+  draw();
+})();
+</script>
+</body>
+</html>
