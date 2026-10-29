@@ -1474,6 +1474,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 #wk-plan .pd-list .pcard .pc-sub,#wk-plan .pd-list .pcard .late{display:none}
 #wk-plan .pd-list .pcard .pc-side{grid-column:auto;margin-top:0;justify-content:flex-end;gap:4px}
 #wk-plan .pd-list .pcard input{margin:0}
+.m360-lw{display:flex;flex-direction:column;gap:10px;min-width:0}.m360-lw>.wf-card{flex:1}.cb-start.cb-side{width:100%;justify-content:center;margin:0}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3739,11 +3740,16 @@ function m360Help(){
 }
 /* day board: cards show just the company and the owner; the rest is on hover (Jonna, Oct 28, 2026) */
 const _planCardM360=planCard;
-planCard=function(item,withMove){const c=_planCardM360(item,withMove);try{if(c&&!withMove){const b=c.querySelector(".pc-main b"),s=c.querySelector(".pc-sub"),l=c.querySelector(".pc-main .late");c.title=[b?b.textContent:"",s?s.textContent:"",l?l.textContent:""].filter(Boolean).join(" · ");}}catch(e){}return c;};
+planCard=function(item,withMove){const c=_planCardM360(item,withMove);try{if(c&&!withMove){const b=c.querySelector(".pc-main b"),s=c.querySelector(".pc-sub"),l=c.querySelector(".pc-main .late");c.title=[b?b.textContent:"",s?s.textContent:"",l?l.textContent:""].filter(Boolean).join(" · ");}if(c&&item.kind==="fu"&&db&&canWrite&&!c.draggable){c.draggable=true;c.addEventListener("dragstart",e=>{dragData={kind:"move",p:{day:item.day,__fu:item}};e.dataTransfer.effectAllowed="move";try{e.dataTransfer.setData("text/plain","follow-up");}catch(x){}c.classList.add("dragging");});c.addEventListener("dragend",()=>{c.classList.remove("dragging");dragData=null;document.querySelectorAll(".pday.over").forEach(x=>x.classList.remove("over"));});}}catch(e){}return c;};
+/* follow-ups move between days by drag too (Jonna, Oct 28, 2026) */
+const _movePlanM360=movePlan;
+movePlan=function(p,day,silent){if(p&&p.__fu)return fuMove(p.__fu.t,day,silent);return _movePlanM360.apply(this,arguments);};
 const _p360DropZone=p360DropZone;
 p360DropZone=function(label,onMail){const z=_p360DropZone(label,onMail);try{z.appendChild(m360Help());}catch(e){}return z;};
 const _renderFocusM360=renderFocus;
-renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360Tray();}catch(e){}return r;};
+/* Start a Call Block sits above Log an Email (Jonna, Oct 28, 2026) */
+function m360CbMove(){const f=document.getElementById("wk-focus");if(!f)return;const z=f.querySelector(".wf-card .p360-drop"),card=z&&z.closest(".wf-card"),bs=[...f.querySelectorAll(".cb-start")];if(!card||!bs.length)return;const b=bs.find(x=>!x.classList.contains("cb-side"))||bs[0];bs.forEach(x=>{if(x!==b)x.remove();});b.classList.add("cb-side");let w=card.parentNode;if(!w.classList.contains("m360-lw")){w=h("div",{class:"m360-lw"});card.parentNode.insertBefore(w,card);w.appendChild(card);}w.insertBefore(b,card);}
+renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Tray();}catch(e){}return r;};
 function m360Start(){
   if(M360.started)return;
   if(!(db&&ME&&typeof ORGS!=="undefined"&&ORGS&&ORGS.length)){setTimeout(m360Start,1500);return;}
