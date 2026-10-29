@@ -2433,6 +2433,10 @@ const STEPS=[
   {id:"w30",name:"Win-Back",off:30,to:["Primary"],what:"Invites a lapsed member back."},
   {id:"w90",name:"Final Win-Back",off:90,to:["Primary"],what:"Last invitation; after this they move to Former."}
 ];
+/* emails sent by hand, outside the renewal series (Jonna, Oct 29, 2026) */
+const STEPS_X=[{id:"ty",name:"Thank You for Renewing",manual:true,all:true,off:0,to:["Primary","Alternate","Billing"],when:"Sent by hand after a company renews",what:"Thanks the company for renewing, shares its membership badge, and offers a membership engagement meeting."}];
+function stepById(id){return STEPS.find(x=>x.id===id)||STEPS_X.find(x=>x.id===id);}
+function m360SchedBtn(sender){return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 18px"><tr><td style="background:#0d314c;border-radius:6px"><a href="mailto:schedule@mismo.org?cc='+encodeURIComponent((sender&&sender.email)||"")+'&amp;subject='+encodeURIComponent("Membership Engagement Meeting")+'" style="display:inline-block;padding:11px 20px;color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;text-decoration:none">Schedule a Membership Engagement Meeting</a></td></tr></table>';}
 const RULES=[
   {k:"level",label:"Executive or Chair level",hint:"Top-tier members always hear from a person."},
   {k:"vip",label:"VIP or Senior Advisor on file",hint:"A contact is marked VIP or Senior Advisor (tick the role on the contact)."},
@@ -3231,6 +3235,17 @@ function wfDrop(el,k){
   el.addEventListener("drop",e=>{e.preventDefault();el.classList.remove("over");const d=dragData;dragData=null;if(!d)return;
     if(d.kind==="new")addPlan(d.o,k,d.lane);else if(d.kind==="move"&&d.p.day!==k)movePlan(d.p,k);});
 }
+/* Communicated This Week: emails sent from Member 360 plus every logged email, call, meeting and note (Jonna, Oct 29, 2026) */
+function commWeek(ws,w){
+  const we=addDays(ws,6),out=[];
+  TP.forEach(t=>{const d=t.date||"";if(d<ws||d>we||!BY[t.org])return;if(w&&NAMES[t.by]!==w)return;
+    out.push({org:t.org,day:d,at:t.at||d,label:t.via==="forward"?"email logged":String(t.type||"touchpoint").toLowerCase()});});
+  try{Object.keys(OUTBOX||{}).forEach(id=>{const b=OUTBOX[id];if(!b||b.test)return;const sx=MAILED[id];if(!sx||sx.status!=="sent")return;
+    const at=sx.at||b.queuedAt,d=at?ymd(new Date(at)):"";if(d<ws||d>we)return;
+    const by=String(b.queuedBy||"").split(" <")[0];if(w&&by!==w&&b.fromName!==w)return;
+    (b.recipients||[]).forEach(r=>{if(r.org&&BY[r.org])out.push({org:r.org,day:d,at:at,label:"Member 360 email"+(b.stepName?": "+b.stepName:"")});});});}catch(e){}
+  return out.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+}
 function renderFocus(){
   const plan=$("wk-plan");if(!plan)return;
   let box=$("wk-focus");
@@ -3287,12 +3302,13 @@ function renderFocus(){
 
   /* drop an email anywhere here: the system finds the company and opens Log a Touchpoint filled in */
   if(write)side.appendChild(h("section",{class:"wf-card",title:"Drop an Outlook email here. We find the company and open Log a Touchpoint filled in, for you to check and save."},h("div",{class:"wf-h"},h("h3",null,"Log an Email"),h("span",null,"We find the company")),p360DropZone("Drag an email from classic Outlook here",m=>{const c=p360MatchMail(m);if(c.length===1)p360LogPop(c[0],m);else p360MailPick(m,c);})));
-  /* done this week */
-  const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Done This Week"),h("span",null,done.length+" of "+(done.length+open.length))));
-  if(!done.length)dc.appendChild(h("div",{class:"wf-empty"},"Nothing ticked off yet."));
-  done.slice(0,6).forEach(it=>{const o=BY[it.org],ck=h("span",{class:"ck"});ck.appendChild(p360Icon("check"));
-    dc.appendChild(h("button",{type:"button",class:"wf-donerow",onclick:()=>openPane(o.k)},ck,h("span",{class:"t"},h("b",null,o.name)," · "+(it.kind==="fu"?"follow-up":(LANE[it.p.lane]?LANE[it.p.lane].name.toLowerCase():"planned touch"))),h("span",{class:"d"},dow(it.day).slice(0,3))));});
-  if(done.length>6)dc.appendChild(h("div",{class:"wf-empty"},"and "+(done.length-6)+" more"));
+  /* communicated this week (Jonna, Oct 29, 2026) */
+  const cm=commWeek(ws,who()),cmOrgs=new Set(cm.map(x=>x.org)).size;
+  const dc=h("section",{class:"wf-card"},h("div",{class:"wf-h"},h("h3",null,"Communicated This Week"),h("span",null,cm.length?n(cmOrgs)+(cmOrgs===1?" company":" companies"):"")));
+  if(!cm.length)dc.appendChild(h("div",{class:"wf-empty"},wkOff===1?"Next week hasn't started yet.":"No emails or touchpoints yet this week."));
+  cm.slice(0,6).forEach(x=>{const o=BY[x.org],ck=h("span",{class:"ck"});ck.appendChild(p360Icon("check"));
+    dc.appendChild(h("button",{type:"button",class:"wf-donerow",onclick:()=>openPane(o.k)},ck,h("span",{class:"t"},h("b",null,o.name)," · "+x.label),h("span",{class:"d"},dow(x.day).slice(0,3))));});
+  if(cm.length>6)dc.appendChild(h("div",{class:"wf-empty"},"and "+(cm.length-6)+" more"));
   side.appendChild(dc);
   /* the next Summit and its unused free registrations */
   try{const S=LASTS||suggestions(),bS=nextEvent("Summit"),bn=S&&S.benefits?S.benefits.filter(x=>x.gaps.some(q=>q.kind==="Summit")).length:0;
@@ -3396,7 +3412,35 @@ function p360MailText(m){let b=String(m.body||"").replace(/\x0d/g,"");
   const head=(m.subject?"Email: "+m.subject:"Email")+((m.fromName||m.from)?" (from "+(m.fromName||m.from)+")":"");
   return (head+(b?"\x0a"+b:"")).slice(0,1200);}
 /* fill in Log a Touchpoint from the email: date, type, the matching contact and a summary to edit */
-function p360MailFill(box,o,m){
+/* when an email is logged, anyone on the company's own email domain who isn't a contact yet is added as one (Jonna, Oct 29, 2026) */
+let M360_PEND=null;
+function m360Addrs(text){const s=String(text||""),out=new Map(),re=/[A-Za-z0-9._%+'-]+@[A-Za-z0-9-]+(?:[.][A-Za-z0-9-]+)+/g;let m;
+  while((m=re.exec(s))){const em=m[0].toLowerCase();if(out.has(em)&&out.get(em).name)continue;
+    const before=s.slice(Math.max(0,m.index-80),m.index).replace(/mailto:$/i,"").split(/[;>:]/).pop().replace(/^.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[ ,]*/,""),mm=before.match(/([A-Za-z][A-Za-z.,' -]{0,60}?)["' ]*[[<(](mailto:)?$/);
+    let nm=mm?mm[1].trim().replace(/^["' ]+|["' ,]+$/g,""):"";
+    if(nm.indexOf(",")>0){const pr=nm.split(",").map(x=>x.trim()).filter(Boolean);if(pr.length===2)nm=pr[1]+" "+pr[0];}
+    if(nm.length<3||/^(mailto|from|to|cc|bcc|sent|email|e-mail|reply)$/i.test(nm))nm="";
+    out.set(em,{email:em,name:nm||(out.get(em)||{}).name||""});}
+  return [...out.values()];}
+function m360NewContacts(o,m){
+  if(!o||!m||!db||!canWrite)return 0;
+  applyContacts(o);
+  const staff=/^(mismo|mba|mortgagebankers)[.]org$/i,dm=e=>String(e||"").toLowerCase().split("@")[1]||"";
+  const doms=new Set((o._base||[]).concat(o.people||[]).map(p=>dm(p.email)).filter(d=>d&&!P360_FREE.test(d)&&!staff.test(d)));
+  if(!doms.size)return 0;
+  const c=contactsOv(o),known=new Set((o._base||[]).concat(o.people||[]).map(p=>String(p.email||"").toLowerCase()).filter(Boolean));
+  c.added.forEach(a=>{if(a.email)known.add(String(a.email).toLowerCase());});
+  const head=(m.fromName&&m.from?m.fromName+" <"+m.from+">":String(m.from||""))+" "+(m.to||[]).join(" ");
+  const seen=new Map();(m.all||[]).concat(m360Addrs(head+" "+String(m.body||""))).forEach(x=>{if(!seen.has(x.email)||(!seen.get(x.email).name&&x.name))seen.set(x.email,x);});
+  const add=[...seen.values()].filter(x=>doms.has(dm(x.email))&&!known.has(x.email)&&!/^(no-?reply|donotreply|do-not-reply|mailer-daemon|postmaster)@/i.test(x.email)).slice(0,15);
+  if(!add.length)return 0;
+  const now=new Date().toISOString();
+  add.forEach((x,i)=>c.added.push({id:Date.now().toString(36)+i,name:x.name||"",title:"",email:x.email,phone:"",roles:[],by:myName()||"",src:"email",at:now}));
+  saveOv(o.k,{contacts:c});
+  toast("Added "+(add.length===1?"a new contact":add.length+" new contacts")+" to "+o.name+" from the email: "+add.map(x=>x.name||x.email).join(", ")+".");
+  return add.length;}
+function m360TpAdded(data){const p=M360_PEND;if(!p||!data||data.org!==p.org||Date.now()-p.at>7200000)return;M360_PEND=null;m360NewContacts(BY[p.org],p.m);}
+function p360MailFill(box,o,m){M360_PEND={org:o.k,m:m,at:Date.now()};
   const fl=box.querySelectorAll(".formgrid .fld"),g=i=>fl[i]&&fl[i].querySelector("input,select,textarea");
   const date=g(0),type=g(1),who=g(3),sum=g(5);
   if(date)date.value=m.date||TODAY;
@@ -3730,11 +3774,11 @@ async function m360Run(){
     if(mine.length&&r.sha){
       const logged=[];
       mine.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
-        const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
+        try{m.all=m360Addrs(m360Text(d.html)).slice(0,80);}catch(e){}const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
         if(c.length===1){d.st="logged";d.org=c[0].k;logged.push([c[0],m,id]);}else{d.st="need";d.cands=c.slice(0,6).map(o=>o.k);}});
       await m360Rel({content:{docs},sha:r.sha});
       let ok=0;const fail=[];
-      const tpIds={};for(const [o,m,id] of logged){try{const ref=await db.collection("touchpoints").add(m360Doc(o,m));if(ref&&ref.id)tpIds[id]=ref.id;ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}if(Object.keys(tpIds).length){try{const r3=await m360Rel(null),d3=r3.data.docs;for(const id in tpIds){if(d3[id])d3[id].tp=tpIds[id];}await m360Rel({content:{docs:d3},sha:r3.sha});M360.docs=d3;}catch(e){}}
+      const tpIds={};for(const [o,m,id] of logged){try{const ref=await db.collection("touchpoints").add(m360Doc(o,m));try{m360NewContacts(o,m);}catch(e){console.error("contacts",e);}if(ref&&ref.id)tpIds[id]=ref.id;ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}if(Object.keys(tpIds).length){try{const r3=await m360Rel(null),d3=r3.data.docs;for(const id in tpIds){if(d3[id])d3[id].tp=tpIds[id];}await m360Rel({content:{docs:d3},sha:r3.sha});M360.docs=d3;}catch(e){}}
       if(fail.length){try{const r2=await m360Rel(null),d2=r2.data.docs;fail.forEach(id=>{if(d2[id]){d2[id].st="need";d2[id].cands=[docs[id].org];}});await m360Rel({content:{docs:d2},sha:r2.sha});M360.docs=d2;}catch(e){}}
       const need=mine.length-ok;
       if(ok)toast(ok===1?"Your forwarded email is logged on "+logged[0][0].name+".":ok+" forwarded emails are logged.");
@@ -3812,7 +3856,7 @@ function actHook(D){
   const col=D.collection,doc=D.doc;ACTV.col=c=>col.call(D,c);ACTV.rawDoc=p=>doc.call(D,p);
   D.doc=function(p){return actWrapDoc(doc.call(D,p),String(p));};
   D.collection=function(c){const r=col.call(D,c),a=r.add,dd=r.doc;
-    if(typeof a==="function")r.add=function(data){return a.call(r,data).then(res=>{try{actNote(c,res&&res.id,"add",data,null);}catch(e){console.error("activity",e);}return res;});};
+    if(typeof a==="function")r.add=function(data){return a.call(r,data).then(res=>{try{if(c==="touchpoints")m360TpAdded(data);}catch(e){console.error("contacts",e);}try{actNote(c,res&&res.id,"add",data,null);}catch(e){console.error("activity",e);}return res;});};
     if(typeof dd==="function")r.doc=function(id){const x=dd.call(r,id);return actWrapDoc(x,x.path||(c+"/"+id));};
     return r;};
   setTimeout(actSub,0);
@@ -4707,7 +4751,7 @@ function fillHistory(o,box){
   box.textContent="";
   const items=[];
   (TPIDX[o.k]||[]).forEach(t=>items.push({kind:"here",d:t.date,t}));
-  const sm=SENTIDX[o.k]||{};STEPS.forEach(st=>{if(sm[st.id])items.push({kind:"auto",d:sm[st.id],st});});
+  const sm=SENTIDX[o.k]||{};STEPS.concat(STEPS_X).forEach(st=>{if(sm[st.id])items.push({kind:"auto",d:sm[st.id],st});});
   o.notes.forEach(x=>items.push({kind:"note",d:x.d,x}));
   items.sort((a,b)=>(b.d||"").localeCompare(a.d||""));
   const cnt=box.closest("details").querySelector('[data-cnt="history"]');if(cnt)cnt.textContent=String(items.length);
@@ -4983,7 +5027,7 @@ function dueGroups(){
 }
 function recipients(o,st){
   const out=[];const seen=new Set();
-  let ps=o.people.filter(p=>p.email&&p.roles.some(r=>st.to.includes(r)));
+  let ps=st.all?o.people.filter(p=>p.email):o.people.filter(p=>p.email&&p.roles.some(r=>st.to.includes(r)));
   if(!ps.length)ps=o.people.filter(p=>p.email).slice(0,1);
   ps.forEach(p=>{if(seen.has(p.email))return;seen.add(p.email);out.push(p);});return out;
 }
@@ -5037,7 +5081,7 @@ function renderWeek(){
   });
   const done=Object.values(SENDS).sort((a,b)=>String(b.batches&&b.batches.length&&b.batches[b.batches.length-1].at).localeCompare(String(a.batches&&a.batches.length&&a.batches[a.batches.length-1].at)));
   if(done.length){const d=h("details",{class:"sect",style:"margin-top:6px"});d.appendChild(h("summary",null,"Sent This Season",h("span",{class:"cnt"},String(done.length))));
-    const sb=h("div",{class:"sbody"});done.forEach(s=>{const st=STEPS.find(x=>x.id===s.step);const tot=(s.batches||[]).reduce((a,b)=>a+(b.orgs||[]).length,0);const last=(s.batches||[]).slice(-1)[0];
+    const sb=h("div",{class:"sbody"});done.forEach(s=>{const st=stepById(s.step);const tot=(s.batches||[]).reduce((a,b)=>a+(b.orgs||[]).length,0);const last=(s.batches||[]).slice(-1)[0];
       sb.appendChild(h("div",{class:"hi"},h("div",{class:"d"},last?fmt(last.at.slice(0,10)):""),h("div",null,(st?st.name:s.step)+" · "+n(tot)+" organizations · memberships ending "+fmt(s.thru))));});
     d.appendChild(sb);box.appendChild(d);}
   const soon=renewalGroup().filter(o=>{if(handling(o)!=="person")return false;const nx=nextStep(o);return nx&&nx.d<=addDays(TODAY,7);}).length;
@@ -5429,7 +5473,7 @@ function renderThisWeek(){
     const sayEl=h("div",{class:"hl-say"});sayEl.innerHTML=say;top.appendChild(sayEl);
     const tl=h("div",{class:"htiles"});
     const tile=(val,lab,sub,cls,go)=>{const e=h(go?"button":"div",{class:"htile"+(cls?" "+cls:""),type:go?"button":null},h("b",null,val),h("span",null,lab),h("small",null,sub));if(go)e.addEventListener("click",go);return e;};
-    tl.appendChild(tile(n(doneN)+(totN?" of "+n(totN):""),wkOff===1?"Planned for Next Week":"Done This Week","touches and follow-ups",null,()=>goList("wk-plan")));
+    if(wkOff===1)tl.appendChild(tile(n(totN),"Planned for Next Week","touches and follow-ups",null,()=>goList("wk-plan")));else{const cm=commWeek(ws,w),co=new Set(cm.map(x=>x.org)).size;tl.appendChild(tile(n(cm.length),"Communicated This Week",n(co)+(co===1?" company":" companies")+" · emails and touchpoints",null,()=>{const f=document.querySelector("#wk-focus .wf-side");if(f)f.scrollIntoView({behavior:"smooth",block:"start"});}));}
     tl.appendChild(tile(n(touches),"Touches Logged",wkOff===1?"next week":"calls, emails and meetings"));
     tl.appendChild(tile(n(fuWk),"Follow-Ups Due",wkOff===1?"next week":"this week",null,toFU));
     tl.appendChild(tile(n(overdue),"Overdue",overdue?"catch these up first":"nothing late",overdue?"warn":"",toFU));
@@ -5478,18 +5522,18 @@ function renderFollow(){
 /* ---------- playbooks + settings ---------- */
 function renderPlays(){
   const box=$("plays");if(box.contains(document.activeElement))return;box.textContent="";
-  STEPS.forEach(st=>{
+  STEPS.concat(STEPS_X).forEach(st=>{
     const tp=TPL[st.id]||{};const dis=!db||!canWrite;
     const d=h("details",{class:"sect play"});
-    const rel=st.off<0?Math.abs(st.off)+" days before":st.off===0?"On the end date":st.off+" days after";
-    d.appendChild(h("summary",null,st.name,h("span",{class:"cnt"},rel+" · "+fmtS(addDays(END,st.off)))));
+    const rel=st.manual?st.when:st.off<0?Math.abs(st.off)+" days before":st.off===0?"On the end date":st.off+" days after";
+    d.appendChild(h("summary",null,st.name,h("span",{class:"cnt"},st.manual?"Sent by hand":rel+" · "+fmtS(addDays(END,st.off)))));
     const sb=h("div",{class:"sbody"});
     sb.appendChild(h("div",{class:"facts"},
-      h("div",{class:"fact"},h("label",null,"Sends"),h("div",null,rel+(st.off===0?"":" the membership end date"))),
-      h("div",{class:"fact"},h("label",null,"For Dec 31 Memberships"),h("div",null,fmt(addDays(END,st.off)))),
-      h("div",{class:"fact"},h("label",null,"Goes To"),h("div",null,st.to.join(" and ")+" contacts")),
+      h("div",{class:"fact"},h("label",null,"Sends"),h("div",null,st.manual?rel:rel+(st.off===0?"":" the membership end date"))),
+      st.manual?null:h("div",{class:"fact"},h("label",null,"For Dec 31 Memberships"),h("div",null,fmt(addDays(END,st.off)))),
+      h("div",{class:"fact"},h("label",null,"Goes To"),h("div",null,st.all?"Every contact at the company with an email":st.to.join(" and ")+" contacts")),
       h("div",{class:"fact"},h("label",null,"Purpose"),h("div",null,st.what)),
-      h("div",{class:"fact"},h("label",null,"Skipped When"),h("div",null,"Renewed, lost, payment in process, on hold, or routed to a person"))));
+      (st.manual?h("div",{class:"fact"},h("label",null,"If They Want a Meeting"),h("div",null,"The Schedule a Meeting button opens an email to schedule@mismo.org with the sender copied, so the meeting can be set up.")):h("div",{class:"fact"},h("label",null,"Skipped When"),h("div",null,"Renewed, lost, payment in process, on hold, or routed to a person")))));
     const subj=h("input",{type:"text",id:"tpl-s-"+st.id,value:tp.subject||"",disabled:dis});
     const body=h("textarea",{id:"tpl-b-"+st.id,rows:"9",disabled:dis});body.value=tp.body||"";
     const save=h("button",{type:"button",class:"btn",disabled:dis},"Save Wording");
@@ -5498,7 +5542,7 @@ function renderPlays(){
       const b={subject:subj.value.trim(),body:body.value,updatedAt:new Date().toISOString(),updatedBy:ME||""};
       try{await db.doc("templates/"+st.id).set(b);TPL[st.id]=b;toast(st.name+" wording saved.");}catch(e){onWriteErr(e);}save.disabled=false;});
     sb.appendChild(h("div",{class:"formgrid"},h("div",{class:"fld wide"},h("label",{for:subj.id},"Subject Line"),subj),h("div",{class:"fld wide"},h("label",{for:body.id},"Email Body"),body)));
-    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Text in [brackets] has to be replaced before the email can be sent."));
+    sb.appendChild(h("div",{class:"hint"},"Merge fields in {{double braces}} are filled in for each person when the email is sent: {{First Name}}, {{Last Name}}, {{Company}}, {{Membership Level}}, {{Member Type}}, {{Membership Ends}}, {{Level Benefits}}, {{Sender Name}} and {{Sender First Name}}. Put {{Schedule Meeting Button}} on a line of its own to add the button that writes to schedule@mismo.org. Text in [brackets] has to be replaced before the email can be sent."));
     const prow=h("div",{class:"btnrow"},save);{const ptest=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send Me a Test");ptest.addEventListener("click",()=>playTest(st,ptest));prow.appendChild(ptest);}prow.appendChild(who);sb.appendChild(prow);
     d.appendChild(sb);box.appendChild(d);
   });
@@ -7371,7 +7415,7 @@ function fillPlain(t,v,sender){return t.replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=
 /* the email body with %%tokens%% where each recipient's values go */
 function bodyTokens(body,sender){
   const paras=escH(body).replace(/\r/g,"").split(/\n{2,}/);
-  return paras.map(p=>{
+  return paras.map(p=>{if(p.split(' ').join('').trim()==='{{ScheduleMeetingButton}}')return m360SchedBtn(sender);
     if(/^\s*\{\{\s*Level Benefits\s*\}\}\s*$/.test(p))return "%%ben%%";
     const lines=p.split("\n");
     if(lines.every(l=>/^\s*[•\-\*]\s+/.test(l)))return '<ul style="margin:6px 0 0;padding-left:22px">'+lines.map(l=>'<li style="margin:0 0 5px">'+l.replace(/^\s*[•\-\*]\s+/,"")+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>";
@@ -7432,7 +7476,7 @@ function batchLine(b){const t=new Date(b.queuedAt);return h("div",{class:"hint",
 function openSend(opt){
   const me=mySender();if(!canSend()){toast(SEND_NO,true);return;}let sender=me;
   const body=$("m360-pane-body");paneK="__send";markSel();
-  let st=STEPS.find(x=>x.id===opt.stId)||STEPS[0];
+  let st=stepById(opt.stId)||STEPS[0];
   const chosen=new Map();   /* "k|email" -> {o,p} */
   const orgsIn=[];          /* org keys shown, in order */
   const addOrg=(o,checkDefault)=>{if(!o||orgsIn.includes(o.k))return;orgsIn.push(o.k);
@@ -7442,8 +7486,8 @@ function openSend(opt){
     $("m360-pane-t").textContent="Send: "+st.name;
     $("m360-pane-sub").textContent="From "+sender.name+" ("+sender.email+") · through Outlook";
     body.textContent="";const sa=h("select",{id:"snd-as"});sendAsList().forEach(x=>sa.appendChild(h("option",{value:x.key,selected:x.key===sender.key},x.name+(x.key===me.key?" (You)":""))));sa.addEventListener("change",()=>{sender=sendAsList().find(x=>x.key===sa.value)||me;paint();});body.appendChild(h("div",{class:"fld",style:"margin-bottom:12px;max-width:340px"},h("label",{for:"snd-as"},"Send As"),sa,h("div",{class:"hint",style:"margin-top:4px"},"Goes out from "+sender.email+", signed by "+sender.name+".")));
-    if(opt.pick){const sel=h("select",{id:"snd-step"});STEPS.forEach(x=>sel.appendChild(h("option",{value:x.id,selected:x.id===st.id},x.name)));
-      sel.addEventListener("change",()=>{st=STEPS.find(x=>x.id===sel.value);chosen.clear();orgsIn.slice().forEach(k=>recipients(BY[k],st).forEach(p=>chosen.set(k+"|"+p.email.toLowerCase(),{o:BY[k],p})));paint();});
+    if(opt.pick){const sel=h("select",{id:"snd-step"});STEPS.concat(STEPS_X).forEach(x=>sel.appendChild(h("option",{value:x.id,selected:x.id===st.id},x.name)));
+      sel.addEventListener("change",()=>{st=stepById(sel.value);chosen.clear();orgsIn.slice().forEach(k=>recipients(BY[k],st).forEach(p=>chosen.set(k+"|"+p.email.toLowerCase(),{o:BY[k],p})));paint();});
       body.appendChild(h("div",{class:"fld",style:"margin-bottom:12px;max-width:340px"},h("label",{for:"snd-step"},"Email"),sel));}
     const prob=tplProblem(st);
     if(prob){const go=h("button",{type:"button",class:"btn ghost"},"Open Playbooks");go.addEventListener("click",()=>{closePane();show("plays");});
