@@ -2123,7 +2123,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   <section class="view" id="v-activity" hidden>
     <div class="vhead">
       <div><h1>Activity</h1>
-      <div class="vsub">What the team saved, changed, removed or forwarded to 360@mismo.org, newest first. Remove takes a touchpoint off a company and Restore puts it back.</div></div>
+      <div class="vsub">What the team saved, changed, removed or forwarded to 360@mba.org, newest first. Remove takes a touchpoint off a company and Restore puts it back.</div></div>
     </div>
     <div class="filters" id="act-filters">
       <input type="search" id="act-q" placeholder="Search activity and companies" aria-label="Search activity">
@@ -3465,7 +3465,7 @@ function p360DropZone(label,onMail){
   const z=h("div",{class:"p360-drop",title:"Drag an email from Outlook, or a saved .msg or .eml file, onto this box."});z.appendChild(p360Icon("mail"));const msg=h("span",null,label);z.appendChild(msg);
   const pick=h("button",{type:"button",class:"p360-link"},"or choose a file");pick.addEventListener("click",()=>inp.click());z.appendChild(pick);z.appendChild(inp);
   const go=async dt=>{msg.textContent="Reading the email…";
-    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"New Outlook and Outlook on the web can't drag a whole email in. Forward it to 360@mismo.org and it logs itself.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sent the subject. To log the whole email, forward it to 360@mismo.org.";}
+    try{const m=await p360ReadMail(dt);msg.textContent=label;if(!m||m.none){msg.textContent=m&&m.file?"That file isn't an email. Drag the email from Outlook, or choose a .msg or .eml file.":"New Outlook and Outlook on the web can't drag a whole email in. Forward it to 360@mba.org and it logs itself.";return;}onMail(m);if(m.partial)msg.textContent="New Outlook only sent the subject. To log the whole email, forward it to 360@mba.org.";}
     catch(e){console.error("email drop",e);msg.textContent="Couldn't read that email. Save it as a .msg or .eml file and try again.";}};
   z.addEventListener("dragover",e=>{if(typeof dragData!=="undefined"&&dragData)return;e.preventDefault();e.stopPropagation();z.classList.add("over");});
   z.addEventListener("dragleave",e=>{if(!z.contains(e.relatedTarget))z.classList.remove("over");});
@@ -3755,9 +3755,9 @@ if(OLK){document.documentElement.classList.add("olk");
   const sc=document.createElement("script");sc.src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js";
   sc.onload=()=>{try{if(!history.pushState)history.pushState=_ps;if(!history.replaceState)history.replaceState=_rs;}catch(e){}try{Office.onReady(()=>olkStart());}catch(e){console.error("outlook",e);}};
   sc.onerror=()=>olkStart();document.head.appendChild(sc);}
-/* ---------- Forward to log: staff forward an email (or Cc/Bcc) to 360@mismo.org; a Power Automate flow on Jonna's mailbox
+/* ---------- Forward to log: staff forward an email (or Cc/Bcc) to 360@mba.org; a Power Automate flow on Jonna's mailbox
    adds it to data/mailin; each person's Member 360 picks up their own emails, finds the company and logs the touchpoint (Jonna, Oct 28, 2026) ---------- */
-const M360_ADDR="360@mismo.org";
+const M360_ADDR="360@mba.org";
 const M360_RELAY="https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/member-360/data/mailin";
 const M360={busy:false,docs:{},timer:null,started:false};
 const M360_STAFF=/@(mismo|mba|mortgagebankers)\.org$/i;
