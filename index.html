@@ -5691,7 +5691,7 @@ async function autoCommit(o,type){if(!db||!canWrite)return;
   if(DEALS.some(d=>d.org===o.k&&d.type===type&&(d.start||"").slice(0,4)===season))return;
   const f=dealDefaults(type,"Standard",TODAY),lv=o.level||"Corporate";
   const last=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0).sort((a,b)=>b.d.localeCompare(a.d))[0];
-  const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:lv,sold:TODAY,start:f.start,end:f.end,price:listPrice(lv)||(last?last.n:0),order:"",by:owner(o)||myName()||"",notes:"",ap:"Needs AP Update",auto:true,at:new Date().toISOString(),createdBy:myName()||""};
+  const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:lv,sold:TODAY,start:f.start,end:f.end,price:listPrice(lv)||(last?last.n:0),order:"",by:owner(o)||"",notes:"",ap:"Needs AP Update",auto:true,at:new Date().toISOString(),createdBy:myName()||""};
   try{await db.collection("deals").add(doc);toast(type==="Renewal"?"Recorded as a renewal under Sales and Renewals. Check the amount there.":"Added to the Monthly Report as a committed new member. Check the amount under Sales and Renewals.");}catch(e){onWriteErr(e);}}
 /* A membership payment arrives and the record turns Renewed on its own, because Aptify holds the
    term and the money is in. Nobody pressed anything, so autoCommit never ran and the month's report
@@ -5715,7 +5715,7 @@ async function commitFromPayment(o,i){
   const type=(!j||j>=start)?"New Member":"Renewal";
   const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:o.level||"Corporate",
     sold,start,end,price:Math.round((i.n||0)*100)/100,order:i.o||"",
-    by:owner(o)||myName()||"",notes:"Recorded from the "+fmt(sold)+" payment in the Financial System.",
+    by:owner(o)||"",notes:"Recorded from the "+fmt(sold)+" payment in the Financial System.",
     ap:"Needs AP Update",auto:true,fromPay:tag,at:new Date().toISOString(),createdBy:myName()||""};
   try{await db.collection("deals").add(doc);return doc;}catch(e){onWriteErr(e);return null;}
 }
