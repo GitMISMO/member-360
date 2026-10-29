@@ -1478,6 +1478,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .m360-fold{cursor:pointer;user-select:none}.m360-fold:focus-visible{outline:2px solid var(--sky);outline-offset:2px;border-radius:6px}.m360-caret{display:inline-block;width:0;height:0;margin-right:8px;border-left:5px solid var(--ink-3);border-top:4px solid transparent;border-bottom:4px solid transparent;transform:rotate(90deg);transition:transform .15s;align-self:center}.m360-closed .m360-caret{transform:none}.wf-card.m360-closed .p360-drop{display:none}.m360-lw>.wf-card.m360-closed{flex:none}.wf-card.m360-closed>.wf-h{margin-bottom:0}.m360-fold h3{margin-right:auto}.wf-card.m360-closed{padding-top:10px;padding-bottom:10px;box-shadow:none}.wf-card.m360-closed h3{font-size:14px;color:var(--ink-2)}
 #wk-focus.wf{align-items:stretch}#wk-focus .wf-main>.wf-up{flex:1}#wk-focus .wf-side{align-content:start}
 .p360-drop.p360-drop-low{margin-top:14px}
+.m360-log{margin:8px 0 2px;font-size:12px}.m360-log-h{font-weight:600;color:var(--ink-2);margin-bottom:4px}.m360-lr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--border)}.m360-lt{color:var(--ink-3);white-space:nowrap}.m360-ls{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink)}.m360-lr .p360-link,.m360-more{font-size:12px;padding:0}.m360-need{color:var(--warn);font-weight:600}.hi-rm{margin-left:10px;font-size:12px;padding:0}
 .pc-side{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
 .pcard.done{opacity:.6}
 .pcard.done b{text-decoration:line-through;text-decoration-color:var(--border-strong)}
@@ -3699,17 +3700,17 @@ async function m360Run(){
         if(c.length===1){d.st="logged";d.org=c[0].k;logged.push([c[0],m,id]);}else{d.st="need";d.cands=c.slice(0,6).map(o=>o.k);}});
       await m360Rel({content:{docs},sha:r.sha});
       let ok=0;const fail=[];
-      for(const [o,m,id] of logged){try{await db.collection("touchpoints").add(m360Doc(o,m));ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}
+      const tpIds={};for(const [o,m,id] of logged){try{const ref=await db.collection("touchpoints").add(m360Doc(o,m));if(ref&&ref.id)tpIds[id]=ref.id;ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}if(Object.keys(tpIds).length){try{const r3=await m360Rel(null),d3=r3.data.docs;for(const id in tpIds){if(d3[id])d3[id].tp=tpIds[id];}await m360Rel({content:{docs:d3},sha:r3.sha});M360.docs=d3;}catch(e){}}
       if(fail.length){try{const r2=await m360Rel(null),d2=r2.data.docs;fail.forEach(id=>{if(d2[id]){d2[id].st="need";d2[id].cands=[docs[id].org];}});await m360Rel({content:{docs:d2},sha:r2.sha});M360.docs=d2;}catch(e){}}
       const need=mine.length-ok;
       if(ok)toast(ok===1?"Your forwarded email is logged on "+logged[0][0].name+".":ok+" forwarded emails are logged.");
       if(need)toast((need===1?"A forwarded email needs":need+" forwarded emails need")+" a company. Pick it in the Outreach Planner, under Log an Email.");
     }
   }catch(e){console.error("mail-in",e);}
-  finally{M360.busy=false;m360Tray();}
+  finally{M360.busy=false;m360Tray();try{m360Log();}catch(e){}}
 }
-function m360Mark(id,st){
-  (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();})();
+function m360Mark(id,st,nm){
+  (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();if(nm)docs[id].orgName=nm;}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();try{m360Log();}catch(e){}})();
 }
 /* forwarded emails that matched no company, or more than one, wait here */
 function m360Tray(){
@@ -3730,7 +3731,7 @@ function m360Tray(){
 /* when the touchpoint for a tray email is saved, take it off the list */
 function m360Watch(id){
   let n=0;const iv=setInterval(()=>{n++;const dl=document.getElementById("p360-dlg");
-    if(dl&&!dl.__m360&&dl.querySelector(".p360-dlg-b textarea")){dl.__m360=1;clearInterval(iv);const sum=dl.querySelector(".p360-dlg-b textarea");dl.addEventListener("close",()=>{if(!sum.value.trim())m360Mark(id,"logged");});}
+    if(dl&&!dl.__m360&&dl.querySelector(".p360-dlg-b textarea")){dl.__m360=1;clearInterval(iv);const sum=dl.querySelector(".p360-dlg-b textarea");const nm=(dl.querySelector("h2")||{}).textContent||"";dl.addEventListener("close",()=>{if(!sum.value.trim())m360Mark(id,"logged",nm);});}
     else if(n>240)clearInterval(iv);},250);
 }
 /* how-to under every email drop box: classic Outlook drags, new Outlook and the web forward */
@@ -3758,7 +3759,11 @@ function m360CbMove(){const f=document.getElementById("wk-focus");if(!f)return;c
 function m360Fold(){const f=document.getElementById("wk-focus");if(!f)return;const z=f.querySelector(".wf-card .p360-drop"),card=z&&z.closest(".wf-card");if(!card||card.__m360f)return;card.__m360f=1;const hd=card.querySelector(".wf-h");if(!hd)return;let open=false;try{open=localStorage.getItem("m360.logEmailOpen")==="1";}catch(e){}const set=o=>{card.classList.toggle("m360-closed",!o);hd.setAttribute("aria-expanded",o?"true":"false");try{localStorage.setItem("m360.logEmailOpen",o?"1":"0");}catch(e){}};hd.classList.add("m360-fold");hd.setAttribute("role","button");hd.setAttribute("tabindex","0");hd.title="Show or hide the email drop box";hd.insertBefore(h("span",{class:"m360-caret","aria-hidden":"true"}),hd.firstChild);const sub=hd.querySelector("span:not(.m360-caret)");if(sub)sub.textContent="For classic Outlook";hd.addEventListener("click",()=>set(card.classList.contains("m360-closed")));hd.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();set(card.classList.contains("m360-closed"));}});card.classList.toggle("m360-closed",!open);hd.setAttribute("aria-expanded",open?"true":"false");}
 /* the side column (Start a Call Block down) lines up with the Up Next box beside it (Jonna, Oct 28, 2026) */
 function m360Level(){const F=document.getElementById("wk-focus");if(!F)return;const main=F.querySelector(".wf-main"),side=F.querySelector(".wf-side"),up=main&&main.querySelector(".wf-up");if(!main||!side||!up)return;const go=()=>{side.style.marginTop="";const mt=main.getBoundingClientRect(),st=side.getBoundingClientRect();if(!mt.height)return;if(Math.abs(st.top-mt.top)<4&&st.left>mt.left+40){const off=up.getBoundingClientRect().top-mt.top;if(off>0)side.style.marginTop=off+"px";}};go();if(!F.__m360ro&&window.ResizeObserver){F.__m360ro=new ResizeObserver(()=>{clearTimeout(F.__m360t);F.__m360t=setTimeout(()=>{try{m360Level();}catch(e){}},60);});F.__m360ro.observe(F);}}
-renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Fold();}catch(e){}try{m360Level();}catch(e){}try{m360Tray();}catch(e){}return r;};
+renderFocus=function(){const r=_renderFocusM360.apply(this,arguments);try{m360CbMove();}catch(e){}try{m360Fold();}catch(e){}try{m360Level();}catch(e){}try{m360Tray();}catch(e){}try{m360Log();}catch(e){}return r;};
+/* a short log of your own forwarded emails: when each arrived and where it went, with a link to the company (Jonna, Oct 29, 2026) */
+function m360Log(){document.querySelectorAll(".m360-log").forEach(e=>e.remove());const me=m360Me(),docs=M360.docs||{},cut=new Date(Date.now()-30*864e5).toISOString();const ids=Object.keys(docs).filter(id=>{const d=docs[id];return d&&m360Who(d)===me&&String(d.received||d.at||"")>=cut;}).sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));if(!ids.length)return;const z=document.querySelector("#wk-focus .wf-card .p360-drop"),card=z&&z.closest(".wf-card");if(!card)return;const hd=card.querySelector(".wf-h");const tpIds=new Set(TP.map(t=>t.id));const goOrg=k=>{openPane(k);setTimeout(()=>{const b=document.getElementById("m360-pane-body");if(b)try{p360Go(b,"activity","history");}catch(e){}},350);};const byName=nm=>{const o=ORGS.find(x=>x.name===nm);return o?o.k:"";};const box=h("div",{class:"m360-log"},h("div",{class:"m360-log-h"},"Your forwarded emails"));const row=d=>{const subj=(d.m&&d.m.subject)||d.subject||"(no subject)";const w=d.received?new Date(d.received).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";let st;const k=d.org||(d.orgName?byName(d.orgName):"");const o=k&&BY[k];if(d.st==="logged"&&o){const gone=d.tp&&!tpIds.has(d.tp);st=h("span",null,gone?"Removed from ":"Logged on ",h("button",{type:"button",class:"p360-link",title:"Open "+o.name+" at Conversation History",onclick:()=>goOrg(k)},o.name));}else if(d.st==="logged")st=h("span",null,"Logged");else if(d.st==="need")st=h("span",{class:"m360-need"},"Needs a company");else if(d.st==="skipped")st=h("span",null,"Not needed");else st=h("span",null,"Waiting");return h("div",{class:"m360-lr"},h("span",{class:"m360-lt"},w),h("span",{class:"m360-ls",title:subj},subj),st);};ids.slice(0,6).forEach(id=>box.appendChild(row(docs[id])));if(ids.length>6){const more=h("button",{type:"button",class:"p360-link m360-more"},"Show all "+ids.length);more.addEventListener("click",()=>{more.remove();ids.slice(6).forEach(id=>box.appendChild(row(docs[id])));});box.appendChild(more);}if(hd)hd.after(box);else card.prepend(box);}
+/* take a touchpoint off the record: it is kept with archived set, never deleted (Jonna, Oct 29, 2026) */
+async function m360RmTp(t){if(blocked())return;const o=BY[t.org];if(!confirm("Remove this touchpoint"+(o?" from "+o.name:"")+"? It comes off the record. Nothing else changes."))return;try{await db.doc("touchpoints/"+t.id).update({archived:true,archivedAt:new Date().toISOString(),archivedBy:ME||""});toast("Touchpoint removed.");try{pushUndo("Removed a touchpoint",()=>db.doc("touchpoints/"+t.id).update({archived:false}));}catch(e){}}catch(e){onWriteErr(e);}}
 function m360Start(){
   if(M360.started)return;
   if(!(db&&ME&&typeof ORGS!=="undefined"&&ORGS&&ORGS.length)){setTimeout(m360Start,1500);return;}
@@ -4518,7 +4523,7 @@ function fillHistory(o,box){
         h("div",null,h("span",{class:"tag"},t.type),h("span",{class:"tag"},t.topic),t.sentiment&&t.sentiment!=="Neutral"?h("span",{class:"tag"},t.sentiment):null),
         p360HistTxt(t),
         t.next?h("div",{class:"nx"},(t.next.done?"✓ Done: ":"Next: ")+t.next.text+(t.next.owner?" · "+t.next.owner:"")+(t.next.due?" · due "+fmtS(t.next.due):"")):null,
-        h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:"")))));}
+        h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null))));}
     else if(i.kind==="auto"){list.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
     else{const x=i.x;list.appendChild(h("div",{class:"hi"},h("div",{class:"d"},x.d?fmt(x.d):"Undated"),h("div",null,
         h("div",null,h("span",{class:"tag"},"Earlier Note"),(x.tags||[]).map(t=>h("span",{class:"tag"},t))),
@@ -7557,7 +7562,7 @@ async function boot(){
   db.collection("meetings").onSnapshot(s=>{const D={};s.docs.forEach(d=>D[d.id]=d.data()||{});const m=D.main||{},orgs={};(m.buckets||[]).forEach(b=>Object.assign(orgs,(D[b]||{}).orgs||{}));MTG=Object.assign({groups:[],unmatched:[]},m,{orgs});MTGC={};scheduleRefresh();},err);
   db.doc("engage/main").onSnapshot(s=>{ENG=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};if(APT){applyAptify();ISGEN++;}scheduleRefresh();},err);
   db.collection("plans").onSnapshot(s=>{PLANS=s.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
-  db.collection("touchpoints").onSnapshot(s=>{TP=s.docs.map(d=>Object.assign({id:d.id},d.data()));rebuildIdx();resolveNames();scheduleRefresh();},err);
+  db.collection("touchpoints").onSnapshot(s=>{TP=s.docs.map(d=>Object.assign({id:d.id},d.data())).filter(t=>!t.archived);rebuildIdx();resolveNames();scheduleRefresh();},err);
   db.collection("sends").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());SENDS=m;rebuildIdx();scheduleRefresh();},err);
   db.collection("templates").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());TPL=m;resolveNames();
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="plays")renderPlays();},err);
