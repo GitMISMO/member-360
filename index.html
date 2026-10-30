@@ -2576,7 +2576,10 @@ function sov(o,key){const v=ov(o);return (v.stageYr||DATA_RY)===RY?v[key]:undefi
 function seasonPatch(o,p){const v=ov(o);const base=(v.stageYr||DATA_RY)===RY?{}:{stage:"",lossReason:"",replied:false};return Object.assign(base,p,{stageYr:RY});}
 /* who renews: every current member (Jonna, Oct 26, 2026), not only the ones the Sept 26 tracker listed, plus anyone
    marked Lost this season. Non-Lenders renew through dues; lenders through the IIF (handling "iif", never automated emails). */
-function inCohort(o){return o.life==="Active"||sov(o,"stage")==="Lost";}
+/* a new member whose first Aptify term already runs through the renewal season (joined this year, covered through next): there is nothing to renew, so they sit outside the renewal season and are never shown as Renewed (Jonna, Oct 30, 2026) */
+function newJoin(o){const T=o.aptAll||[];if(!T.length||o.life!=="Active")return false;const y0=String(RY-1)+"-01-01";return !T.some(t=>t.s&&t.s<y0)&&String(o.thru||"")>=RY+"-12-31";}
+function newJoinStart(o){return (o.aptAll||[]).map(t=>t.s).filter(Boolean).sort()[0]||"";}
+function inCohort(o){return (o.life==="Active"&&!newJoin(o))||sov(o,"stage")==="Lost";}
 /* already covered for the season: Aptify's term runs through it (a two-year deal, or a member who joined late in the year),
    with no payment for the season and no stage set by hand. Counted apart from Renewed. */
 /* paid ahead on the Deferral sheet: the same order covers this season and the one before it (a two-year deal, e.g. CBRE) */
@@ -3165,12 +3168,13 @@ function p360Update(o,box){
     const cid=String(fd(/company id|aptify/)||o.cid||"").trim();if(/^[0-9]{4,}$/.test(cid))tag("id","ID "+cid);}
   /* header metrics */
   const M=isPro?[["Sales Stage",v.pstage||"Not Started"],["Forecast",pipe.forecast?money(pipe.forecast):"Not set"],["Probability",(pipe.prob!=null&&pipe.prob!=="")?pipe.prob+"%":"Not set"],["Lead Source",pipe.lead||o.source||"Not set"],["Last Touch",ltxt]]
-    :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||"Not recorded"],["Last Touch",ltxt]];
+    :[["Level",o.level||(o.life==="Active"?"Not recorded":o.life||"Not recorded")],["Member Since",F["member since"]||"Not recorded"],[o.life==="Active"?"Membership Ends":"Membership Ended",F["membership ends"]||(o.thru?fmtS(o.thru):"Not recorded")],[RY+" Dues",F[(RY+" dues").toLowerCase()]||(newJoin(o)?"Not needed, new member":"Not recorded")],["Last Touch",ltxt]];
   const mx=box.querySelector(".p360-metrics");mx.textContent="";M.forEach(([k,val])=>mx.appendChild(h("div",{class:"p360-metric"},h("div",{class:"k"},k),h("div",{class:"v"},String(val)))));
   /* status card: the renewal path for a member in this season (click a step to set it), Sales for a prospect */
   const sw=box.querySelector(".p360-steps-wrap");sw.textContent="";const tw=box.querySelector(".p360-touch-wrap");tw.textContent="";
-  if(inCohort(o)){const s=stageOf(o),L=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in Process","Renewed"],at=L.indexOf(s),hd=handling(o),nx=nextStep(o);
-    const right=s==="Lost"?h("span",{class:"p360-sub"},"Marked lost"):nx?h("span",{class:"p360-sub"},hd==="person"?"Next step: ":"Next email: ",h("b",null,nx.st.name+", "+dow(nx.d)+" "+fmtS(nx.d))):h("span",{class:"p360-sub"},s==="Renewed"?"Renewed for "+RY:hd==="person"?"Personal outreach, no automatic emails":hd==="hold"?"Automatic emails paused":"");
+  if(newJoin(o)){sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),h("span",{class:"p360-sub"},"Not needed")));sw.appendChild(h("div",{class:"p360-sub",style:"margin:4px 0 8px"},"New member: joined "+fmt(newJoinStart(o))+", and the membership already runs through "+fmt(o.thru)+", so there is nothing to renew for "+RY+"."));}
+  else if(inCohort(o)){const s=stageOf(o),L=["Not Renewed Yet","Contacted","Invoiced","Committed","Payment in Process","Renewed"],at=L.indexOf(s),hd=handling(o),nx=nextStep(o);
+    const right=s==="Lost"?h("span",{class:"p360-sub"},"Marked lost"):nx?h("span",{class:"p360-sub"},hd==="person"?"Next step: ":"Next email: ",h("b",null,nx.st.name+", "+dow(nx.d)+" "+fmtS(nx.d))):h("span",{class:"p360-sub"},s==="Renewed"?(covered(o)?"Covered for "+RY+" by the current term":"Renewed for "+RY):hd==="person"?"Personal outreach, no automatic emails":hd==="hold"?"Automatic emails paused":"");
     sw.appendChild(h("div",{class:"p360-head"},h("h3",null,RY+" Renewal"),right));
     if(s!=="Lost"){const paid=s==="Renewed"&&!sov(o,"stage"),g=h("div",{class:"p360-steps"});
       L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the "+RY+" stage to "+x,title:"Click to set the "+RY+" stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>p360SetStage(box,x)},h("i"),h("span",null,x==="Not Renewed Yet"?"Not Renewed":x==="Payment in Process"?"Paying":x));
@@ -4289,7 +4293,7 @@ function refreshProfile(o,box){
     else if(hd==="hold")rs.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"On hold: no automated emails go to this member until the hold is lifted."));
   }
   const tl=box.querySelector('[data-part="timeline"]');if(tl)fillTimeline(o,tl);
-  const du=box.querySelector('[data-part="dues"]');if(du){const pd=paid(o);du.textContent=pd?"Paid "+fmtS(pd.d)+" \u00b7 "+money(pd.n)+(pd.how==="IIF"?" IIF":""):(baseStage(o)==="Renewed"?"Marked paid in the membership records":"Not paid yet");du.className=pd||o.stage==="Renewed"?"":"muted";}
+  const du=box.querySelector('[data-part="dues"]');if(du){const pd=paid(o);du.textContent=pd?"Paid "+fmtS(pd.d)+" \u00b7 "+money(pd.n)+(pd.how==="IIF"?" IIF":""):(covered(o)?(prepaid(o)?"Paid ahead":"Covered through "+fmt(o.thru)+", no "+RY+" payment needed"):baseStage(o)==="Renewed"?"Marked paid in the membership records":"Not paid yet");du.className=pd||o.stage==="Renewed"?"":"muted";}
   const ac=box.querySelector('[data-part="act"]');if(ac)fillActivity(o,ac);
   const en=box.querySelector('[data-part="eng"]');if(en)fillEngage(o,en);
   const dlx=box.querySelector('[data-part="dl"]');if(dlx)fillDl(o,dlx);
@@ -6295,7 +6299,17 @@ function dealMonths(){const set=new Set(DEALS.filter(d=>d.type==="New Member"&&!
   const first=[...set].sort()[0],end=TODAY.slice(0,7);let y=+first.slice(0,4),mo=+first.slice(5,7);
   for(let i=0;i<600;i++){const k=y+"-"+String(mo).padStart(2,"0");if(k>end)break;set.add(k);if(++mo>12){mo=1;y++;}}
   return [...set].sort().reverse();}
-function dealsShown(){const m=$("dl-month").value,ap=$("dl-ap").value,by=$("dl-by").value,ty=$("dl-type").value,tm=$("dl-terms").value,pd=$("dl-pd").value;
+/* new or renewal comes from Aptify, not from how the commitment was first recorded (Jonna, Oct 30, 2026). Find the Aptify term the payment bought
+   (running on the payment date, or starting within four months after it). A renewal when an earlier term ran into the year before that term,
+   or the term itself had already been running for a year (multi-year); a new member when there is no earlier term at all;
+   a member who lapsed for over a year and came back keeps what was recorded. */
+function dealKind(d){if(d.type!=="New Member"&&d.type!=="Renewal")return d.type;let o=BY[d.org];for(let n=0;o&&ov(o).mergedInto&&BY[ov(o).mergedInto]&&n<5;n++)o=BY[ov(o).mergedInto];const T=(o&&o.aptAll||[]).filter(t=>t.s&&t.e);if(!T.length)return d.type;
+  const p=String(d.sold||d.start||"").slice(0,10),t0=Date.parse(p);if(!p||isNaN(t0))return d.type;const sh=(x,n)=>new Date(Date.parse(x)+n*864e5).toISOString().slice(0,10);
+  const B=T.filter(t=>t.s<=sh(p,120)&&t.e>=p).sort((x,y)=>x.s<y.s?1:-1)[0];
+  if(!B){if(T.some(t=>t.e<p&&t.e>=sh(p,-365)))return "Renewal";return T.some(t=>t.s<p)?d.type:"New Member";}
+  const E=T.filter(t=>t.s<B.s);if(B.s<=sh(p,-365)||(B.s<p.slice(0,4)+"-01-01"&&B.s<=sh(p,-180))||E.some(t=>t.e>=sh(B.s,-365)))return "Renewal";return E.length?d.type:"New Member";}
+function dealFixAll(){DEALS.forEach(d=>{const k=dealKind(d);if(k!==d.type){if(!d.typeWas)d.typeWas=d.type;d.type=k;}});}
+function dealsShown(){dealFixAll();const m=$("dl-month").value,ap=$("dl-ap").value,by=$("dl-by").value,ty=$("dl-type").value,tm=$("dl-terms").value,pd=$("dl-pd").value;
   /* the report is new members only (Jonna, Oct 27, 2026); renewals stay on each record under Sales and Renewals */
   return DEALS.filter(d=>d.type==="New Member"&&!d.archived&&(!m||(d.sold||"").slice(0,7)===m)&&(!ap||(d.ap||"Needs AP Update")===ap)&&(!by||d.by===by)&&(!ty||d.type===ty)&&(!tm||termsOf(d)===tm)&&(!pd||(pd==="paid")===!!dealPaid(d)))
     .sort((a,b)=>(a.sold||"").localeCompare(b.sold||"")||(a.orgName||"").localeCompare(b.orgName||""));}
@@ -6325,7 +6339,7 @@ async function tidyDeals(){
   DEALS=DEALS.filter(d=>!bad.some(b=>b.id===d.id));
   renderDeals();scheduleRefresh();
   toast(n+" commitment"+(n===1?"":"s")+" taken off the report: a term that ran backwards, or the same payment twice.");}
-function renderDeals(){
+function renderDeals(){dealFixAll();
   const ms=$("dl-month"),cur=DL_WANT||(ms.dataset.init?ms.value:TODAY.slice(0,7));DL_WANT=null;ms.textContent="";ms.appendChild(h("option",{value:""},"All Months"));dealMonths().forEach(m=>ms.appendChild(h("option",{value:m},"Committed in "+monthLabel(m))));ms.value=cur;ms.dataset.init="1";
   const bs=$("dl-by"),bc=bs.value;bs.textContent="";bs.appendChild(h("option",{value:""},"Everyone"));(SET.staff||[]).forEach(x=>bs.appendChild(h("option",{value:x},x)));bs.value=bc;
   const L=dealsShown(),tot=L.reduce((a,d)=>a+(d.price||0),0),need=L.filter(d=>(d.ap||"Needs AP Update")==="Needs AP Update").length;
