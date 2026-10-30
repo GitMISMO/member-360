@@ -3063,9 +3063,7 @@ function renderProfile(o,box){
   if(canSend()&&o.people.some(p=>p.email)){const se=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Send an Email");
     se.addEventListener("click",()=>{const nx=nextStep(o);openSend({stId:nx?nx.st.id:"r90",thru:o.thru||"",orgs:[o],pick:true});});
     box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},se));}
-  /* only on records marked with a special (TMC, Broker, ACUMA) (Jonna, Oct 28, 2026) */if(specialOf(o)&&canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
-    sq.addEventListener("click",()=>openSquarePay(o));
-    box.appendChild(h("div",{class:"btnrow",style:"margin:0 0 14px"},sq));}
+  /* only on records marked with a special (TMC, Broker, ACUMA) (Jonna, Oct 28, 2026) *//* Record a Square Payment removed: MISMO Money now takes Square payments and Member 360 reads them from its file (Jonna, Oct 30, 2026) */
   box.appendChild(h("div",{"data-part":"ctrls"}));
   box.appendChild(h("div",{"data-part":"reasons"}));
   /* the two the team uses every day sit at the top: everything else is reference */
@@ -5226,6 +5224,7 @@ async function iifNewDone(id){if(blocked())return;const P=Object.assign({items:[
   IFN=P;iifNewRender();try{await db.doc("aptify/iifnew").set(P);toast("Marked done.");}catch(e){onWriteErr(e);}}
 function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textContent="";box.hidden=false;
   const P=IFN||{},D=P.done||{};
+  try{sqRender(box);}catch(e){console.error(e);}
   /* IIF members only: a lender, a company on the IIF list, or one in the InvFee Member Contacts export. Members who paid their own dues (Sole and the like) are in the planner's Welcome New Members list instead (Jonna, Oct 30, 2026) */
   const isIif=x=>{const o=x.o;return !!((x.cid&&(P.contacts||{})[x.cid])||(o&&(o.type==="Lender"||o.iif)));};
   const L=(P.items||[]).filter(x=>!D[x.id]).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
@@ -5246,6 +5245,22 @@ function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textConte
     else lines.push(h("div",{class:"act-d"},h("span",{class:"act-s warn",style:"margin-left:0;margin-right:6px"},"No contacts"),"Neither Aptify nor Member 360 has a contact for them yet."));
     const done=h("button",{type:"button",class:"btn ghost",disabled:dis},"Done");done.addEventListener("click",()=>iifNewDone(x.id));
     box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(x.at)),h("div",{class:"act-m"},...lines),h("div",{class:"act-a"},done)));});}
+/* Square payments now come from MISMO Money (Jonna, Oct 30, 2026): an order in its paid file whose payment type, source or
+   line says Square is a special (TMC, Broker, ACUMA) paid outside the Financial System. Member 360 sets the special from it and
+   lists the company under "Paid by Square: Set Up in Aptify" until the weekly Aptify upload shows their membership. */
+function sqItems(o){return fsItems(o).filter(i=>i.sq);}
+function sqSpecial(o){const L=sqItems(o).filter(i=>i.sp).sort((a,b)=>String(b.d).localeCompare(String(a.d)));return L.length?L[0].sp:"";}
+function sqWaiting(){const out=[];ORGS.forEach(o=>{if(ov(o).mergedInto)return;const L=sqItems(o).sort((a,b)=>String(b.d).localeCompare(String(a.d)));if(!L.length)return;const i=L[0];
+  if(!i.d||i.d<addDays(TODAY,-180))return;const yr=String(i.s||i.d).slice(0,4);
+  if(o.aptTerm&&o.aptTerm.e>=yr+"-12-31"&&o.aptTerm.s<=addDays(i.d,45))return;out.push({o,i});});
+  return out.sort((a,b)=>String(b.i.d).localeCompare(String(a.i.d)));}
+function sqRender(box){const L=sqWaiting();if(!L.length)return;
+  box.appendChild(h("h2",null,"Paid by Square: Set Up in Aptify"));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"MISMO Money took these special payments through Square and told the membership team. Each drops off once the weekly Aptify upload shows their membership."));
+  L.forEach(({o,i})=>{const sp=i.sp||specialOf(o);
+    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(i.d)),
+      h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),sp?h("span",{class:"act-s"},sp):null,h("span",{class:"act-s warn"},"Not in Aptify yet")),
+        h("div",{class:"act-d"},"Paid "+money(i.n)+" by Square on "+fmt(i.d)+(i.o?" · order "+i.o:""))),h("div",{class:"act-a"})));});}
 function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
   renderIIFYear();document.querySelectorAll(".iyy").forEach(e=>e.textContent=IIFY());const Y=IIFY(),inv0=Y!==String(Number(IY)-2);
   const L=iifSetFor(Y);let inv=0,paid=0;const cc={"Paid Full Amount":0,"Partial Payment Received":0,"Not Paid":0,"Paid":0};const oc={};
@@ -5284,8 +5299,7 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
     kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":"In "+n(days)+" days")));});
   const ir=$("iif-right");ir.textContent="";ir.hidden=false;
   ir.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"Planning starts in October; invoices go out in February"+(KEYSRC?". Key dates come from IIF Planning HQ.":"")));
-  if(canEmail()){const sq=h("button",{type:"button",class:"btn ghost",style:"min-width:max-content"},"Record a Square Payment");
-    sq.addEventListener("click",()=>openSquarePay(null));ir.appendChild(sq);}
+  
   const chip=$("iif-sel");chip.textContent="";chip.hidden=!IIFSEL;if(IIFSEL){chip.appendChild(h("span",null,"Showing: "+IIFSEL.label));const x=h("button",{type:"button","aria-label":"Show all lenders"},"\u00d7");x.addEventListener("click",()=>iifPick(null,"",""));chip.appendChild(x);}
   {let say;const nxk=KEYDATES.find(x=>!x[2]&&x[0]>=TODAY);
     if(inv0){let out=0,bo=0,bn=0;L.forEach(o=>{const yd=iifY(o,Y);const due=Math.max(0,yd.inv-yd.paid);if(yd.cs==="Paid Full Amount"||yd.cs==="Paid")return;out+=due;if(yd.inv>=20000&&due>0){bo+=due;bn++;}});
@@ -6666,7 +6680,7 @@ function addCommonBenefit(){
   saveSet({commonBenefits:commonBenefits().concat(["New benefit"])});
 }
 Object.defineProperty(window,"SPECIALS",{get(){return specialsList().map(x=>x.name);},configurable:true});
-function specialOf(o){const v=ov(o).special;if(v!==undefined&&v!==null&&v!=="")return v==="none"?"":v;const m=specialsList().find(x=>x.level&&x.level===o.level);return m?m.name:"";}
+function specialOf(o){const v=ov(o).special;if(v!==undefined&&v!==null&&v!=="")return v==="none"?"":v;const q=sqSpecial(o);if(q)return q;const m=specialsList().find(x=>x.level&&x.level===o.level);return m?m.name:"";}
 function fsItems(o){return ((ACT[o.k]||{}).items||[]);}
 function lendPaid(o,y){const a=ACT[o.k];const fs=a&&a.iif?(a.iif[y]||0):0;return Math.max(y===IY?iifPaid(o):0,fs);}
 /* a membership payment covers year y when it starts in y, or starts in the second half of the year before (new members get the rest of that year plus y), or is a two-year deal */
@@ -7929,6 +7943,8 @@ function mmOrders(f){if(!f)return [];if(Array.isArray(f))return f;const o=f.orde
 function mmItems(r){
   const lines=(Array.isArray(r.lines)?r.lines:[]).map(l=>({p:String(l.product||l.name||"").trim(),n:mmNum(l.amount),s:l.start||""}));
   const pays=Array.isArray(r.payments)?r.payments:[];
+  const sqOrd=/square/i.test(String(r.source||r.channel||r.via||""))||pays.some(p=>/square/i.test(String(p.type||p.method||p.via||"")))||(Array.isArray(r.lines)?r.lines:[]).some(l=>/square/i.test(String(l.description||"")));
+  const sqSp=sqOrd?((JSON.stringify(r.lines||[])+" "+String(r.special||"")).match(/TMC|Broker|ACUMA/i)||[""])[0]:"";
   const d=String(r.lastPaidOn||pays.map(p=>p.on||p.date||"").sort().pop()||r.firstPaidOn||"").slice(0,10);
   const net=r.net!=null?mmNum(r.net):lines.reduce((a,l)=>a+l.n,0);
   /* an IIF order's membership line is the level the fee unlocks, not a membership payment of its own: it becomes the
@@ -7950,7 +7966,7 @@ function mmItems(r){
     if(diff){let big=0;ns.forEach((x,i)=>{if(Math.abs(x)>Math.abs(ns[big]))big=i;});ns[big]=Math.round((ns[big]+diff)*100)/100;}
   }
   return use.map((l,i)=>{const c=mmCat(l.p),it={d,o:String(r.order==null?"":r.order).trim(),c,p:l.p.slice(0,160),n:Math.round(ns[i]*100)/100};
-    if(l.s)it.s=String(l.s).slice(0,10);if(c==="IIF"&&lvl)it.L=lvl;return it;});
+    if(l.s)it.s=String(l.s).slice(0,10);if(c==="IIF"&&lvl)it.L=lvl;if(sqOrd){it.sq=1;if(sqSp)it.sp=sqSp.toUpperCase()==="BROKER"?"Broker":sqSp.toUpperCase();}return it;});
 }
 function mmMatcher(){
   const byCid={},byName={};
