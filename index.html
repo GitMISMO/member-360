@@ -1504,6 +1504,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .trk-n{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
 .trk-note{font-size:13px;padding:6px 0;border-top:1px dashed var(--border);white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:640px){.trk-c{grid-template-columns:1fr}}
+.m360-full{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:13.5px;line-height:1.55;max-height:65vh;overflow:auto;margin:0;background:var(--surface-2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);color:var(--ink)}
 .act-list{margin-top:12px}
 .act-day{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
 .act-day:first-child{margin-top:4px}
@@ -3065,7 +3066,7 @@ function renderProfile(o,box){
   box.appendChild(sect("MISMO Connect and Downloads","dl",0));
   box.appendChild(sect("Contacts","contacts",o.people.length));
   box.appendChild(sect("Sales and Renewals","deals",null));
-  box.appendChild(sect("Membership History and Levels","mhist",o.hist.length));
+  box.appendChild(sect("Membership History and Levels","mhist",mhYears(o).length));
   box.appendChild(sect("Membership Benefits","benefits",null));
   box.appendChild(sect("Issues Log","issues",0));
   if(sampleCap)box.appendChild(sect("Draft a Personal Email","draft",null));
@@ -3482,7 +3483,19 @@ function m360NewContacts(o,m){
   saveOv(o.k,{contacts:c});
   toast("Added "+(add.length===1?"a new contact":add.length+" new contacts")+" to "+o.name+" from the email: "+add.map(x=>x.name||x.email).join(", ")+".");
   return add.length;}
-function m360TpAdded(data){const p=M360_PEND;if(!p||!data||data.org!==p.org||Date.now()-p.at>7200000)return;M360_PEND=null;m360NewContacts(BY[p.org],p.m);}
+/* the whole email, thread and all, kept beside the touchpoint in a monthly file (mailfull-YYYY-MM); the touchpoint shows only the latest message (Jonna, Oct 29, 2026) */
+function m360FullKey(at){return "mailfull-"+String(at||new Date().toISOString()).slice(0,7);}
+function m360SaveFull(tpId,text){if(!tpId||!text||!ACTV.rawDoc)return;try{ACTV.rawDoc(m360FullKey()+"/"+tpId).set({t:String(text).slice(0,40000),at:new Date().toISOString()}).catch(e=>console.error("full email",e));}catch(e){console.error("full email",e);}}
+async function m360ShowFull(t){const NL=String.fromCharCode(10);let txt="";
+  try{const t0=Date.parse(t.at||"")||Date.now();for(const k of [m360FullKey(new Date(t0).toISOString()),m360FullKey(new Date(t0+5*864e5).toISOString())]){const s=await ACTV.rawDoc(k+"/"+t.id).get();if(s&&s.exists){txt=((typeof s.data==="function"?s.data():s.data)||{}).t||"";if(txt)break;}}}catch(e){console.error("full email",e);}
+  if(!txt){const d=Object.values(M360.docs||{}).find(x=>x&&x.tp===t.id);if(d&&d.m)txt=[(d.m.fromName||d.m.from)?"From: "+(d.m.fromName||d.m.from):"",d.m.subject?"Subject: "+d.m.subject:"","",d.m.body||""].join(NL).trim();}
+  let dl=document.getElementById("p360-full");if(dl)dl.remove();
+  dl=h("dialog",{id:"p360-full",class:"p360-dlg","aria-label":"The full email"});const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
+  const head=String(t.summary||"").split(NL)[0].replace(/^Email: /,"").slice(0,140)||"Email";
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"The Full Email"),h("h2",null,head)),x));
+  dl.appendChild(h("div",{class:"p360-dlg-b"},txt?h("pre",{class:"m360-full"},txt):h("p",{class:"hint"},"The full email wasn't kept for this touchpoint. Emails logged from now on keep the whole thread.")));
+  dl.addEventListener("close",()=>dl.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}}
+function m360TpAdded(data,id){const p=M360_PEND;if(!p||!data||data.org!==p.org||Date.now()-p.at>7200000)return;M360_PEND=null;m360NewContacts(BY[p.org],p.m);if(id&&p.m&&p.m.body)m360SaveFull(id,[(p.m.fromName||p.m.from)?"From: "+(p.m.fromName||p.m.from):"",p.m.subject?"Subject: "+p.m.subject:"","",p.m.body].join(String.fromCharCode(10)).trim());}
 function p360MailFill(box,o,m){M360_PEND={org:o.k,m:m,at:Date.now()};
   const fl=box.querySelectorAll(".formgrid .fld"),g=i=>fl[i]&&fl[i].querySelector("input,select,textarea");
   const date=g(0),type=g(1),who=g(3),sum=g(5);
@@ -3840,13 +3853,13 @@ async function m360Run(){
     const r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};M360.docs=docs;
     const mine=Object.keys(docs).filter(id=>{const d=docs[id];return d&&!d.st&&m360Who(d)===me;});
     if(mine.length&&r.sha){
-      const logged=[];
+      const logged=[],FULL={};
       mine.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
-        try{m.all=m360Addrs(m360Text(d.html)).slice(0,80);}catch(e){}const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
+        try{FULL[id]=m360Text(d.html);m.all=m360Addrs(FULL[id]).slice(0,80);}catch(e){}const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
         if(c.length===1){d.st="logged";d.org=c[0].k;logged.push([c[0],m,id]);}else{d.st="need";d.cands=c.slice(0,6).map(o=>o.k);}});
       await m360Rel({content:{docs},sha:r.sha});
       let ok=0;const fail=[];
-      const tpIds={};for(const [o,m,id] of logged){try{const ref=await db.collection("touchpoints").add(m360Doc(o,m));try{m360NewContacts(o,m);}catch(e){console.error("contacts",e);}if(ref&&ref.id)tpIds[id]=ref.id;ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}if(Object.keys(tpIds).length){try{const r3=await m360Rel(null),d3=r3.data.docs;for(const id in tpIds){if(d3[id])d3[id].tp=tpIds[id];}await m360Rel({content:{docs:d3},sha:r3.sha});M360.docs=d3;}catch(e){}}
+      const tpIds={};for(const [o,m,id] of logged){try{const ref=await db.collection("touchpoints").add(m360Doc(o,m));try{m360NewContacts(o,m);}catch(e){console.error("contacts",e);}try{m360SaveFull(ref&&ref.id,FULL[id]);}catch(e){}if(ref&&ref.id)tpIds[id]=ref.id;ok++;}catch(e){console.error("mail-in save",e);fail.push(id);}}if(Object.keys(tpIds).length){try{const r3=await m360Rel(null),d3=r3.data.docs;for(const id in tpIds){if(d3[id])d3[id].tp=tpIds[id];}await m360Rel({content:{docs:d3},sha:r3.sha});M360.docs=d3;}catch(e){}}
       if(fail.length){try{const r2=await m360Rel(null),d2=r2.data.docs;fail.forEach(id=>{if(d2[id]){d2[id].st="need";d2[id].cands=[docs[id].org];}});await m360Rel({content:{docs:d2},sha:r2.sha});M360.docs=d2;}catch(e){}}
       const need=mine.length-ok;
       if(ok)toast(ok===1?"Your forwarded email is logged on "+logged[0][0].name+".":ok+" forwarded emails are logged.");
@@ -3924,7 +3937,7 @@ function actHook(D){
   const col=D.collection,doc=D.doc;ACTV.col=c=>col.call(D,c);ACTV.rawDoc=p=>doc.call(D,p);
   D.doc=function(p){return actWrapDoc(doc.call(D,p),String(p));};
   D.collection=function(c){const r=col.call(D,c),a=r.add,dd=r.doc;
-    if(typeof a==="function")r.add=function(data){return a.call(r,data).then(res=>{try{if(c==="touchpoints")m360TpAdded(data);}catch(e){console.error("contacts",e);}try{actNote(c,res&&res.id,"add",data,null);}catch(e){console.error("activity",e);}return res;});};
+    if(typeof a==="function")r.add=function(data){return a.call(r,data).then(res=>{try{if(c==="touchpoints")m360TpAdded(data,res&&res.id);}catch(e){console.error("contacts",e);}try{actNote(c,res&&res.id,"add",data,null);}catch(e){console.error("activity",e);}return res;});};
     if(typeof dd==="function")r.doc=function(id){const x=dd.call(r,id);return actWrapDoc(x,x.path||(c+"/"+id));};
     return r;};
   setTimeout(actSub,0);
@@ -4571,26 +4584,25 @@ function levelLabel(o){const L={"Chair":"Chair Champion","Executive":"Executive 
    A year staff confirm from Aptify (override "since") always wins. */
 const RENEW_RX=/\brenew(al|als|ed|ing)?\b|\bdues\b|membership (payment|invoice|fee)/i;
 const LVCHG_RX=/\b(upgrad\w*|downgrad\w*|mov\w* (from|to|down|up)|chang\w* (from|to)|switch\w* (from|to))\b[^.]{0,60}\b(chair(man)?|executive|associate|corporate|sole|solo|individual)\b/i;
+/* past membership years come from Aptify's membership terms (and, for lenders, IIF payments in the Financial System), never the Smartsheet tracker (Jonna, Oct 29, 2026) */
+const APT_LVRANK={Chair:5,Executive:4,Associate:3,Corporate:2,Sole:1};
+function aptYears(o){const out={},top=+TODAY.slice(0,4)+1;(o.aptAll||[]).forEach(t=>{const a=+String(t.s).slice(0,4),b=+String(t.e).slice(0,4);if(!a||!b)return;for(let y=a;y<=b&&y<=top;y++){const k=String(y);if(!out[k]||(APT_LVRANK[t.lv]||0)>(APT_LVRANK[out[k].lv]||0))out[k]={lv:t.lv,src:"Aptify",x:!!t.x};}});return out;}
+function memberYear(o,y){y=String(y);const a=aptYears(o)[y];if(a)return a;if(o.type==="Lender"){const p=lendPaid(o,y);if(p>=1000)return {lv:"",src:"IIF",paid:p};}return null;}
+function mhYears(o){const ys=new Set(Object.keys(aptYears(o)));const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif)Object.keys(a.iif).forEach(y=>{if(lendPaid(o,y)>=1000)ys.add(String(y));});return [...ys].sort().reverse().map(y=>({y:y,m:memberYear(o,y)})).filter(x=>x.m);}
 const MEMST_RX=/paid|invfee payer|^free|champion member/i;
-function wasMember(o){return o.life==="Active"||(o.voted||[]).length>0||o.hist.some(y=>/paid|lost|free|renew|payer|champion member/i.test(y.status||""));}
+function wasMember(o){return o.life==="Active"||(o.voted||[]).length>0||mhYears(o).length>0;}
 function sinceInfo(o){
   const c=ov(o).since;if(c&&/^\d{4}$/.test(c))return {y:c,confirmed:true,src:"Confirmed in Aptify"+(ov(o).sinceBy?" by "+ov(o).sinceBy:"")};
   const ev=[];
-  if(joinedOf(o))ev.push({y:joinedOf(o).slice(0,4),src:"Joined Date on file ("+fmt(joinedOf(o))+")"});
-  if(o.joined0)ev.push({y:o.joined0.slice(0,4),src:"Joined Date in the archived records ("+fmt(o.joined0)+")"});
-  if(o.aptStart)ev.push({y:o.aptStart.slice(0,4),src:"Aptify membership term began "+fmt(o.aptStart)});
+  if(ov(o).joined)ev.push({y:ov(o).joined.slice(0,4),src:"Last Joined Date set by staff ("+fmt(ov(o).joined)+")"});
+  const ay=Object.keys(aptYears(o)).sort();if(ay.length)ev.push({y:ay[0],src:"Aptify membership terms start in "+ay[0],apt:true});
+  if(o.aptStart)ev.push({y:o.aptStart.slice(0,4),src:"Aptify membership term began "+fmt(o.aptStart),apt:true});
+  const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif){const py=Object.keys(a.iif).filter(y=>lendPaid(o,y)>=1000).sort();if(py.length)ev.push({y:py[0],src:"IIF paid in "+py[0]+" (Financial System)"});}
   (o.voted||[]).forEach(y=>ev.push({y:String(y),src:"Voted in MISMO's "+y+" election (archived records)"}));
-  o.hist.forEach(y=>{const st=y.status||"",arc=y.a?" (archived records)":"";
-    if(MEMST_RX.test(st))ev.push({y:String(y.y),src:y.y+" status: "+st+arc});
-    if(/paid.*renew/i.test(st))ev.push({y:String(+y.y-1),src:"Renewed for "+y.y+", so a member in "+(+y.y-1)+arc});});
-  if(wasMember(o))o.notes.forEach(n=>{if(!n.d)return;if(RENEW_RX.test(n.t||""))ev.push({y:n.d.slice(0,4),src:"Note about renewal or dues, "+fmt(n.d.slice(0,10))});else if(LVCHG_RX.test(n.t||""))ev.push({y:n.d.slice(0,4),src:"Note about a level change, "+fmt(n.d.slice(0,10))});});
   if(!ev.length)return {y:"",confirmed:false,src:""};
-  ev.sort((a,b)=>a.y.localeCompare(b.y));
+  ev.sort((x,z)=>x.y.localeCompare(z.y));
   const y=ev[0].y;
-  /* Our records cover every member from 2021 on (archived trackers); before that only election votes (2017+) and 2020 Champion levels.
-     So a first year after 2021, or a year marked "New", is a real start. 2021 or earlier could go back further: check Aptify. */
-  const sure=y>"2021"||o.hist.some(h=>String(h.y)===y&&/\bnew\b/i.test(h.status||""));
-  return {y,confirmed:false,sure,src:ev[0].src,later:!!(joinedOf(o)&&y<joinedOf(o).slice(0,4))};
+  return {y,confirmed:false,sure:!!ev[0].apt,src:ev[0].src,later:false};
 }
 function sinceYear(o){return sinceInfo(o).y;}
 function levelNotes(o){return o.notes.filter(n=>LVCHG_RX.test(n.t||"")).map(n=>({d:(n.d||"").slice(0,10),t:(n.t||"").replace(/\s+/g," ").trim()}));}
@@ -4916,12 +4928,12 @@ function fillMhist(o,box){
     h("div",{class:"hint"},si.confirmed?si.src+".":si.y?(si.sure?"From our records: "+si.y+" · "+si.src+". Enter a year here only if Aptify says otherwise.":"Earliest in our records: "+si.y+" · "+si.src+". They may have joined earlier; check Aptify and enter the year here."):"No membership evidence yet. Enter the original join year from Aptify.")),
     h("div",{class:"fld"},h("label",null,"Last Joined Date"),jd,h("div",{class:"hint"},jdHint))));
   const LN=levelNotes(o);
-  if(!o.hist.length&&!LN.length){box.appendChild(h("div",{class:"hint"},"No membership years on record."));return;}
-  if(!o.hist.length){fillLevelNotes(box,LN);return;}
-  const t=h("table",{class:"tbl"});
-  t.appendChild(h("thead",null,h("tr",null,["Year","Status","Level","Source"].map(x=>h("th",null,x)))));
-  const tb=h("tbody");o.hist.forEach(y=>tb.appendChild(h("tr",null,h("td",{class:"num"},y.y),h("td",null,y.status||"—"),h("td",null,y.level||"—"),h("td",{class:"muted nw"},y.a?"Archived Records":"Membership Records"))));
-  t.appendChild(tb);box.appendChild(h("div",{class:"tblwrap"},t));
+  const MH=mhYears(o);
+  if(!MH.length&&!LN.length){box.appendChild(h("div",{class:"hint"},"No membership years in Aptify or the Financial System."));return;}
+  if(MH.length){const t=h("table",{class:"tbl"});
+  t.appendChild(h("thead",null,h("tr",null,["Year","Membership","Level","Source"].map(x=>h("th",null,x)))));
+  const tb=h("tbody");MH.forEach(r=>tb.appendChild(h("tr",null,h("td",{class:"num"},r.y),h("td",null,statusIn(o,r.y)||"—"),h("td",null,r.m.lv||"—"),h("td",{class:"muted nw"},r.m.src==="IIF"?"Financial System (IIF)":"Aptify"))));
+  t.appendChild(tb);box.appendChild(h("div",{class:"tblwrap"},t));}
   if(o.lossReason)box.appendChild(h("div",{class:"hint",style:"margin-top:8px"},"Loss reason on file: "+o.lossReason));
   if((o.voted||[]).length)box.appendChild(h("div",{class:"hint",style:"margin-top:8px"},"Voted in MISMO elections: "+o.voted.join(", ")+"."));
   if(LN.length)fillLevelNotes(box,LN);
@@ -4985,7 +4997,7 @@ function fillHistory(o,box){
         h("div",null,h("span",{class:"tag"},t.type),h("span",{class:"tag"},t.topic),t.sentiment&&t.sentiment!=="Neutral"?h("span",{class:"tag"},t.sentiment):null),
         p360HistTxt(t),
         t.next?h("div",{class:"nx"},(t.next.done?"✓ Done: ":"Next: ")+t.next.text+(t.next.owner?" · "+t.next.owner:"")+(t.next.due?" · due "+fmtS(t.next.due):"")):null,
-        h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null))));}
+        h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null,t.type==="Email"&&(t.via==="forward"||String(t.at||"")>="2026-10-29")?h("button",{type:"button",class:"p360-link hi-rm",title:"See the whole email and the thread",onclick:()=>m360ShowFull(t)},"View Full Email"):null))));}
     else if(i.kind==="auto"){list.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
     else{const x=i.x;list.appendChild(h("div",{class:"hi"},h("div",{class:"d"},x.d?fmt(x.d):"Undated"),h("div",null,
         h("div",null,h("span",{class:"tag"},"Earlier Note"),(x.tags||[]).map(t=>h("span",{class:"tag"},t))),
@@ -6447,12 +6459,11 @@ function memKind(o){const s=curStatus(o);if(/^free/i.test(s))return "Free";if(o.
 /* ---------- Membership Stats year: This Year, Last Year, 2 Years Ago ---------- */
 let STYI=0;
 function STY(){return String(RY-1-STYI);}
-function statusIn(o,y){y=String(y);const hs=o.hist.find(x=>String(x.y)===y&&!x.a)||o.hist.find(x=>String(x.y)===y);return hs?hs.status||"":"";}
+function statusIn(o,y){y=String(y);const m=memberYear(o,y);if(m)return m.src==="IIF"?"IIF paid "+money(m.paid):"Aptify term"+(m.lv?" · "+m.lv:"");if(y===String(RY-1)&&o.life==="Active")return memKind(o)==="Free"?"Complimentary":"Current member";return "";}
 /* this year = a current member in the tracker; earlier years = a paid, free or Champion status for that year */
-function memberIn(o,y){if(y===String(RY-1))return o.life==="Active";const s=statusIn(o,y);return /paid|^free|invfee payer|champion member/i.test(s)&&!/lost|potential|not renewed/i.test(s);}
-function kindIn(o,y){const s=statusIn(o,y);if(/^free/i.test(s))return "Free";if(y===String(RY-1))return memKind(o);
-  if(/non-lender|\(m\)/i.test(s))return "Non-Lender";if(/lender|invfee/i.test(s))return "Lender";return o.type==="Lender"?"Lender":o.type==="Non-Lender"?"Non-Lender":"Type Not Recorded";}
-function levelIn(o,y){if(y===String(RY-1))return o.level||"";const hs=o.hist.find(x=>String(x.y)===String(y)&&x.level);return hs?hs.level:"";}
+function memberIn(o,y){y=String(y);if(y===String(RY-1))return o.life==="Active";return !!memberYear(o,y);}
+function kindIn(o,y){if(String(y)===String(RY-1))return memKind(o);return o.type==="Lender"?"Lender":o.type==="Non-Lender"?"Non-Lender":"Type Not Recorded";}
+function levelIn(o,y){if(String(y)===String(RY-1))return o.level||"";const m=memberYear(o,y);return m&&m.lv||"";}
 function renderStYear(){const box=$("st-year");box.textContent="";const Y0=RY-1;
   [["This Year",0],["Last Year",1],["2 Years Ago",2]].forEach(([l,i])=>{const b=h("button",{type:"button",class:STYI===i?"on":null,"aria-pressed":String(STYI===i)},l,h("span",{class:"yrn"}," "+(Y0-i)));
     b.addEventListener("click",()=>{if(STYI===i)return;STYI=i;STSEL=null;$("st-listpanel").hidden=true;renderStats();});box.appendChild(b);});
@@ -7371,7 +7382,7 @@ let APT=null,APTR={noRecord:[],noTerm:[],changed:{}};
 function aptN(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]/g,"");}
 function applyAptify(){
   const R={noRecord:[],noTerm:[],changed:{level:0,thru:0,life:0,joined:0,cu:0,addr:0}};
-  ORGS.forEach(o=>{if(o._apt0){Object.assign(o,o._apt0);}delete o.aptStart;delete o.aptTerm;});
+  ORGS.forEach(o=>{if(o._apt0){Object.assign(o,o._apt0);}delete o.aptStart;delete o.aptTerm;delete o.aptAll;});
   if(!APT||!APT.terms){certMatch(R);APTR=R;return;}
   const byCid={},byName={};
   ORGS.forEach(o=>{if(o.cid&&!o.mm)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o);
@@ -7391,7 +7402,7 @@ function applyAptify(){
   const set=(o,f,v)=>{if(o[f]===v)return;if(!o._apt0)o._apt0={level:o.level,thru:o.thru,life:o.life,joined:o.joined,cu:o.cu,addr:o.addr};
     if(!(f in o._apt0))o._apt0[f]=o[f];o[f]=v;R.changed[f]=(R.changed[f]||0)+1;};
   const seen=new Set();
-  const take=(o,ts)=>{let cur=ts.slice().sort((a,b)=>a.e.localeCompare(b.e)).pop(),first=ts.slice().sort((a,b)=>a.s.localeCompare(b.s))[0];
+  const take=(o,ts)=>{o.aptAll=(o.aptAll||[]).concat(ts);ts=ts.filter(t=>!t.x);if(!ts.length)return;let cur=ts.slice().sort((a,b)=>a.e.localeCompare(b.e)).pop(),first=ts.slice().sort((a,b)=>a.s.localeCompare(b.s))[0];
     /* a record that carries two Aptify companies (a merge) keeps the term that ends last and the start that comes first */
     if(o.aptTerm&&o.aptTerm.e>cur.e)cur=o.aptTerm;if(o.aptStart&&o.aptStart<first.s)first=Object.assign({},first,{s:o.aptStart});
     seen.add(o.k);o.aptTerm=cur;o.aptStart=first.s;
@@ -7401,12 +7412,12 @@ function applyAptify(){
     if(cur.e>=TODAY&&o.life!=="Active")set(o,"life","Active");
     if(first.s&&o.joined!==first.s)set(o,"joined",first.s);};
   Object.keys(APT.terms).forEach(cid=>{const ts=APT.terms[cid].filter(t=>t.lv!=="Sole");if(!ts.length)return;
-    const am=(ALIAS.map||{})[ts[0].co];const o=orgFor(cid)||(am&&BY[am]&&!BY[am].mm?BY[am]:null);if(o)take(o,ts);else R.noRecord.push({name:ts[0].co||("Company ID "+cid),note:"Company ID "+cid+" · "+ts[ts.length-1].lv+" · ends "+fmt(ts[ts.length-1].e)});});
+    const am=(ALIAS.map||{})[ts[0].co];const o=orgFor(cid)||(am&&BY[am]&&!BY[am].mm?BY[am]:null);if(o)take(o,ts);else if(ts.some(t=>!t.x))R.noRecord.push({name:ts[0].co||("Company ID "+cid),note:"Company ID "+cid+" · "+ts[ts.length-1].lv+" · ends "+fmt(ts[ts.length-1].e)});});
   const sole={};Object.keys(APT.terms).forEach(cid=>APT.terms[cid].filter(t=>t.lv==="Sole").forEach(t=>(sole[aptN(t.who)]=sole[aptN(t.who)]||[]).push(t)));
   (APT.sole||[]).forEach(t=>(sole[aptN(t.who)]=sole[aptN(t.who)]||[]).push(t));
   Object.keys(ALIAS.map||{}).forEach(nm=>{const k=ALIAS.map[nm];if(BY[k]&&!BY[k].mm){const n=aptN(nm);if(n&&!(byName[n]||[]).includes(BY[k]))(byName[n]=byName[n]||[]).push(BY[k]);}});
   Object.keys(sole).forEach(n=>{const l=byName[n]||[];const ts=sole[n];
-    if(l.length===1)take(l[0],ts);else R.noRecord.push({name:ts[0].who,note:"Sole membership · ends "+fmt(ts[ts.length-1].e)+(l.length>1?" · more than one record has this name":"")});});
+    if(l.length===1)take(l[0],ts);else if(ts.some(t=>!t.x))R.noRecord.push({name:ts[0].who,note:"Sole membership · ends "+fmt(ts[ts.length-1].e)+(l.length>1?" · more than one record has this name":"")});});
   Object.keys(APT.companies||{}).forEach(cid=>{const c=APT.companies[cid],o=orgFor(cid);if(!o)return;
     /* Aptify can set this flag but never clear it: its company type calls plenty
        of real credit unions an Independent Mortgage Bank, so a type that doesn't
@@ -7497,8 +7508,8 @@ async function aptRead(files){
   const T={},S=[];let kept=0,skipped=0;
   (terms||[]).forEach(r=>{const lv=APT_LV[String(r["Product"]).trim()];const s=aptDate(r["Start Date"]),e=aptDate(r["End Date"]);
     const who=String(r["Subscriber"]||"").trim(),co=String(r["SubscriberCompany"]||"").trim(),cid=String(r["Subscriber Company"]||"").replace(/\.0+$/,"").trim();
-    if(!lv||String(r["Status"]).trim()!=="1"||!s||!e||s>e||/\btest/i.test(who+" "+co)||/^(mismo|mortgage bankers association)$/i.test(co)){skipped++;return;}
-    const t={lv,s,e,who:/not specified/i.test(who)?"":who,co};kept++;
+    const ina=String(r["Status"]).trim()!=="1";if(!lv||!s||!e||s>e||/\btest/i.test(who+" "+co)||/^(mismo|mortgage bankers association)$/i.test(co)){skipped++;return;}
+    const t={lv,s,e,who:/not specified/i.test(who)?"":who,co};if(ina)t.x=1;else kept++;
     if(cid)(T[cid]=T[cid]||[]).push(t);else if(lv==="Sole"&&t.who)S.push(t);else skipped++;});
   const C={};(comp||[]).forEach(r=>{const cid=String(r["ID"]||"").replace(/\.0+$/,"").trim();if(!cid)return;
     C[cid]={n:String(r["Name"]||"").trim(),ct:String(r["CompanyType"]||"").trim(),city:String(r["City"]||"").trim(),st:String(r["State"]||"").trim()};});
