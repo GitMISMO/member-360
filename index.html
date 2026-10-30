@@ -1485,6 +1485,25 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .ty-i{display:flex;align-items:baseline;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px;min-width:0}
 .ty-i .hint{margin:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ty-x{margin-left:auto;font-size:12px;white-space:nowrap}
+/* Weekly Tracker Update (Jonna, Oct 29, 2026) */
+.trk{margin-top:28px;padding:18px 20px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.trk-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.trk-h h2{font-size:17px;margin:0}
+.trk-drop{border:2px dashed var(--border-strong);border-radius:10px;padding:22px;text-align:center;color:var(--ink-2);background:var(--surface-2)}
+.trk-drop.over{border-color:var(--sky);background:var(--surface)}
+.trk-msg{margin-top:8px}
+.trk-sum{margin:6px 0 12px;font-size:14px}
+.trk-list{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.trk-i{border-top:1px solid var(--border)}
+.trk-i:first-child{border-top:0}
+.trk-i summary{padding:9px 12px;cursor:pointer;font-size:14px}
+.trk-b{padding:4px 12px 12px 24px}
+.trk-c{display:grid;grid-template-columns:170px minmax(0,1fr) 18px minmax(0,1fr);gap:8px;font-size:13px;padding:3px 0;align-items:start}
+.trk-f{color:var(--ink-3)}
+.trk-o{color:var(--ink-3);text-decoration:line-through;overflow-wrap:anywhere}
+.trk-n{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.trk-note{font-size:13px;padding:6px 0;border-top:1px dashed var(--border);white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:640px){.trk-c{grid-template-columns:1fr}}
 .act-list{margin-top:12px}
 .act-day{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
 .act-day:first-child{margin-top:4px}
@@ -4059,6 +4078,149 @@ function renderActivity(){
   if(rows.length>ACTV.lim){const mb=h("button",{type:"button",class:"btn ghost act-more"},"Show "+Math.min(100,rows.length-ACTV.lim)+" More");mb.addEventListener("click",()=>{ACTV.lim+=100;renderActivity();});box.appendChild(mb);}
   if(hid||ACTV.showHidden){const tg=h("button",{type:"button",class:"p360-link act-hidl"},ACTV.showHidden?"Hide what you took off your list":"Show "+hid+" item"+(hid===1?"":"s")+" you took off your list");tg.addEventListener("click",()=>{ACTV.showHidden=!ACTV.showHidden;renderActivity();});box.appendChild(tg);}
 }
+/* ---------- Weekly Tracker Update: drop the Smartsheet Membership Tracker export on the Activity page; Member 360 lists what changed since
+   the last tracker it saw and applies it after a look. Changes are kept in data/trkpatch (on top of the Sept 26 tracker in orgsdata), so
+   Aptify and anything set by hand in Member 360 still win, as before. Nothing is deleted. (Jonna, Oct 29, 2026) ---------- */
+const TRK={base:{},meta:null,loaded:false,url:"https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/member-360/data/trkpatch",pending:null};
+const TRK_ROLES=["Primary","Alternate","Billing","Marketing"];
+const TRK_COL={Primary:"MISMO PRIMARY CONTACT (MPC)",Alternate:"MISMO ALTERNATE CONTACT (MAC)",Billing:"MISMO BILLING CONTACT (MBC)",Marketing:"MISMO MARKETING CONTACT (MMC)"};
+const TRK_PRE={Primary:"MPC",Alternate:"MAC",Billing:"MBC",Marketing:"MMC"};
+const TRK_LABEL={name:"Name",sector:"Industry sector",market:"Commercial/Residential",cu:"Credit union member",joined:"Joined date",thru:"Thru date",created:"Created on",current:"Current member",s27:"2027 status",l27:"2027 level",sp27:"2027 special",s26:"2026 status",l26:"2026 level",sp26:"2026 special",s25:"2025 status",l25:"2025 level",twoYear:"2-year renewal",viaForm:"Applied through the form",vips:"VIPs",advisors:"Senior advisors",cPrimary:"Primary contact",cAlternate:"Alternate contact",cBilling:"Billing contact",cMarketing:"Marketing contact"};
+function trkS(v){return v==null?"":String(v).trim();}
+function trkYes(v){return v===true||/^(true|yes|y|x|1)$/i.test(trkS(v));}
+function trkDate(v){if(!v)return "";const d=v instanceof Date?v:new Date(v);if(isNaN(d))return trkS(v);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+const TRK_SPLIT=new RegExp("[;,: "+String.fromCharCode(9,10,13)+"]+"),TRK_NSPLIT=new RegExp("[;"+String.fromCharCode(10,13)+"]+");
+function trkEmails(v){return trkS(v).split(TRK_SPLIT).map(x=>x.trim().toLowerCase()).filter(x=>x.indexOf("@")>0).sort();}
+function trkNames(v){return trkS(v).split(TRK_NSPLIT).map(x=>x.trim()).filter(Boolean).sort();}
+function trkSp(v){v=trkS(v);return /tmc/i.test(v)?"TMC":/broker/i.test(v)?"Broker":/acuma/i.test(v)?"ACUMA":"";}
+function trkNorm(t){return String(t||"").replace(/[^a-z0-9]/gi,"").toLowerCase().slice(0,60);}
+function trkTags(t){const s=String(t||""),out=[];if(/invoice/i.test(s))out.push("Invoice");if(/iif|invfee/i.test(s))out.push("IIF");if(/paid|payment|check|ach|refund/i.test(s))out.push("Payment");if(/renew/i.test(s))out.push("Renewal");if(/lost|not renewing|cancel/i.test(s))out.push("Lost");if(/meet|call|summit|met with/i.test(s))out.push("Meeting");if(/level|upgrade|downgrade|champ/i.test(s))out.push("Level Change");return out;}
+/* one tracker row, in the fields Member 360 keeps */
+function trkFromRow(r,notes){const N={name:trkS(r["Member Name"]),cid:r["Company ID"]?String(Math.round(Number(r["Company ID"]))):"",sector:trkS(r["Industry Sector"]),market:trkS(r["Commercial/Residential"]),cu:trkYes(r["2026 Credit Union Member"]),
+  joined:trkDate(r["Joined Date"]),thru:trkDate(r["Thru Date"]),created:trkDate(r["Created on"]),current:trkYes(r["Current Member"]),
+  s27:trkS(r["2027 Membership Status"]),l27:trkS(r["2027 Membership Level"]),sp27:trkSp(r["2027 Special Memberships (BROKER, ACUMA, TMC)"]),
+  s26:trkS(r["2026 Membership Status"]),l26:trkS(r["2026 Membership Level"]),sp26:trkSp(r["2026 Special Memberships (BROKER, ACUMA, TMC)"]),
+  s25:trkS(r["2025 Membership Status"]),l25:trkS(r["2025 Membership Level"]),twoYear:trkYes(r["2025/6 2-Year Membership Renewal"]),viaForm:trkYes(r["Application Submitted Through Form"]),
+  vips:trkEmails(r["VIPs"]).join("; "),advisors:trkNames(r["Senior Advisor(s)"]).join("; "),names:{}};
+  TRK_ROLES.forEach(role=>{N["c"+role]=trkEmails(r[TRK_COL[role]])[0]||"";const p=TRK_PRE[role];N.names[role]={name:trkS(r[p+" Name"]),title:trkS(r[p+" Title"]),phone:trkS(r[p+" Phone"])};});
+  N.notes=notes||[];return N;}
+/* the same fields from a record as the last tracker left it */
+function trkFromOrg(o){const H={};(o.hist||[]).filter(x=>!x.a).forEach(x=>{H[x.y]=x;});const lv=x=>{const m=/^(.*?) [(](TMC|Broker|ACUMA)[)]$/.exec(x||"");return m?[m[1],m[2]]:[x||"",""];};
+  const N={name:o.name||"",cid:o.cid||"",sector:o.sector||"",market:o.market||"",cu:!!o.cu,joined:o.joined0||o.joined||"",thru:o.thru||"",created:o.created||"",current:o.life==="Active",
+  s27:(H["2027"]||{}).status||"",l27:lv((H["2027"]||{}).level)[0],sp27:lv((H["2027"]||{}).level)[1],s26:(H["2026"]||{}).status||"",l26:lv((H["2026"]||{}).level)[0],sp26:lv((H["2026"]||{}).level)[1],
+  s25:(H["2025"]||{}).status||"",l25:lv((H["2025"]||{}).level)[0],twoYear:!!o.twoYear,viaForm:!!o.viaForm,
+  vips:(o.people||[]).filter(p=>(p.roles||[]).includes("VIP")).map(p=>String(p.email||"").toLowerCase()).filter(Boolean).sort().join("; "),advisors:(o.advisors||[]).slice().sort().join("; ")};
+  TRK_ROLES.forEach(role=>{const p=(o.people||[]).find(p=>(p.roles||[]).includes(role));N["c"+role]=p?String(p.email||"").toLowerCase():"";});
+  N.notes=new Set((o.notes||[]).map(n=>trkNorm(n.t)));return N;}
+/* put a stored change onto a record */
+function trkApplyOne(o,f){
+  ["name","sector","market","cu","twoYear","viaForm"].forEach(k=>{if(k in f)o[k]=f[k];});
+  if("joined" in f){o.joined=f.joined;o.joined0=f.joined;}if("thru" in f)o.thru=f.thru;if("created" in f)o.created=f.created;
+  if("current" in f)o.life=f.current?"Active":(o.life==="Active"?"Former":o.life);
+  o.hist=o.hist||[];
+  [["2027","s27","l27","sp27"],["2026","s26","l26","sp26"],["2025","s25","l25",""]].forEach(([y,s,l,sp])=>{if(!(s in f)&&!(l in f)&&!(sp&&sp in f))return;
+    let h=o.hist.find(x=>String(x.y)===y&&!x.a);if(!h){h={y:y,status:"",level:""};o.hist.unshift(h);}
+    const cur=/^(.*?) [(](TMC|Broker|ACUMA)[)]$/.exec(h.level||"");let L=cur?cur[1]:(h.level||""),SP=cur?cur[2]:"";
+    if(s in f)h.status=f[s];if(l in f)L=f[l];if(sp&&sp in f)SP=f[sp];h.level=L?(L+(SP?" ("+SP+")":"")):"";});
+  if("l26" in f||"sp26" in f){const h=o.hist.find(x=>String(x.y)==="2026"&&!x.a);if(h&&h.level)o.level=h.level;}
+  if("s27" in f){const s=f.s27;if(/^not renewed/i.test(s))o.stage="Not Renewed Yet";else if(/^(paid|2 yr)/i.test(s))o.stage="Renewed";else if(/^lost/i.test(s))o.stage="Lost";}
+  const st=[f.s27,f.s26].filter(Boolean).join(" ");if(/[(]non.?lender[)]/i.test(st))o.type="Non-Lender";else if(/[(]lender[)]/i.test(st))o.type="Lender";
+  o.people=o.people||[];
+  const person=e=>{let p=o.people.find(x=>String(x.email||"").toLowerCase()===e);if(!p){p={email:e,name:"",title:"",phone:"",roles:[]};o.people.push(p);}p.roles=p.roles||[];return p;};
+  TRK_ROLES.forEach(role=>{if(!("c"+role in f))return;o.people.forEach(p=>{p.roles=(p.roles||[]).filter(r=>r!==role);});const e=f["c"+role];if(e){const p=person(e);if(!p.roles.includes(role))p.roles.push(role);}});
+  if(f.names)TRK_ROLES.forEach(role=>{const nm=f.names[role];if(!nm)return;const p=o.people.find(x=>(x.roles||[]).includes(role));if(!p)return;if(nm.name&&!p.name)p.name=nm.name;if(nm.title&&!p.title)p.title=nm.title;if(nm.phone&&!p.phone)p.phone=nm.phone;});
+  if("vips" in f){o.people.forEach(p=>{p.roles=(p.roles||[]).filter(r=>r!=="VIP");});String(f.vips||"").split("; ").filter(Boolean).forEach(e=>{const p=person(e);if(!p.roles.includes("VIP"))p.roles.push("VIP");});}
+  if("advisors" in f)o.advisors=String(f.advisors||"").split("; ").filter(Boolean);
+}
+function trkNewOrg(k,f){const life=f.current?"Active":"Prospect";const st=[f.s27,f.s26].filter(Boolean).join(" ");
+  return {k:k,cid:f.cid||"",row:0,name:f.name||"New Company",sector:"",market:"",cu:false,addr:"",joined:"",thru:"",created:"",life:life,stage:"",type:/[(]non.?lender[)]/i.test(st)?"Non-Lender":(/[(]lender[)]/i.test(st)?"Lender":""),level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,people:[],advisors:[],hand:[],notes:[],dupId:false,noId:!f.cid,iif:null,sector5:"",sectorSrc:"",fromTracker:true};}
+/* at load: the stored changes go onto the Sept 26 tracker, before Aptify and everything set here */
+async function trkLoad(orgs){
+  TRK.loaded=true;let P=null;
+  try{if(window.ResourcesSession&&ResourcesSession.token&&ResourcesSession.token()){const r=await fetch(TRK.url,{headers:{Authorization:"Bearer "+ResourcesSession.token()},cache:"no-store"});if(r.ok){const j=await r.json();P=j&&j.data||null;}}}catch(e){console.error("tracker",e);}
+  const map={};orgs.forEach(o=>{map[o.k]=o;});
+  if(P&&P.orgs)Object.keys(P.orgs).forEach(k=>{const e=P.orgs[k];let o=map[k];if(!o&&e.isNew){o=trkNewOrg(k,e.f||{});orgs.push(o);map[k]=o;}if(!o)return;
+    trkApplyOne(o,e.f||{});if(e.notes&&e.notes.length){o.notes=(e.notes.concat(o.notes||[])).sort((a,b)=>String(b.d).localeCompare(String(a.d)));}});
+  TRK.meta=P&&P.meta||null;
+  orgs.forEach(o=>{if(o.row||o.fromTracker||(P&&P.orgs&&P.orgs[o.k]))TRK.base[o.k]=trkFromOrg(o);});
+}
+/* read the export and list what changed since the last tracker */
+function trkDiff(rows,cm){
+  const notesByRow={};(cm||[]).forEach(c=>{if(!c||!c[0]||!c[1])return;const m=/Row ([0-9]+)/.exec(String(c[0]));if(!m)return;(notesByRow[m[1]]=notesByRow[m[1]]||[]).push({t:trkS(c[1]),by:trkS(c[2]),d:trkDate(trkS(c[3]).split(" ")[0])});});
+  const byName={};Object.keys(TRK.base).forEach(k=>{const b=TRK.base[k];byName[String(b.name).toLowerCase().trim()]=k;});
+  const out=[];let fields=0,notes=0,news=0;
+  rows.forEach((r,i)=>{const T=trkFromRow(r,notesByRow[i+1]);if(!T.name&&!T.cid)return;if(!T.cid&&/^note[: ]/i.test(T.name))return;
+    let k=T.cid&&TRK.base["c"+T.cid]?"c"+T.cid:byName[T.name.toLowerCase()];
+    if(!k){k=T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);if(BY[k]&&!T.cid){/* already a record by that key */}
+      const f={};Object.keys(TRK_LABEL).forEach(x=>{if(T[x]!==""&&T[x]!==false)f[x]=T[x];});f.cid=T.cid;f.names=T.names;
+      out.push({k:k,name:T.name,isNew:true,f:f,ch:[["New company","",T.s27||T.s26||"Added to the tracker"]],notes:T.notes.map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}))});news++;notes+=T.notes.length;return;}
+    const B=TRK.base[k],f={},ch=[];
+    Object.keys(TRK_LABEL).forEach(x=>{if(String(T[x])!==String(B[x])){f[x]=T[x];ch.push([TRK_LABEL[x],B[x],T[x]]);}});
+    if(TRK_ROLES.some(role=>("c"+role) in f))f.names=T.names;
+    const nn=T.notes.filter(n=>n.t&&!B.notes.has(trkNorm(n.t))).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
+    if(ch.length||nn.length){out.push({k:k,name:T.name||B.name,f:f,ch:ch,notes:nn});fields+=ch.length;notes+=nn.length;}});
+  out.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||a.name.localeCompare(b.name));
+  return {list:out,fields:fields,notes:notes,news:news,rows:rows.length};
+}
+async function trkRead(file){
+  const X=await loadXlsx();const wb=X.read(new Uint8Array(await file.arrayBuffer()),{type:"array",cellDates:true});
+  const ws=wb.Sheets[wb.SheetNames[0]];const rows=X.utils.sheet_to_json(ws,{defval:null,raw:true});
+  if(!rows.length||!("Member Name" in rows[0])||!("Company ID" in rows[0]))throw new Error("That file doesn't look like the MISMO Membership Tracker export (no Member Name and Company ID columns).");
+  const cs=wb.SheetNames.find(n=>/comment/i.test(n));const cm=cs?X.utils.sheet_to_json(wb.Sheets[cs],{header:1,defval:null}):[];
+  return trkDiff(rows,cm);
+}
+async function trkSave(d,fileName){
+  if(blocked())return false;
+  const H={"Content-Type":"application/json",Authorization:"Bearer "+ResourcesSession.token()};
+  for(let tries=0;tries<3;tries++){
+    const g=await fetch(TRK.url,{headers:H,cache:"no-store"}).then(r=>r.json());const P=(g&&g.data)||{orgs:{}};P.orgs=P.orgs||{};
+    d.list.forEach(x=>{const e=P.orgs[x.k]||{f:{}};e.f=Object.assign({},e.f||{},x.f);if(x.isNew)e.isNew=true;if(x.notes.length)e.notes=x.notes.concat(e.notes||[]);e.at=new Date().toISOString();P.orgs[x.k]=e;});
+    P.meta={at:new Date().toISOString(),by:ME||"",byName:myName()||"",file:fileName||"",rows:d.rows,fields:d.fields,notes:d.notes,news:d.news,companies:d.list.length};
+    P.history=(P.history||[]).concat([P.meta]).slice(-60);
+    const r=await fetch(TRK.url,{method:"PUT",headers:H,body:JSON.stringify({content:P,sha:g&&g.sha||undefined})});
+    if(r.ok){try{const lid=Date.now().toString(36)+"trk";const e={at:new Date().toISOString(),by:ME||"",byName:myName()||"",coll:"tracker",doc:"trkpatch",kind:"update",label:"Applied the weekly tracker update",detail:[d.fields+" change"+(d.fields===1?"":"s"),d.notes+" new note"+(d.notes===1?"":"s"),d.news?d.news+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" at "+d.list.length+" compan"+(d.list.length===1?"y":"ies"),org:"",orgName:"",fields:[],auto:false};ACTV.log[lid]=e;ACTV.rawDoc(actMonth()+"/"+lid).set(e).catch(()=>{});}catch(x){}return true;}
+    if(r.status!==409)throw new Error("The save didn't go through ("+r.status+").");}
+  throw new Error("Someone else was saving at the same time. Try again.");
+}
+/* the box at the bottom of the Activity page */
+function trkPanel(){
+  const list=document.getElementById("act-list");if(!list)return;let box=document.getElementById("trk-box");
+  const state=(TRK.pending?"p"+TRK.pending.file+TRK.pending.list.length:"idle")+"|"+(TRK.meta?TRK.meta.at:"");
+  if(box&&box.__st===state)return;
+  if(!box){box=h("section",{class:"trk",id:"trk-box"});const v=document.getElementById("v-activity");v.appendChild(box);}
+  box.__st=state;box.textContent="";
+  const m=TRK.meta;
+  box.appendChild(h("div",{class:"trk-h"},h("h2",null,"Weekly Tracker Update"),h("span",{class:"hint"},m&&m.at?"Last update "+fmt(m.at.slice(0,10))+(m.byName?" by "+m.byName:"")+(m.file?" ("+m.file+")":""):"Last tracker: September 26, 2026")));
+  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. Member 360 shows what changed since the last tracker, and nothing changes until you press Apply. Anything set from Aptify or by hand in Member 360 still wins."));
+  if(TRK.pending){trkReview(box);return;}
+  const inp=h("input",{type:"file",accept:".xlsx,.xls",hidden:true});
+  const z=h("div",{class:"trk-drop",tabindex:"0",title:"Drop the tracker export here"},h("b",null,"Drop the tracker's Excel file here"),h("span",null," or "),h("button",{type:"button",class:"p360-link"},"choose the file"));
+  const msg=h("div",{class:"hint trk-msg"});
+  const go=async f=>{if(!f)return;msg.textContent="Reading "+f.name+"…";try{const d=await trkRead(f);d.file=f.name;TRK.pending=d;trkPanel();}catch(e){console.error("tracker",e);msg.textContent=e.message||"Couldn't read that file.";}};
+  z.querySelector("button").addEventListener("click",()=>inp.click());inp.addEventListener("change",()=>{go(inp.files[0]);inp.value="";});
+  z.addEventListener("dragover",e=>{e.preventDefault();z.classList.add("over");});z.addEventListener("dragleave",()=>z.classList.remove("over"));
+  z.addEventListener("drop",e=>{e.preventDefault();z.classList.remove("over");go(e.dataTransfer.files[0]);});
+  box.appendChild(z);box.appendChild(inp);box.appendChild(msg);
+}
+function trkReview(box){
+  const d=TRK.pending;
+  if(!d.list.length){box.appendChild(h("div",{class:"trk-sum"},"Nothing has changed since the last tracker."));const b=h("button",{type:"button",class:"btn ghost"},"Done");b.addEventListener("click",()=>{TRK.pending=null;trkPanel();});box.appendChild(b);return;}
+  box.appendChild(h("div",{class:"trk-sum"},h("b",null,n(d.list.length)+" compan"+(d.list.length===1?"y":"ies")+" changed"),": "+[n(d.fields)+" field change"+(d.fields===1?"":"s"),n(d.notes)+" new note"+(d.notes===1?"":"s"),d.news?n(d.news)+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" in "+d.file+"."));
+  const row=h("div",{class:"btnrow",style:"margin:0 0 12px"});
+  if(db&&canWrite){const ap=h("button",{type:"button",class:"btn"},"Apply These Changes");ap.addEventListener("click",async()=>{ap.disabled=true;ap.textContent="Saving…";try{if(await trkSave(d,d.file)){toast("Tracker update applied. Reloading Member 360…");setTimeout(()=>location.reload(),1200);}else{ap.disabled=false;ap.textContent="Apply These Changes";}}catch(e){toast(e.message||"That didn't save.",true);ap.disabled=false;ap.textContent="Apply These Changes";}});row.appendChild(ap);}
+  const cx=h("button",{type:"button",class:"btn ghost"},"Cancel");cx.addEventListener("click",()=>{TRK.pending=null;trkPanel();});row.appendChild(cx);box.appendChild(row);
+  const ul=h("div",{class:"trk-list"});
+  d.list.slice(0,400).forEach(x=>{const o=BY[x.k];const det=h("details",{class:"trk-i"});
+    det.appendChild(h("summary",null,h("b",null,x.name),h("span",{class:"hint"}," · "+(x.isNew?"new company":[x.ch.length?x.ch.length+" change"+(x.ch.length===1?"":"s"):"",x.notes.length?x.notes.length+" new note"+(x.notes.length===1?"":"s"):""].filter(Boolean).join(", ")))));
+    const b=h("div",{class:"trk-b"});
+    x.ch.forEach(c=>b.appendChild(h("div",{class:"trk-c"},h("span",{class:"trk-f"},c[0]),h("span",{class:"trk-o"},String(c[1]===true?"Yes":c[1]===false?"No":c[1]||"(blank)")),h("span",{class:"trk-a"},"→"),h("span",{class:"trk-n"},String(c[2]===true?"Yes":c[2]===false?"No":c[2]||"(blank)")))));
+    x.notes.forEach(nt=>b.appendChild(h("div",{class:"trk-note"},h("span",{class:"hint"},[nt.d?fmtS(nt.d):"",nt.by].filter(Boolean).join(" · ")),h("div",null,String(nt.t).slice(0,400)))));
+    if(o){const op=h("button",{type:"button",class:"p360-link"},"Open "+o.name);op.addEventListener("click",()=>openPane(o.k));b.appendChild(op);}
+    det.appendChild(b);ul.appendChild(det);});
+  if(d.list.length>400)ul.appendChild(h("div",{class:"hint"},"and "+(d.list.length-400)+" more"));
+  box.appendChild(ul);
+}
+{const _raTrk=renderActivity;renderActivity=function(){const r=_raTrk.apply(this,arguments);try{trkPanel();}catch(e){console.error("tracker panel",e);}return r;};}
 function actRefresh(){clearTimeout(ACTV.tm);ACTV.tm=setTimeout(()=>{const v=document.getElementById("v-activity");if(v&&!v.hidden)renderActivity();},250);}
 /* take a touchpoint off the record: it is kept with archived set, never deleted (Jonna, Oct 29, 2026) */
 async function m360RmTp(t){if(blocked())return;const o=BY[t.org];if(!confirm("Remove this touchpoint"+(o?" from "+o.name:"")+"? It comes off the record. Nothing else changes."))return;try{await db.doc("touchpoints/"+t.id).update({archived:true,archivedAt:new Date().toISOString(),archivedBy:ME||""});toast("Touchpoint removed.");try{pushUndo("Removed a touchpoint",()=>db.doc("touchpoints/"+t.id).update({archived:false}));}catch(e){}}catch(e){onWriteErr(e);}}
@@ -7802,7 +7964,7 @@ function remergeAct(){
 /* ---------- boot ---------- */
 $("dl-sect").addEventListener("toggle",renderDlList);
 async function boot(){
-  try{const r=await fetch("data.json");const d=await r.json();ORGS=d.orgs;META=d.meta||{};if(META.iifYear)IY=String(META.iifYear);if(META.stageYear)DATA_RY=String(META.stageYear);ORGS.forEach(applyContacts);}
+  try{const r=await fetch("data.json");const d=await r.json();ORGS=d.orgs;try{await trkLoad(ORGS);}catch(e){console.error("tracker",e);}META=d.meta||{};if(META.iifYear)IY=String(META.iifYear);if(META.stageYear)DATA_RY=String(META.stageYear);ORGS.forEach(applyContacts);}
   catch(e){$("main").prepend(h("div",{class:"banner"},h("b",null,"The member data didn't load. "),"Reload the page to try again."));return;}
   ORGS.forEach(o=>BY[o.k]=o);
   paintDataDates();
