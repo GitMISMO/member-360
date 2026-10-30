@@ -5226,11 +5226,13 @@ async function iifNewDone(id){if(blocked())return;const P=Object.assign({items:[
   IFN=P;iifNewRender();try{await db.doc("aptify/iifnew").set(P);toast("Marked done.");}catch(e){onWriteErr(e);}}
 function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textContent="";box.hidden=false;
   const P=IFN||{},D=P.done||{};
-  const L=(P.items||[]).filter(x=>!D[x.id]).map(x=>Object.assign({o:iifOrg(x)},x));
+  /* IIF members only: a lender, a company on the IIF list, or one in the InvFee Member Contacts export. Members who paid their own dues (Sole and the like) are in the planner's Welcome New Members list instead (Jonna, Oct 30, 2026) */
+  const isIif=x=>{const o=x.o;return !!((x.cid&&(P.contacts||{})[x.cid])||(o&&(o.type==="Lender"||o.iif)));};
+  const L=(P.items||[]).filter(x=>!D[x.id]).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
   L.sort((a,b)=>String(b.at).localeCompare(String(a.at))||((b.o&&b.o.type==="Lender")-(a.o&&a.o.type==="Lender"))||String(a.co||a.who).localeCompare(String(b.co||b.who)));
-  box.appendChild(h("h2",null,"New Members This Week"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Mark each one Done once they've been welcomed."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
-  if(!L.length){box.appendChild(h("div",{class:"hint"},"Nobody new since the last Aptify upload."));return;}
+  box.appendChild(h("h2",null,"New IIF Members This Week"));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"IIF lenders turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Mark each one Done once they've been welcomed."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
+  if(!L.length){box.appendChild(h("div",{class:"hint"},"No new IIF members since the last Aptify upload."));return;}
   const dis=!db||!canWrite;
   L.forEach(x=>{const o=x.o,ct=x.cid?(P.contacts||{})[x.cid]:null;
     const ppl=(ct&&ct.p||[]).filter(p=>!/donotcontact/i.test(p[1]));const rec=o?(o.people||[]).filter(p=>p.email):[];
