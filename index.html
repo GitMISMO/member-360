@@ -4131,55 +4131,66 @@ function trkFromOrg(o){const H={};(o.hist||[]).filter(x=>!x.a).forEach(x=>{H[x.y
   vips:(o.people||[]).filter(p=>(p.roles||[]).includes("VIP")).map(p=>String(p.email||"").toLowerCase()).filter(Boolean).sort().join("; "),advisors:(o.advisors||[]).slice().sort().join("; ")};
   TRK_ROLES.forEach(role=>{const p=(o.people||[]).find(p=>(p.roles||[]).includes(role));N["c"+role]=p?String(p.email||"").toLowerCase():"";});
   N.notes=new Set((o.notes||[]).map(n=>trkNorm(n.t)));return N;}
-/* put a stored change onto a record */
-function trkApplyOne(o,f){
-  ["name","sector","market","cu","twoYear","viaForm"].forEach(k=>{if(k in f)o[k]=f[k];});
-  if("joined" in f){o.joined=f.joined;o.joined0=f.joined;}if("thru" in f)o.thru=f.thru;if("created" in f)o.created=f.created;
-  if("current" in f)o.life=f.current?"Active":(o.life==="Active"?"Former":o.life);
-  o.hist=o.hist||[];
-  [["2027","s27","l27","sp27"],["2026","s26","l26","sp26"],["2025","s25","l25",""]].forEach(([y,s,l,sp])=>{if(!(s in f)&&!(l in f)&&!(sp&&sp in f))return;
-    let h=o.hist.find(x=>String(x.y)===y&&!x.a);if(!h){h={y:y,status:"",level:""};o.hist.unshift(h);}
-    const cur=/^(.*?) [(](TMC|Broker|ACUMA)[)]$/.exec(h.level||"");let L=cur?cur[1]:(h.level||""),SP=cur?cur[2]:"";
-    if(s in f)h.status=f[s];if(l in f)L=f[l];if(sp&&sp in f)SP=f[sp];h.level=L?(L+(SP?" ("+SP+")":"")):"";});
-  if("l26" in f||"sp26" in f){const h=o.hist.find(x=>String(x.y)==="2026"&&!x.a);if(h&&h.level)o.level=h.level;}
-  if("s27" in f){const s=f.s27;if(/^not renewed/i.test(s))o.stage="Not Renewed Yet";else if(/^(paid|2 yr)/i.test(s))o.stage="Renewed";else if(/^lost/i.test(s))o.stage="Lost";}
-  const st=[f.s27,f.s26].filter(Boolean).join(" ");if(/[(]non.?lender[)]/i.test(st))o.type="Non-Lender";else if(/[(]lender[)]/i.test(st))o.type="Lender";
-  o.people=o.people||[];
-  const person=e=>{let p=o.people.find(x=>String(x.email||"").toLowerCase()===e);if(!p){p={email:e,name:"",title:"",phone:"",roles:[]};o.people.push(p);}p.roles=p.roles||[];return p;};
-  TRK_ROLES.forEach(role=>{if(!("c"+role in f))return;o.people.forEach(p=>{p.roles=(p.roles||[]).filter(r=>r!==role);});const e=f["c"+role];if(e){const p=person(e);if(!p.roles.includes(role))p.roles.push(role);}});
-  if(f.names)TRK_ROLES.forEach(role=>{const nm=f.names[role];if(!nm)return;const p=o.people.find(x=>(x.roles||[]).includes(role));if(!p)return;if(nm.name&&!p.name)p.name=nm.name;if(nm.title&&!p.title)p.title=nm.title;if(nm.phone&&!p.phone)p.phone=nm.phone;});
-  if("vips" in f){o.people.forEach(p=>{p.roles=(p.roles||[]).filter(r=>r!=="VIP");});String(f.vips||"").split("; ").filter(Boolean).forEach(e=>{const p=person(e);if(!p.roles.includes("VIP"))p.roles.push("VIP");});}
-  if("advisors" in f)o.advisors=String(f.advisors||"").split("; ").filter(Boolean);
-}
+
+
 function trkNewOrg(k,f){const life="Prospect";const st=[f.s27,f.s26].filter(Boolean).join(" ");
   return {k:k,cid:f.cid||"",row:0,name:f.name||"New Company",sector:"",market:"",cu:false,addr:"",joined:"",thru:"",created:"",life:life,stage:"",type:/[(]non.?lender[)]/i.test(st)?"Non-Lender":(/[(]lender[)]/i.test(st)?"Lender":""),level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,people:[],advisors:[],hand:[],notes:[],dupId:false,noId:!f.cid,iif:null,sector5:"",sectorSrc:"",fromTracker:true};}
-/* at load: the stored changes go onto the Sept 26 tracker, before Aptify and everything set here */
+
+
+
+
+/* put a stored tracker change onto a record: contacts and senior advisors are only ever added, never removed or replaced (Jonna, Oct 29, 2026) */
+function trkApplyOne(o,f){
+  o.people=o.people||[];
+  const has=e=>o.people.find(x=>String(x.email||"").toLowerCase()===e);
+  (f.add||[]).forEach(a=>{let p=has(a.email);if(!p){p={email:a.email,name:a.name||"",title:a.title||"",phone:a.phone||"",roles:[],fromTracker:true};o.people.push(p);}
+    p.roles=p.roles||[];if(a.role&&!o.people.some(x=>(x.roles||[]).includes(a.role)))p.roles.push(a.role);});
+  (f.vipAdd||[]).forEach(e=>{let p=has(e);if(!p){p={email:e,name:"",title:"",phone:"",roles:[],fromTracker:true};o.people.push(p);}p.roles=p.roles||[];if(!p.roles.includes("VIP"))p.roles.push("VIP");});
+  if(f.advAdd&&f.advAdd.length)o.advisors=[...new Set((o.advisors||[]).concat(f.advAdd))];
+}
+function trkNotesOnto(o,ns){if(!ns||!ns.length)return;const have=new Set((o.notes||[]).map(n=>trkNorm(n.t)));const add=ns.filter(n=>!have.has(trkNorm(n.t)));if(add.length)o.notes=add.concat(o.notes||[]).sort((a,b)=>String(b.d).localeCompare(String(a.d)));}
+/* at load: stored changes go onto the records, before Aptify and everything set here */
 async function trkLoad(orgs){
   TRK.loaded=true;let P=null;
   try{if(window.ResourcesSession&&ResourcesSession.token&&ResourcesSession.token()){const r=await fetch(TRK.url,{headers:{Authorization:"Bearer "+ResourcesSession.token()},cache:"no-store"});if(r.ok){const j=await r.json();P=j&&j.data||null;}}}catch(e){console.error("tracker",e);}
+  TRK.P=P;TRK.meta=P&&P.meta||null;if(!P||!P.orgs)return;
   const map={};orgs.forEach(o=>{map[o.k]=o;});
-  if(P&&P.orgs)Object.keys(P.orgs).forEach(k=>{const e=P.orgs[k];let o=map[k];if(!o&&e.isNew){o=trkNewOrg(k,e.f||{});orgs.push(o);map[k]=o;}if(!o)return;
-    trkApplyOne(o,e.f||{});if(e.notes&&e.notes.length){o.notes=(e.notes.concat(o.notes||[])).sort((a,b)=>String(b.d).localeCompare(String(a.d)));}});
-  TRK.meta=P&&P.meta||null;
-  orgs.forEach(o=>{if(o.row||o.fromTracker||(P&&P.orgs&&P.orgs[o.k]))TRK.base[o.k]=trkFromOrg(o);});
+  Object.keys(P.orgs).forEach(k=>{const e=P.orgs[k];let o=map[k];if(!o&&e.isNew){o=trkNewOrg(k,e.f||{});orgs.push(o);map[k]=o;}if(!o)return;
+    o.__trk=1;trkApplyOne(o,e.f||{});trkNotesOnto(o,e.notes);});
 }
-/* read the export and list what changed since the last tracker */
+/* records that join later (from payments, prospects added here) get theirs when the list is rebuilt */
+function trkApplyLate(list){const P=TRK.P;if(!P||!P.orgs)return;list.forEach(o=>{if(o.__trk)return;const e=P.orgs[o.k];if(!e)return;o.__trk=1;trkApplyOne(o,e.f||{});trkNotesOnto(o,e.notes);});}
+/* find the record a tracker row belongs to: Company ID first, then the name, across every record in Member 360 */
+function trkFind(T){const nm=aptN(String(T.name).replace(/ *[(][^)]*[)] */g," ")),nm2=aptN(T.name),c=[];
+  ORGS.forEach(o=>{if(ov(o).mergedInto)return;let s=0;
+    if(T.cid&&(String(o.cid||"")===T.cid||String(o.pid||"")===T.cid))s=3;
+    else if(nm&&[o.name,o.nameWas,ov(o).pairName].concat((o.mergedIn||[]).map(x=>x.name)).some(x=>x&&(aptN(String(x).replace(/ *[(][^)]*[)] */g," "))===nm||aptN(x)===nm2)))s=2;
+    if(s)c.push([s,o]);});
+  if(!c.length)return null;
+  c.sort((a,b)=>b[0]-a[0]||((b[1].life==="Active")-(a[1].life==="Active"))||((a[1].mm?1:0)-(b[1].mm?1:0)));return c[0][1];}
+/* read the export and list what's new since Member 360 last saw it: new contacts, VIPs, senior advisors and notes from the last two years */
 function trkDiff(rows,cm){
+  const cut=String(new Date().getFullYear()-1)+"-01-01";
   const notesByRow={};(cm||[]).forEach(c=>{if(!c||!c[0]||!c[1])return;const m=/Row ([0-9]+)/.exec(String(c[0]));if(!m)return;(notesByRow[m[1]]=notesByRow[m[1]]||[]).push({t:trkS(c[1]),by:trkS(c[2]),d:trkDate(trkS(c[3]).split(" ")[0])});});
-  const byName={};Object.keys(TRK.base).forEach(k=>{const b=TRK.base[k];byName[String(b.name).toLowerCase().trim()]=k;});
-  const out=[];let fields=0,notes=0,news=0;
+  const byK={};let fields=0,notes=0,news=0;
   rows.forEach((r,i)=>{const T=trkFromRow(r,notesByRow[i+1]);if(!T.name&&!T.cid)return;if(!T.cid&&/^note[: ]/i.test(T.name))return;
-    let k=T.cid&&TRK.base["c"+T.cid]?"c"+T.cid:byName[T.name.toLowerCase()];
-    if(!k){k=T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);if(BY[k]&&!T.cid){/* already a record by that key */}
-      const f={name:T.name};TRK_TAKE.forEach(x=>{if(T[x]!=="")f[x]=T[x];});f.cid=T.cid;f.names=T.names;
-      out.push({k:k,name:T.name,isNew:true,f:f,ch:[["New company","","Added as a prospect with its contacts and notes"]],notes:T.notes.map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}))});news++;notes+=T.notes.length;return;}
-    const B=TRK.base[k],f={},ch=[];
-    TRK_TAKE.forEach(x=>{if(String(T[x])!==String(B[x])){f[x]=T[x];ch.push([TRK_LABEL[x],B[x],T[x]]);}});
-    if(TRK_ROLES.some(role=>("c"+role) in f))f.names=T.names;
-    const nn=T.notes.filter(n=>n.t&&!B.notes.has(trkNorm(n.t))).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
-    if(ch.length||nn.length){out.push({k:k,name:T.name||B.name,f:f,ch:ch,notes:nn});fields+=ch.length;notes+=nn.length;}});
-  out.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||a.name.localeCompare(b.name));
-  return {list:out,fields:fields,notes:notes,news:news,rows:rows.length};
+    const tn=T.notes.filter(n=>n.t&&n.d&&n.d>=cut).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
+    const o=trkFind(T);
+    const k=o?o.k:(T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40));
+    const x=byK[k]||(byK[k]={k:k,name:o?o.name:T.name,isNew:!o,f:o?{}:{name:T.name,cid:T.cid},ch:o?[]:[["New company","","Added as a prospect with its contacts and notes"]],notes:[]});
+    const people=o?(o.people||[]):[];
+    const have=new Set(people.map(p=>String(p.email||"").toLowerCase()).filter(Boolean).concat((x.f.add||[]).map(a=>a.email)));
+    TRK_ROLES.forEach(role=>{const e=T["c"+role];if(e&&!have.has(e)){const nm=T.names[role]||{};(x.f.add=x.f.add||[]).push({email:e,role:role,name:nm.name||"",title:nm.title||"",phone:nm.phone||""});have.add(e);x.ch.push(["New contact","",e+" ("+role+")"]);}});
+    const vipNow=new Set(people.filter(p=>(p.roles||[]).includes("VIP")).map(p=>String(p.email||"").toLowerCase()).concat(x.f.vipAdd||[]));
+    T.vips.split("; ").filter(e=>e&&!vipNow.has(e)).forEach(e=>{(x.f.vipAdd=x.f.vipAdd||[]).push(e);vipNow.add(e);x.ch.push(["Marked VIP","",e]);});
+    const advNow=new Set(((o&&o.advisors)||[]).concat(x.f.advAdd||[]).map(a=>a.toLowerCase()));
+    T.advisors.split("; ").filter(a=>a&&!advNow.has(a.toLowerCase())).forEach(a=>{(x.f.advAdd=x.f.advAdd||[]).push(a);advNow.add(a.toLowerCase());x.ch.push(["Senior advisor added","",a]);});
+    const haveN=new Set(((o&&o.notes)||[]).concat(x.notes).map(n=>trkNorm(n.t)));
+    tn.forEach(n=>{if(!haveN.has(trkNorm(n.t))){x.notes.push(n);haveN.add(trkNorm(n.t));}});});
+  const list=Object.values(byK).filter(x=>x.isNew||x.ch.length||x.notes.length);
+  list.forEach(x=>{x.notes.sort((a,b)=>String(b.d).localeCompare(String(a.d)));x.latest=x.notes.length?x.notes[0].d:"";if(x.isNew)news++;else fields+=x.ch.length;notes+=x.notes.length;});
+  list.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||String(b.latest).localeCompare(String(a.latest))||a.name.localeCompare(b.name));
+  return {list:list,fields:fields,notes:notes,news:news,rows:rows.length};
 }
 async function trkRead(file){
   const X=await loadXlsx();const wb=X.read(new Uint8Array(await file.arrayBuffer()),{type:"array",cellDates:true});
@@ -4193,7 +4204,7 @@ async function trkSave(d,fileName){
   const H={"Content-Type":"application/json",Authorization:"Bearer "+ResourcesSession.token()};
   for(let tries=0;tries<3;tries++){
     const g=await fetch(TRK.url,{headers:H,cache:"no-store"}).then(r=>r.json());const P=(g&&g.data)||{orgs:{}};P.orgs=P.orgs||{};
-    d.list.forEach(x=>{const e=P.orgs[x.k]||{f:{}};e.f=Object.assign({},e.f||{},x.f);if(x.isNew)e.isNew=true;if(x.notes.length)e.notes=x.notes.concat(e.notes||[]);e.at=new Date().toISOString();P.orgs[x.k]=e;});
+    d.list.forEach(x=>{const e=P.orgs[x.k]||{f:{}};const mf=(a,b)=>{const r=Object.assign({},a||{});Object.keys(b||{}).forEach(k=>{r[k]=Array.isArray(b[k])?(r[k]||[]).concat(b[k]):b[k];});return r;};e.f=mf(e.f,x.f);if(x.isNew)e.isNew=true;if(x.notes.length)e.notes=x.notes.concat(e.notes||[]);e.at=new Date().toISOString();P.orgs[x.k]=e;});
     P.meta={at:new Date().toISOString(),by:ME||"",byName:myName()||"",file:fileName||"",rows:d.rows,fields:d.fields,notes:d.notes,news:d.news,companies:d.list.length};
     P.history=(P.history||[]).concat([P.meta]).slice(-60);
     const r=await fetch(TRK.url,{method:"PUT",headers:H,body:JSON.stringify({content:P,sha:g&&g.sha||undefined})});
@@ -4210,7 +4221,7 @@ function trkPanel(){
   box.__st=state;box.textContent="";
   const m=TRK.meta;
   box.appendChild(h("div",{class:"trk-h"},h("h2",null,"Weekly Tracker Update"),h("span",{class:"hint"},m&&m.at?"Last update "+fmt(m.at.slice(0,10))+(m.byName?" by "+m.byName:"")+(m.file?" ("+m.file+")":""):"Last tracker: September 26, 2026")));
-  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. Only notes, contacts, VIPs and senior advisors come in, plus any new companies as prospects. Statuses, levels and dates stay as Member 360 and Aptify have them. Nothing changes until you press Apply."));
+  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. New contacts, VIPs, senior advisors and notes from the last two years are added, plus any company that isn't in Member 360 yet, as a prospect. Nothing already here is changed or removed, and statuses, levels and dates stay as Member 360 and Aptify have them. Nothing is saved until you press Apply."));
   if(TRK.pending){trkReview(box);return;}
   const inp=h("input",{type:"file",accept:".xlsx,.xls",hidden:true});
   const z=h("div",{class:"trk-drop",tabindex:"0",title:"Drop the tracker export here"},h("b",null,"Drop the tracker's Excel file here"),h("span",null," or "),h("button",{type:"button",class:"p360-link"},"choose the file"));
@@ -4224,7 +4235,7 @@ function trkPanel(){
 function trkReview(box){
   const d=TRK.pending;
   if(!d.list.length){box.appendChild(h("div",{class:"trk-sum"},"Nothing has changed since the last tracker."));const b=h("button",{type:"button",class:"btn ghost"},"Done");b.addEventListener("click",()=>{TRK.pending=null;trkPanel();});box.appendChild(b);return;}
-  box.appendChild(h("div",{class:"trk-sum"},h("b",null,n(d.list.length)+" compan"+(d.list.length===1?"y":"ies")+" changed"),": "+[n(d.fields)+" field change"+(d.fields===1?"":"s"),n(d.notes)+" new note"+(d.notes===1?"":"s"),d.news?n(d.news)+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" in "+d.file+"."));
+  box.appendChild(h("div",{class:"trk-sum"},h("b",null,n(d.list.length)+" compan"+(d.list.length===1?"y":"ies")+" changed"),": "+[n(d.fields)+" contact"+(d.fields===1?"":"s")+", VIP"+(d.fields===1?"":"s")+" or advisor"+(d.fields===1?"":"s")+" to add",n(d.notes)+" new note"+(d.notes===1?"":"s"),d.news?n(d.news)+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" in "+d.file+"."));
   const row=h("div",{class:"btnrow",style:"margin:0 0 12px"});
   if(db&&canWrite){const ap=h("button",{type:"button",class:"btn"},"Apply These Changes");ap.addEventListener("click",async()=>{ap.disabled=true;ap.textContent="Saving…";try{if(await trkSave(d,d.file)){toast("Tracker update applied. Reloading Member 360…");setTimeout(()=>location.reload(),1200);}else{ap.disabled=false;ap.textContent="Apply These Changes";}}catch(e){toast(e.message||"That didn't save.",true);ap.disabled=false;ap.textContent="Apply These Changes";}});row.appendChild(ap);}
   const cx=h("button",{type:"button",class:"btn ghost"},"Cancel");cx.addEventListener("click",()=>{TRK.pending=null;trkPanel();});row.appendChild(cx);box.appendChild(row);
@@ -4232,7 +4243,7 @@ function trkReview(box){
   d.list.slice(0,400).forEach(x=>{const o=BY[x.k];const det=h("details",{class:"trk-i"});
     det.appendChild(h("summary",null,h("b",null,x.name),h("span",{class:"hint"}," · "+(x.isNew?"new company":[x.ch.length?x.ch.length+" change"+(x.ch.length===1?"":"s"):"",x.notes.length?x.notes.length+" new note"+(x.notes.length===1?"":"s"):""].filter(Boolean).join(", ")))));
     const b=h("div",{class:"trk-b"});
-    x.ch.forEach(c=>b.appendChild(h("div",{class:"trk-c"},h("span",{class:"trk-f"},c[0]),h("span",{class:"trk-o"},String(c[1]===true?"Yes":c[1]===false?"No":c[1]||"(blank)")),h("span",{class:"trk-a"},"→"),h("span",{class:"trk-n"},String(c[2]===true?"Yes":c[2]===false?"No":c[2]||"(blank)")))));
+    x.ch.forEach(c=>b.appendChild(h("div",{class:"trk-c"},h("span",{class:"trk-f"},c[0]),h("span",{class:"trk-o"},String(c[1]===true?"Yes":c[1]===false?"No":c[1]||"")),h("span",{class:"trk-a"},"→"),h("span",{class:"trk-n"},String(c[2]===true?"Yes":c[2]===false?"No":c[2]||"(blank)")))));
     x.notes.forEach(nt=>b.appendChild(h("div",{class:"trk-note"},h("span",{class:"hint"},[nt.d?fmtS(nt.d):"",nt.by].filter(Boolean).join(" · ")),h("div",null,String(nt.t).slice(0,400)))));
     if(o){const op=h("button",{type:"button",class:"p360-link"},"Open "+o.name);op.addEventListener("click",()=>openPane(o.k));b.appendChild(op);}
     det.appendChild(b);ul.appendChild(det);});
@@ -6016,7 +6027,7 @@ function rebuildOrgs(){
   EXTRA.auto.forEach(o=>{if(!seen.has(o.k)){o.auto=true;keep.push(o);seen.add(o.k);}});
   (EXTRA.mm||[]).forEach(o=>{if(!seen.has(o.k)){keep.push(o);seen.add(o.k);}});
   EXTRA.manual.forEach(o=>{if(!seen.has(o.k)){keep.push(o);seen.add(o.k);}});
-  keep.forEach(applyContacts);
+  try{trkApplyLate(keep);}catch(e){console.error("tracker",e);}keep.forEach(applyContacts);
   keep.sort((a,b)=>a.name.localeCompare(b.name));
   ORGS.length=0;keep.forEach(o=>ORGS.push(o));for(const k in BY)delete BY[k];ORGS.forEach(o=>BY[o.k]=o);
   applyCidOv();
