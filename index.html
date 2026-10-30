@@ -3932,7 +3932,7 @@ function actLabel(c,kind,d,p,isNew){
   if(c==="prospects")return del?"Deleted a prospect":"Edited a prospect";
   if(c==="orgs")return "Updated company details";
   if(c==="sends")return del?"Cleared a sent email":"Recorded a sent email";
-  if(c==="outbox")return del?"Took emails out of the queue":(isNew?"Queued Member 360 emails":"Updated queued emails");
+  if(c==="outbox")return del?"Took emails out of the queue":(isNew?(d.step==="square"?"Recorded a Square payment":"Sent Member 360 emails"):"Updated queued emails");
   if(c==="templates")return del?"Deleted a playbook email":"Saved a playbook email";
   if(c==="settings")return "Changed settings";
   if(c==="sync")return "Changed company name matching";
