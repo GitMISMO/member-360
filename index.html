@@ -1505,6 +1505,12 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .trk-note{font-size:13px;padding:6px 0;border-top:1px dashed var(--border);white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:640px){.trk-c{grid-template-columns:1fr}}
 .m360-full{white-space:pre-wrap;overflow-wrap:anywhere;font-family:inherit;font-size:13.5px;line-height:1.55;max-height:65vh;overflow:auto;margin:0;background:var(--surface-2);padding:12px 14px;border-radius:8px;border:1px solid var(--border);color:var(--ink)}
+.hist-older{margin-top:12px}
+.hist-oh{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px}
+.hist-yr{border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface)}
+.hist-yr>summary{padding:8px 12px;cursor:pointer;font-weight:600;font-size:14px}
+.hist-yr .cnt{margin-left:8px;font-weight:500;color:var(--ink-3);font-size:12px}
+.hist-yr .hist{padding:0 12px 8px}
 .act-list{margin-top:12px}
 .act-day{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);margin:18px 0 6px}
 .act-day:first-child{margin-top:4px}
@@ -4174,7 +4180,7 @@ function trkDiff(rows,cm){
   const notesByRow={};(cm||[]).forEach(c=>{if(!c||!c[0]||!c[1])return;const m=/Row ([0-9]+)/.exec(String(c[0]));if(!m)return;(notesByRow[m[1]]=notesByRow[m[1]]||[]).push({t:trkS(c[1]),by:trkS(c[2]),d:trkDate(trkS(c[3]).split(" ")[0])});});
   const byK={};let fields=0,notes=0,news=0;
   rows.forEach((r,i)=>{const T=trkFromRow(r,notesByRow[i+1]);if(!T.name&&!T.cid)return;if(!T.cid&&/^note[: ]/i.test(T.name))return;
-    const tn=T.notes.filter(n=>n.t&&n.d&&n.d>=cut).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
+    const tn=T.notes.filter(n=>n.t).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
     const o=trkFind(T);
     const k=o?o.k:(T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40));
     const x=byK[k]||(byK[k]={k:k,name:o?o.name:T.name,isNew:!o,f:o?{}:{name:T.name,cid:T.cid},ch:o?[]:[["New company","","Added as a prospect with its contacts and notes"]],notes:[]});
@@ -4221,7 +4227,7 @@ function trkPanel(){
   box.__st=state;box.textContent="";
   const m=TRK.meta;
   box.appendChild(h("div",{class:"trk-h"},h("h2",null,"Weekly Tracker Update"),h("span",{class:"hint"},m&&m.at?"Last update "+fmt(m.at.slice(0,10))+(m.byName?" by "+m.byName:"")+(m.file?" ("+m.file+")":""):"Last tracker: September 26, 2026")));
-  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. New contacts, VIPs, senior advisors and notes from the last two years are added, plus any company that isn't in Member 360 yet, as a prospect. Nothing already here is changed or removed, and statuses, levels and dates stay as Member 360 and Aptify have them. Nothing is saved until you press Apply."));
+  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. New contacts, VIPs, senior advisors and all of her notes are added, plus any company that isn't in Member 360 yet, as a prospect. Nothing already here is changed or removed, and statuses, levels and dates stay as Member 360 and Aptify have them. Nothing is saved until you press Apply."));
   if(TRK.pending){trkReview(box);return;}
   const inp=h("input",{type:"file",accept:".xlsx,.xls",hidden:true});
   const z=h("div",{class:"trk-drop",tabindex:"0",title:"Drop the tracker export here"},h("b",null,"Drop the tracker's Excel file here"),h("span",null," or "),h("button",{type:"button",class:"p360-link"},"choose the file"));
@@ -5004,22 +5010,26 @@ function fillHistory(o,box){
   [["all","All"],["here","Logged Here"],["note","Earlier Notes"],["auto","Automated Emails"]].forEach(([v,l])=>{
     chips.appendChild(h("button",{type:"button",class:mode===v?"on":"",onclick:()=>{histMode[o.k]=v;fillHistory(o,box);}},l));});
   box.appendChild(chips);
-  const list=h("div",{class:"hist"});const lim=box._all?9999:25;let k=0;
-  items.filter(i=>mode==="all"||i.kind===mode).forEach(i=>{
-    if(k++>=lim)return;
+  const list=h("div",{class:"hist"});const RECENT=3;const shown=items.filter(i=>mode==="all"||i.kind===mode);const render=(i,into)=>{
     if(i.kind==="here"){const t=i.t;const who=t.by?(NAMES[t.by]||"A colleague"):"Someone";
-      list.appendChild(h("div",{class:"hi"},h("div",null,h("div",{class:"d"},fmt(t.date))),h("div",null,
+      into.appendChild(h("div",{class:"hi"},h("div",null,h("div",{class:"d"},fmt(t.date))),h("div",null,
         h("div",null,h("span",{class:"tag"},t.type),h("span",{class:"tag"},t.topic),t.sentiment&&t.sentiment!=="Neutral"?h("span",{class:"tag"},t.sentiment):null),
         p360HistTxt(t),
         t.next?h("div",{class:"nx"},(t.next.done?"✓ Done: ":"Next: ")+t.next.text+(t.next.owner?" · "+t.next.owner:"")+(t.next.due?" · due "+fmtS(t.next.due):"")):null,
         h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null,t.type==="Email"&&(t.via==="forward"||String(t.at||"")>="2026-10-29")?h("button",{type:"button",class:"p360-link hi-rm",title:"See the whole email and the thread",onclick:()=>m360ShowFull(t)},"View Full Email"):null))));}
-    else if(i.kind==="auto"){list.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
-    else{const x=i.x;list.appendChild(h("div",{class:"hi"},h("div",{class:"d"},x.d?fmt(x.d):"Undated"),h("div",null,
+    else if(i.kind==="auto"){into.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
+    else{const x=i.x;into.appendChild(h("div",{class:"hi"},h("div",{class:"d"},x.d?fmt(x.d):"Undated"),h("div",null,
         h("div",null,h("span",{class:"tag"},"Earlier Note"),(x.tags||[]).map(t=>h("span",{class:"tag"},t))),
         h("div",{class:"txt"},x.t),h("div",{class:"who"},x.by?"By "+x.by:""))));}
-  });
-  box.appendChild(list);
-  if(k>lim&&!box._all)box.appendChild(h("button",{type:"button",class:"linkbtn",style:"margin-top:8px",onclick:()=>{box._all=true;fillHistory(o,box);}},"Show All "+n(k)));
+  };
+  /* the latest few show; everything older is under a year you open (Jonna, Oct 29, 2026) */
+  shown.slice(0,RECENT).forEach(i=>render(i,list));box.appendChild(list);
+  const rest=shown.slice(RECENT);
+  if(rest.length){const byY={};rest.forEach(i=>{const y=i.d?String(i.d).slice(0,4):"Undated";(byY[y]=byY[y]||[]).push(i);});
+    const wrap=h("div",{class:"hist-older"},h("div",{class:"hist-oh"},"Earlier Conversations"));
+    Object.keys(byY).sort((a,b)=>b.localeCompare(a)).forEach(y=>{const d=h("details",{class:"hist-yr"});d.appendChild(h("summary",null,y,h("span",{class:"cnt"},n(byY[y].length))));
+      const l=h("div",{class:"hist"});let drawn=false;d.addEventListener("toggle",()=>{if(d.open&&!drawn){drawn=true;byY[y].forEach(i=>render(i,l));}});d.appendChild(l);wrap.appendChild(d);});
+    box.appendChild(wrap);}
 }
 function fillDraft(o,box){
   box.textContent="";
