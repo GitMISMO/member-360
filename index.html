@@ -5352,16 +5352,26 @@ function npNew(from,to){const out=[];const P=(typeof TRK!=="undefined"&&TRK.P&&T
     else if(P[o.k]&&P[o.k].isNew){at=String(P[o.k].at||"").slice(0,10);how="Kelly's tracker";}
     if(at&&at>=from&&at<to)out.push({o,at,how,by});});
   return out.sort((a,b)=>b.at.localeCompare(a.at)||a.o.name.localeCompare(b.o.name));}
-function newProsRender(){const box=$("newpros-panel");if(!box)return;box.textContent="";box.hidden=false;
+var NPALL=false;
+function newProsRender(){const box=$("newpros-panel");if(!box)return;box.textContent="";box.hidden=false;box.style.padding="12px 16px";
   const from=npWeekStart(NPW),to=NPW?npWeekStart(NPW-1):"9999";const L=npNew(from,to);
-  const chip=(n,l)=>{const b=h("button",{type:"button",class:"chip"+(NPW===n?" on":""),"aria-pressed":String(NPW===n)},l);b.addEventListener("click",()=>{NPW=n;newProsRender();});return b;};
-  box.appendChild(h("div",{style:"display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"},h("h2",{style:"margin:0"},(NPW?"New Prospects Last Week":"New Prospects This Week")+" ("+L.length+")"),h("div",{class:"chipset"},chip(0,"This Week"),chip(1,"Last Week"))));
-  box.appendChild(h("div",{class:"hint",style:"margin:6px 0 10px"},"Added from "+fmt(from)+(NPW?" to "+fmt(addDays(to,-1)):"")+": by hand in Member 360, from website downloads, or from Kelly's tracker."));
-  if(!L.length){box.appendChild(h("div",{class:"hint"},NPW?"No prospects were added last week.":"No prospects added yet this week."));return;}
-  L.forEach(({o,at,how,by})=>{const em=(o.people||[]).map(p=>p.email).filter(Boolean)[0]||"";
-    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(at)),
-      h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),h("span",{class:"act-s"},o.type||"Non-Lender")),
-        h("div",{class:"act-d"},how+(by?" · added by "+by:"")+(owner(o)?" · owner "+owner(o):"")+(em?" · "+em:""))),h("div",{class:"act-a"})));});}
+  const chip=(n,l)=>{const b=h("button",{type:"button",class:"chip"+(NPW===n?" on":""),"aria-pressed":String(NPW===n)},l);b.addEventListener("click",()=>{NPW=n;NPALL=false;newProsRender();});return b;};
+  box.appendChild(h("div",{style:"display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"},
+    h("h2",{style:"margin:0;font-size:14px"},(NPW?"New Prospects Last Week":"New Prospects This Week")+" ("+L.length+")"),h("div",{class:"chipset"},chip(0,"This Week"),chip(1,"Last Week"))));
+  if(!L.length){box.appendChild(h("div",{class:"hint",style:"margin:6px 0 0"},NPW?"No prospects were added last week.":"No prospects added yet this week."));return;}
+  const SHOW=6,list=NPALL?L:L.slice(0,SHOW);
+  const ul=h("div",{style:"margin-top:8px;border-top:1px solid var(--border)"});
+  list.forEach(({o,at,how,by})=>{
+    const row=h("button",{type:"button",title:"Open "+o.name,style:"display:grid;grid-template-columns:52px minmax(0,1.3fr) minmax(0,1fr);gap:10px;align-items:baseline;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--border);padding:6px 4px;cursor:pointer;font:inherit;color:inherit"},
+      h("span",{style:"font-size:12px;color:var(--ink-3);white-space:nowrap"},fmtS(at)),
+      h("span",{style:"font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"},o.name),
+      h("span",{style:"font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"},how+(by?" · "+by.split(" ")[0]:"")));
+    row.addEventListener("click",()=>openOrg(o.k));
+    row.addEventListener("mouseenter",()=>{row.style.background="var(--surface-2)";});row.addEventListener("mouseleave",()=>{row.style.background="none";});
+    ul.appendChild(row);});
+  box.appendChild(ul);
+  if(L.length>SHOW){const more=h("button",{type:"button",class:"p360-link",style:"background:none;border:0;padding:6px 4px 0;cursor:pointer;font-size:13px"},NPALL?"Show fewer":"Show all "+L.length);
+    more.addEventListener("click",()=>{NPALL=!NPALL;newProsRender();});box.appendChild(more);}}
 /* one company, one record (Jonna, Oct 30, 2026): a new prospect named like a record already here (spaces, punctuation and Inc/LLC aside,
    or a letter or two off), with the same Company ID, or with a contact at the same company email domain, is flagged before it is added */
 function npKey(s){return String(s||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]/g,"").replace(/(incorporated|inc|llc|corp|corporation|company|ltd|llp|pllc|fsb)$/,"");}
