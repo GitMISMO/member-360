@@ -4086,6 +4086,8 @@ const TRK_ROLES=["Primary","Alternate","Billing","Marketing"];
 const TRK_COL={Primary:"MISMO PRIMARY CONTACT (MPC)",Alternate:"MISMO ALTERNATE CONTACT (MAC)",Billing:"MISMO BILLING CONTACT (MBC)",Marketing:"MISMO MARKETING CONTACT (MMC)"};
 const TRK_PRE={Primary:"MPC",Alternate:"MAC",Billing:"MBC",Marketing:"MMC"};
 const TRK_LABEL={name:"Name",sector:"Industry sector",market:"Commercial/Residential",cu:"Credit union member",joined:"Joined date",thru:"Thru date",created:"Created on",current:"Current member",s27:"2027 status",l27:"2027 level",sp27:"2027 special",s26:"2026 status",l26:"2026 level",sp26:"2026 special",s25:"2025 status",l25:"2025 level",twoYear:"2-year renewal",viaForm:"Applied through the form",vips:"VIPs",advisors:"Senior advisors",cPrimary:"Primary contact",cAlternate:"Alternate contact",cBilling:"Billing contact",cMarketing:"Marketing contact"};
+/* the tracker is not the record: only Kelly's notes, contacts, VIPs and senior advisors come in. Statuses, levels, specials and dates stay as Member 360 and Aptify have them (Jonna, Oct 29, 2026) */
+const TRK_TAKE=["vips","advisors","cPrimary","cAlternate","cBilling","cMarketing"];
 function trkS(v){return v==null?"":String(v).trim();}
 function trkYes(v){return v===true||/^(true|yes|y|x|1)$/i.test(trkS(v));}
 function trkDate(v){if(!v)return "";const d=v instanceof Date?v:new Date(v);if(isNaN(d))return trkS(v);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
@@ -4132,7 +4134,7 @@ function trkApplyOne(o,f){
   if("vips" in f){o.people.forEach(p=>{p.roles=(p.roles||[]).filter(r=>r!=="VIP");});String(f.vips||"").split("; ").filter(Boolean).forEach(e=>{const p=person(e);if(!p.roles.includes("VIP"))p.roles.push("VIP");});}
   if("advisors" in f)o.advisors=String(f.advisors||"").split("; ").filter(Boolean);
 }
-function trkNewOrg(k,f){const life=f.current?"Active":"Prospect";const st=[f.s27,f.s26].filter(Boolean).join(" ");
+function trkNewOrg(k,f){const life="Prospect";const st=[f.s27,f.s26].filter(Boolean).join(" ");
   return {k:k,cid:f.cid||"",row:0,name:f.name||"New Company",sector:"",market:"",cu:false,addr:"",joined:"",thru:"",created:"",life:life,stage:"",type:/[(]non.?lender[)]/i.test(st)?"Non-Lender":(/[(]lender[)]/i.test(st)?"Lender":""),level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,people:[],advisors:[],hand:[],notes:[],dupId:false,noId:!f.cid,iif:null,sector5:"",sectorSrc:"",fromTracker:true};}
 /* at load: the stored changes go onto the Sept 26 tracker, before Aptify and everything set here */
 async function trkLoad(orgs){
@@ -4152,10 +4154,10 @@ function trkDiff(rows,cm){
   rows.forEach((r,i)=>{const T=trkFromRow(r,notesByRow[i+1]);if(!T.name&&!T.cid)return;if(!T.cid&&/^note[: ]/i.test(T.name))return;
     let k=T.cid&&TRK.base["c"+T.cid]?"c"+T.cid:byName[T.name.toLowerCase()];
     if(!k){k=T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40);if(BY[k]&&!T.cid){/* already a record by that key */}
-      const f={};Object.keys(TRK_LABEL).forEach(x=>{if(T[x]!==""&&T[x]!==false)f[x]=T[x];});f.cid=T.cid;f.names=T.names;
-      out.push({k:k,name:T.name,isNew:true,f:f,ch:[["New company","",T.s27||T.s26||"Added to the tracker"]],notes:T.notes.map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}))});news++;notes+=T.notes.length;return;}
+      const f={name:T.name};TRK_TAKE.forEach(x=>{if(T[x]!=="")f[x]=T[x];});f.cid=T.cid;f.names=T.names;
+      out.push({k:k,name:T.name,isNew:true,f:f,ch:[["New company","","Added as a prospect with its contacts and notes"]],notes:T.notes.map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}))});news++;notes+=T.notes.length;return;}
     const B=TRK.base[k],f={},ch=[];
-    Object.keys(TRK_LABEL).forEach(x=>{if(String(T[x])!==String(B[x])){f[x]=T[x];ch.push([TRK_LABEL[x],B[x],T[x]]);}});
+    TRK_TAKE.forEach(x=>{if(String(T[x])!==String(B[x])){f[x]=T[x];ch.push([TRK_LABEL[x],B[x],T[x]]);}});
     if(TRK_ROLES.some(role=>("c"+role) in f))f.names=T.names;
     const nn=T.notes.filter(n=>n.t&&!B.notes.has(trkNorm(n.t))).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
     if(ch.length||nn.length){out.push({k:k,name:T.name||B.name,f:f,ch:ch,notes:nn});fields+=ch.length;notes+=nn.length;}});
@@ -4191,7 +4193,7 @@ function trkPanel(){
   box.__st=state;box.textContent="";
   const m=TRK.meta;
   box.appendChild(h("div",{class:"trk-h"},h("h2",null,"Weekly Tracker Update"),h("span",{class:"hint"},m&&m.at?"Last update "+fmt(m.at.slice(0,10))+(m.byName?" by "+m.byName:"")+(m.file?" ("+m.file+")":""):"Last tracker: September 26, 2026")));
-  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. Member 360 shows what changed since the last tracker, and nothing changes until you press Apply. Anything set from Aptify or by hand in Member 360 still wins."));
+  box.appendChild(h("p",{class:"hint",style:"margin:0 0 10px"},"Export the MISMO Membership Tracker from Smartsheet to Excel and drop it here. Only notes, contacts, VIPs and senior advisors come in, plus any new companies as prospects. Statuses, levels and dates stay as Member 360 and Aptify have them. Nothing changes until you press Apply."));
   if(TRK.pending){trkReview(box);return;}
   const inp=h("input",{type:"file",accept:".xlsx,.xls",hidden:true});
   const z=h("div",{class:"trk-drop",tabindex:"0",title:"Drop the tracker export here"},h("b",null,"Drop the tracker's Excel file here"),h("span",null," or "),h("button",{type:"button",class:"p360-link"},"choose the file"));
