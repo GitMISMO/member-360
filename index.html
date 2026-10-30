@@ -7508,7 +7508,7 @@ async function aptRead(files){
   const T={},S=[];let kept=0,skipped=0;
   (terms||[]).forEach(r=>{const lv=APT_LV[String(r["Product"]).trim()];const s=aptDate(r["Start Date"]),e=aptDate(r["End Date"]);
     const who=String(r["Subscriber"]||"").trim(),co=String(r["SubscriberCompany"]||"").trim(),cid=String(r["Subscriber Company"]||"").replace(/\.0+$/,"").trim();
-    const ina=String(r["Status"]).trim()!=="1";if(!lv||!s||!e||s>e||/\btest/i.test(who+" "+co)||/^(mismo|mortgage bankers association)$/i.test(co)){skipped++;return;}
+    const ina=String(r["Status"]).trim()!=="1"||!!(e&&e<TODAY); /* expired terms are history, even when Aptify still says active */if(!lv||!s||!e||s>e||/\btest/i.test(who+" "+co)||/^(mismo|mortgage bankers association)$/i.test(co)){skipped++;return;}
     const t={lv,s,e,who:/not specified/i.test(who)?"":who,co};if(ina)t.x=1;else kept++;
     if(cid)(T[cid]=T[cid]||[]).push(t);else if(lv==="Sole"&&t.who)S.push(t);else skipped++;});
   const C={};(comp||[]).forEach(r=>{const cid=String(r["ID"]||"").replace(/\.0+$/,"").trim();if(!cid)return;
