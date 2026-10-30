@@ -2155,6 +2155,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="vright"><button type="button" class="btn" id="np-open">Add a Prospect</button></div>
     </div>
     <div class="headline" id="mem-hl"><div class="hl-date" id="mem-eb"></div><div class="hl-say" id="mem-say"></div><div class="tiles" id="mem-tiles"></div></div>
+    <div class="panel" id="newpros-panel" hidden></div>
     <div class="filters">
       <div class="chipset" id="mem-life"></div>
       <input type="search" id="mem-q" placeholder="Filter by company, Company ID or contact" aria-label="Filter members">
@@ -5342,7 +5343,36 @@ function renderList(list){
   if(list==="stats"){const box=$("st-rows");if(STSEL)renderRows("stats",STSEL.items(),box);}
   if(list==="members"){const it=memberItems();$("mem-count").textContent=n(it.length)+" organizations";renderRows("members",it,$("mem-rows"));}
 }
-function renderMemHl(){const box=$("mem-tiles");if(!box)return;box.textContent="";const c={Active:0,Prospect:0,"IIF Invoiced":0,Former:0,Lost:0};
+/* ---------- New Prospects This Week (Jonna, Oct 30, 2026): every prospect added in Member 360, from the website, or from Kelly's tracker, by week ---------- */
+var NPW=0;
+function npWeekStart(off){const d=new Date(TODAY+"T12:00:00");const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow-7*(off||0));return d.toISOString().slice(0,10);}
+function npNew(from,to){const out=[];const P=(typeof TRK!=="undefined"&&TRK.P&&TRK.P.orgs)||{};
+  ORGS.forEach(o=>{if(ov(o).mergedInto||o.life!=="Prospect")return;let at="",how="",by="";
+    if(o.manual){at=String(o.addedAt||o.created||"").slice(0,10);how=o.source||"Added in Member 360";by=o.addedBy||"";}
+    else if(P[o.k]&&P[o.k].isNew){at=String(P[o.k].at||"").slice(0,10);how="Kelly's tracker";}
+    if(at&&at>=from&&at<to)out.push({o,at,how,by});});
+  return out.sort((a,b)=>b.at.localeCompare(a.at)||a.o.name.localeCompare(b.o.name));}
+function newProsRender(){const box=$("newpros-panel");if(!box)return;box.textContent="";box.hidden=false;
+  const from=npWeekStart(NPW),to=NPW?npWeekStart(NPW-1):"9999";const L=npNew(from,to);
+  const chip=(n,l)=>{const b=h("button",{type:"button",class:"chip"+(NPW===n?" on":""),"aria-pressed":String(NPW===n)},l);b.addEventListener("click",()=>{NPW=n;newProsRender();});return b;};
+  box.appendChild(h("div",{style:"display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"},h("h2",{style:"margin:0"},(NPW?"New Prospects Last Week":"New Prospects This Week")+" ("+L.length+")"),h("div",{class:"chipset"},chip(0,"This Week"),chip(1,"Last Week"))));
+  box.appendChild(h("div",{class:"hint",style:"margin:6px 0 10px"},"Added from "+fmt(from)+(NPW?" to "+fmt(addDays(to,-1)):"")+": by hand in Member 360, from website downloads, or from Kelly's tracker."));
+  if(!L.length){box.appendChild(h("div",{class:"hint"},NPW?"No prospects were added last week.":"No prospects added yet this week."));return;}
+  L.forEach(({o,at,how,by})=>{const em=(o.people||[]).map(p=>p.email).filter(Boolean)[0]||"";
+    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(at)),
+      h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),h("span",{class:"act-s"},o.type||"Non-Lender")),
+        h("div",{class:"act-d"},how+(by?" · added by "+by:"")+(owner(o)?" · owner "+owner(o):"")+(em?" · "+em:""))),h("div",{class:"act-a"})));});}
+/* one company, one record (Jonna, Oct 30, 2026): a new prospect named like a record already here (spaces, punctuation and Inc/LLC aside,
+   or a letter or two off), with the same Company ID, or with a contact at the same company email domain, is flagged before it is added */
+function npKey(s){return String(s||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]/g,"").replace(/(incorporated|inc|llc|corp|corporation|company|ltd|llp|pllc|fsb)$/,"");}
+function npDups(name,em,cidv){const k=npKey(name),dom=(String(em||"").toLowerCase().split("@")[1]||"");const free=/^(gmail|yahoo|outlook|hotmail|aol|icloud|me|msn|live|comcast|att|verizon|protonmail)[.]/;const out=[];
+  ORGS.forEach(o=>{if(ov(o).mergedInto||o.mm&&!o.cid)return;let why="";
+    if(cidv&&String(o.cid||"")===String(cidv))why="same Aptify Company ID";
+    else{const ok=npKey(o.name);if(k&&ok){if(ok===k)why="same name";else if(k.length>=5&&ok.length>=5&&Math.abs(ok.length-k.length)<=2&&mmLev(ok,k)<=2)why="a very similar name";}
+      if(!why&&dom&&!free.test(dom)&&(o.people||[]).some(p=>String(p.email||"").toLowerCase().endsWith("@"+dom)))why="a contact at "+dom;}
+    if(why)out.push({o,why});});
+  return out.sort((a,b)=>(a.why==="same name"?0:1)-(b.why==="same name"?0:1)).slice(0,3);}
+function renderMemHl(){try{newProsRender();}catch(e){console.error(e);}const box=$("mem-tiles");if(!box)return;box.textContent="";const c={Active:0,Prospect:0,"IIF Invoiced":0,Former:0,Lost:0};
   ORGS.forEach(o=>{const L=o.life==="Other"?"Former":o.life;if(L in c)c[L]++;});
   [["Active","Current Members","paid or free","var(--sky)"],["Prospect","Prospects","not members yet","var(--c5)"],["IIF Invoiced","IIF Invoiced","lenders under $1,000 paid","var(--c2)"],["Former","Former Members","membership ended","var(--ink-3)"],["Lost","Lost","chose not to renew","var(--bad)"]].forEach(([L,l,sub,col])=>{
     const on=memLife===L;box.appendChild(h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+col,"aria-pressed":String(on),onclick:()=>{memLife=L;shown.members=PAGE;renderMemChips();renderList("members");goList("mem-rows");}},h("span",{class:"lab"},l),h("span",{class:"val"},n(c[L])),h("span",{class:"sub"},sub)));});
@@ -5925,7 +5955,7 @@ const EXTRA={auto:[],manual:[],mm:[]};
 function prospectOrg(d){return {k:"p"+d.id,cid:d.cid||"",row:0,name:d.name||"New Prospect",sector:"",sector5:d.sector5||"",sectorSrc:d.sector5?"staff":"",market:"",cu:false,addr:"",
   joined:"",thru:"",created:(d.at||"").slice(0,10),life:"Prospect",stage:"",type:d.type||"Non-Lender",level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,
   people:(d.people||[]).map(p=>Object.assign({email:"",name:"",title:"",phone:"",roles:["Primary"]},p)),advisors:[],hand:[],
-  notes:d.note?[{d:(d.at||"").slice(0,19),by:d.byName||"",t:d.note,tags:["Added as a prospect"]}]:[],dupId:false,noId:!d.cid,manual:true,source:d.source||""};}
+  notes:d.note?[{d:(d.at||"").slice(0,19),by:d.byName||"",t:d.note,tags:["Added as a prospect"]}]:[],dupId:false,noId:!d.cid,manual:true,source:d.source||"",addedBy:d.byName||"",addedAt:d.at||""};}
 function mergeNew(list){EXTRA.auto=list;rebuildOrgs();}
 function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);rebuildOrgs();}
 /* ---------- MISMO Connect and work product downloads (Jonna, Oct 26, 2026) ----------
@@ -6148,6 +6178,11 @@ function openNewProspect(){
   const inp=(f,type,ph)=>h("input",{type:type||"text",id:id(f),placeholder:ph||""});
   const F=(label,el,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",{for:el.id},label),el);
   const nm=inp("name","text","Company or person's name"),cid=inp("cid","text","Only if they're already in Aptify");
+  const dupH=h("div",{class:"hint",style:"margin:6px 0 0"});
+  const npShow=()=>{const L=npDups(nm.value.trim(),(document.getElementById(id("email"))||{}).value||"",cid.value.trim());if(!dupH.isConnected)nm.insertAdjacentElement("afterend",dupH);dupH.textContent="";if(!L.length)return L;
+    dupH.appendChild(h("b",{style:"color:#b45309"},"Already in Member 360: "));L.forEach((x,i)=>{if(i)dupH.appendChild(document.createTextNode(", "));dupH.appendChild(h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(x.o.k);}},x.o.name));dupH.appendChild(document.createTextNode(" ("+(x.o.life||"record")+", "+x.why+")"));});
+    dupH.appendChild(document.createTextNode(". Open it to log there instead."));return L;};
+  nm.addEventListener("input",()=>{clearTimeout(nm._t);nm._t=setTimeout(npShow,250);});cid.addEventListener("change",npShow);setTimeout(()=>{const e=document.getElementById(id("email"));if(e)e.addEventListener("change",npShow);},0);
   const ty=select([{v:"Non-Lender",l:"Non-Lender"},{v:"Lender",l:"Lender"}],"Non-Lender",{id:id("type")});
   const sc=select([{v:"",l:"Choose a Sector"}].concat(SECTORS.map(x=>({v:x,l:sectorLab(x)}))),"",{id:id("sector")});
   const ow=select(staffOpts(),SET.staff&&SET.staff.includes(myName())?myName():"",{id:id("owner")});
@@ -6163,6 +6198,7 @@ function openNewProspect(){
   const save=h("button",{type:"button",class:"btn"},"Save Prospect"),cancel=h("button",{type:"button",class:"btn ghost"},"Cancel");
   cancel.addEventListener("click",closePane);
   save.addEventListener("click",async()=>{const name=nm.value.trim();if(!name){toast("Enter the organization's name.",true);nm.focus();return;}
+    {const L=npShow();if(L.length&&nm.dataset.dupOk!==name){nm.dataset.dupOk=name;toast(L[0].o.name+" is already in Member 360. Open it from the note under the name, or press Save again to add a separate prospect.",true);nm.focus();return;}}
     const em=ce.value.trim();if(em&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast("That email address doesn't look complete.",true);ce.focus();return;}
     const person=(cf.value.trim()||cl.value.trim()||em)?[{name:(cf.value.trim()+" "+cl.value.trim()).trim(),title:ct.value.trim(),email:em,phone:cp.value.trim(),roles:["Primary"]}]:[];
     const doc={name,cid:cid.value.trim(),type:ty.value,sector5:sc.value,people:person,note:note.value.trim(),source:src.value.trim(),at:new Date().toISOString(),by:ME||"",byName:myName()||""};
