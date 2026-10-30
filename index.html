@@ -2123,7 +2123,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
   <section class="view" id="v-activity" hidden>
     <div class="vhead">
       <div><h1>Activity</h1>
-      <div class="vsub">What the team saved, changed, removed or forwarded to 360@mba.org, newest first. Remove takes a touchpoint off a company and Restore puts it back.</div></div>
+      <div class="vsub">What the team saved, changed, removed or forwarded to 360@mba.org, newest first, starting October 29, 2026. Things Member 360 does on its own aren't listed. Remove takes a touchpoint off a company and Restore puts it back.</div></div>
     </div>
     <div class="filters" id="act-filters">
       <input type="search" id="act-q" placeholder="Search activity and companies" aria-label="Search activity">
@@ -3950,7 +3950,7 @@ function actDetail(c,b){
 }
 function actNote(c,id,kind,data,prev){
   if(!ACTV.rawDoc||!id||ACT_SKIP.test(c))return;
-  if(c==="sync"&&id!=="aliases")return;
+  if(c==="sync"&&id!=="aliases")return;if(c==="outbox"&&data&&data.test)return; /* tests are not activity */
   data=data||null;const isNew=!prev&&(kind==="add"||kind==="set");
   if(isNew&&/^(touchpoints|deals|issues|prospects)$/.test(c))return; /* these show from their own records */
   if(c==="issues"&&/^auto-/.test(id)&&!(data&&("status" in data||"updates" in data||"resolution" in data)))return;
@@ -3974,9 +3974,12 @@ function actRows(){
   Object.keys(R.issues).forEach(id=>{const x=R.issues[id];if(!x||!x.title||!x.at)return;rows.push({key:"is-"+id,type:"issue",at:x.at,by:x.by||"",auto:/^auto-/.test(id),label:"Logged an issue",detail:x.title,org:actOrgOf("issues",id,x)});});
   Object.keys(R.prospects).forEach(id=>{const x=R.prospects[id];if(!x||!x.at)return;rows.push({key:"pr-"+id,type:"prospect",at:x.at,by:x.by||"",byName:x.byName||"",label:"Added a prospect",detail:"",org:"p"+id,orgName:x.name||""});});
   Object.keys(ACTV.log).forEach(id=>{const e=ACTV.log[id];if(!e||!e.at)return;rows.push({key:"log-"+id,type:"log",at:e.at,by:e.by||"",byName:e.byName||"",auto:!!e.auto,label:e.label||"Saved a change",detail:e.detail||(e.coll==="orgs"&&e.fields&&e.fields.length?"Changed "+e.fields.join(", "):""),org:e.org||"",orgName:e.orgName||"",e:e,id:id});});
-  rows.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  const keep=rows.filter(actKeep);rows.length=0;keep.forEach(x=>rows.push(x));rows.sort((a,b)=>String(b.at).localeCompare(String(a.at)));
   return rows;
 }
+/* only what people on staff do, starting Oct 29, 2026: nothing Member 360 does on its own, nothing earlier (Jonna, Oct 29, 2026) */
+const ACT_START=new Date(2026,9,29).toISOString();
+function actKeep(r){if(!r||!r.at)return false;const at=String(r.at);let iso=at;try{iso=new Date(at).toISOString();}catch(e){return false;}if(iso<ACT_START)return false;if(r.auto)return false;if(r.type==='log'&&r.e&&r.e.coll==='outbox'&&/^t/.test(String(r.e.doc||'')))return false;if(r.type==='mail')return !!r.byLocal;const w=actWhoOf(r);return w.id==='me'||!['Member 360','Someone','Claude'].includes(w.name);}
 function actLocalName(l){if(!l)return "";for(const k in NAMES){if(m360Local(k)===l&&NAMES[k])return NAMES[k];}return "";}
 function actWhoOf(r){
   if(r.type==="mail"){const l=r.byLocal||"";if(l&&l===m360Me())return {id:"me",name:"You"};const nm=actLocalName(l);return {id:nm||l||"Someone",name:nm||l||"Someone"};}
