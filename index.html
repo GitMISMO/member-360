@@ -1486,7 +1486,7 @@ html.olk .p360-dlg{width:calc(100vw - 16px)!important;max-height:calc(100vh - 16
 .ty-i .hint{margin:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ty-x{margin-left:auto;font-size:12px;white-space:nowrap}
 /* Weekly Tracker Update (Jonna, Oct 29, 2026) */
-.trk{margin-top:28px;padding:18px 20px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.trk{margin:0}
 .trk-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .trk-h h2{font-size:17px;margin:0}
 .trk-drop{border:2px dashed var(--border-strong);border-radius:10px;padding:22px;text-align:center;color:var(--ink-2);background:var(--surface-2)}
@@ -2249,6 +2249,10 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
     <details class="sect">
       <summary>Aptify Member Data</summary>
       <div class="sbody" id="aptinfo"></div>
+    </details>
+    <details class="sect">
+      <summary>Smartsheet Membership Tracker</summary>
+      <div class="sbody" id="trkinfo"></div>
     </details>
     <details class="sect">
       <summary>MISMO Connect and Download Data</summary>
@@ -4199,10 +4203,10 @@ async function trkSave(d,fileName){
 }
 /* the box at the bottom of the Activity page */
 function trkPanel(){
-  const list=document.getElementById("act-list");if(!list)return;let box=document.getElementById("trk-box");
+  const host=document.getElementById("trkinfo");if(!host)return;let box=document.getElementById("trk-box");
   const state=(TRK.pending?"p"+TRK.pending.file+TRK.pending.list.length:"idle")+"|"+(TRK.meta?TRK.meta.at:"");
   if(box&&box.__st===state)return;
-  if(!box){box=h("section",{class:"trk",id:"trk-box"});const v=document.getElementById("v-activity");v.appendChild(box);}
+  if(!box){box=h("section",{class:"trk",id:"trk-box"});host.appendChild(box);}
   box.__st=state;box.textContent="";
   const m=TRK.meta;
   box.appendChild(h("div",{class:"trk-h"},h("h2",null,"Weekly Tracker Update"),h("span",{class:"hint"},m&&m.at?"Last update "+fmt(m.at.slice(0,10))+(m.byName?" by "+m.byName:"")+(m.file?" ("+m.file+")":""):"Last tracker: September 26, 2026")));
@@ -4235,7 +4239,7 @@ function trkReview(box){
   if(d.list.length>400)ul.appendChild(h("div",{class:"hint"},"and "+(d.list.length-400)+" more"));
   box.appendChild(ul);
 }
-{const _raTrk=renderActivity;renderActivity=function(){const r=_raTrk.apply(this,arguments);try{trkPanel();}catch(e){console.error("tracker panel",e);}return r;};}
+{const _rsTrk=renderSettings;renderSettings=function(){const r=_rsTrk.apply(this,arguments);try{trkPanel();}catch(e){console.error("tracker panel",e);}return r;};}
 function actRefresh(){clearTimeout(ACTV.tm);ACTV.tm=setTimeout(()=>{const v=document.getElementById("v-activity");if(v&&!v.hidden)renderActivity();},250);}
 /* take a touchpoint off the record: it is kept with archived set, never deleted (Jonna, Oct 29, 2026) */
 async function m360RmTp(t){if(blocked())return;const o=BY[t.org];if(!confirm("Remove this touchpoint"+(o?" from "+o.name:"")+"? It comes off the record. Nothing else changes."))return;try{await db.doc("touchpoints/"+t.id).update({archived:true,archivedAt:new Date().toISOString(),archivedBy:ME||""});toast("Touchpoint removed.");try{pushUndo("Removed a touchpoint",()=>db.doc("touchpoints/"+t.id).update({archived:false}));}catch(e){}}catch(e){onWriteErr(e);}}
