@@ -668,6 +668,30 @@
     refresh: loadMoney, status: function () { return { at: MM.at, sha: MM.sha, error: MM.err, has: !!MM.data }; }
   };
 
+  /* ---------- Square members from MISMO Money ----------
+     When the membership team has set up a TMC, Broker or ACUMA company that paid through Square,
+     MISMO Money writes it into data/mismo-money-square.json (kind "mismo-money-square", members keyed
+     by the Square record; a record that disappears means the set-up was undone). MISMO Money owns
+     that file: this page only reads it, after sign-in and every five minutes. */
+  var SQ_FILE = 'mismo-money-square', SQ_POLL_MS = 300000;
+  var SQ = { data: null, sha: undefined, at: 0, cbs: [], busy: false };
+  function loadSquare() {
+    if (SQ.busy || !ready || !(RS() && RS().token())) return Promise.resolve();
+    SQ.busy = true;
+    return net('GET', SQ_FILE).then(function (b) {
+      var sha = (b && b.sha) || null; SQ.at = now();
+      if (sha === SQ.sha) return;
+      SQ.sha = sha; SQ.data = (b && b.data) || null;
+      SQ.cbs.forEach(function (cb) { try { cb(SQ.data); } catch (e) { console.error(e); } });
+    }, function () { SQ.at = now(); }).then(function () { SQ.busy = false; });
+  }
+  setInterval(function () { if (SQ.at && now() - SQ.at >= SQ_POLL_MS && document.visibilityState !== 'hidden') loadSquare(); }, 60000);
+  whenReady().then(loadSquare);
+  window.__m360Square = {
+    onData: function (cb) { SQ.cbs.push(cb); if (SQ.sha !== undefined) { try { cb(SQ.data); } catch (e) { console.error(e); } } },
+    refresh: function () { SQ.at = 0; return loadSquare(); }
+  };
+
   /* ---------- what Power Automate has sent ----------
      Pressing Send in Member 360 saves an email batch into data/outbox.json. That save is a
      commit to member-360-data, and the repository's webhook wakes the "Member 360 Emails"
@@ -3977,7 +4001,7 @@ function actLabel(c,kind,d,p,isNew){
   if(c==="prospects")return del?"Deleted a prospect":"Edited a prospect";
   if(c==="orgs")return "Updated company details";
   if(c==="sends")return del?"Cleared a sent email":"Recorded a sent email";
-  if(c==="outbox")return del?"Took emails out of the queue":(isNew?(d.step==="square"?"Recorded a Square payment":"Sent Member 360 emails"):"Updated queued emails");
+  if(c==="outbox")return del?"Took emails out of the queue":(isNew?(d.step==="square"?"Recorded a Square payment":d.step==="mm-square"?"Square payment set-up email (MISMO Money)":"Sent Member 360 emails"):"Updated queued emails");
   if(c==="templates")return del?"Deleted a playbook email":"Saved a playbook email";
   if(c==="settings")return "Changed settings";
   if(c==="sync")return "Changed company name matching";
@@ -4523,7 +4547,10 @@ function applyContacts(o){
   const ed=c.edits||{},rm=c.removed||{},out=[];
   o._base.forEach((p,i)=>{const k=ckey(p,i);if(rm[k])return;const e=ed[k];out.push(Object.assign({},p,e||{},{_key:k,_src:e?"edited":"aptify"}));});
   (c.added||[]).forEach(p=>out.push(Object.assign({name:"",title:"",email:"",phone:"",roles:[]},p,{_key:"a:"+p.id,_src:"added"})));
-  o.people=out;
+  /* a Square signer or contact (sqApply) steps aside for the same person already on the record, who takes its role */
+  const lc=x=>String(x||"").toLowerCase();
+  o.people=out.filter(p=>{if(!p._sqp)return true;const b=out.find(b=>b!==p&&!b._sqp&&((p.email&&lc(b.email)===lc(p.email))||(p.name&&samePerson(b,p.name))));
+    if(!b)return true;const r=p.roles.filter(x=>!b.roles.includes(x));if(r.length)b.roles=b.roles.concat(r);return false;});
 }
 function contactsOv(o){const c=ov(o).contacts||{};return {edits:Object.assign({},c.edits||{}),removed:Object.assign({},c.removed||{}),added:(c.added||[]).map(x=>Object.assign({},x))};}
 function saveContact(o,p,patch){
@@ -5256,11 +5283,11 @@ function sqWaiting(){const out=[];ORGS.forEach(o=>{if(ov(o).mergedInto)return;co
   return out.sort((a,b)=>String(b.i.d).localeCompare(String(a.i.d)));}
 function sqRender(box){const L=sqWaiting();if(!L.length)return;
   box.appendChild(h("h2",null,"Paid by Square: Set Up in Aptify"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"MISMO Money took these special payments through Square and told the membership team. Each drops off once the weekly Aptify upload shows their membership."));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Special payments taken through Square that the membership team has set up. Each drops off once the weekly Aptify upload shows their membership."));
   L.forEach(({o,i})=>{const sp=i.sp||specialOf(o);
     box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(i.d)),
       h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),sp?h("span",{class:"act-s"},sp):null,h("span",{class:"act-s warn"},"Not in Aptify yet")),
-        h("div",{class:"act-d"},"Paid "+money(i.n)+" by Square on "+fmt(i.d)+(i.o?" · order "+i.o:""))),h("div",{class:"act-a"})));});}
+        h("div",{class:"act-d"},"Paid "+money(i.n)+" by Square on "+fmt(i.d)+(i.o?" · Aptify payment in, order "+i.o:" · waiting for the Aptify payment"))),h("div",{class:"act-a"})));});}
 function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
   renderIIFYear();document.querySelectorAll(".iyy").forEach(e=>e.textContent=IIFY());const Y=IIFY(),inv0=Y!==String(Number(IY)-2);
   const L=iifSetFor(Y);let inv=0,paid=0;const cc={"Paid Full Amount":0,"Partial Payment Received":0,"Not Paid":0,"Paid":0};const oc={};
@@ -6106,7 +6133,7 @@ function rebuildOrgs(){
   applyCidOv();
   applyMerges();
   leadDirty();
-  if(MMF)remergeAct();
+  if(MMF||SQF)remergeAct();
   if(APT)applyAptify();
   const dl=$("orgnames");if(dl)dl.textContent="";
   renderMemChips();renderList("renewals");renderList("members");
@@ -6250,7 +6277,7 @@ function dealsOf(o){return DEALS.filter(d=>d.org===o.k).sort((a,b)=>(b.sold||"")
 function dealLine(d){const m=monthsIn(d.start,d.end);return [d.level,fmt(d.start)+" to "+fmt(d.end)+" ("+m+" months)",money(d.price||0)].join(" · ");}
 /* has the Financial System received the membership payment behind a commitment? */
 function dealPaid(d){const o=BY[d.org];if(!o)return null;const from=addDays(d.start,-62),soldFrom=addDays(d.sold||d.start,-45);
-  const hits=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0&&(i.s?(i.s>=from&&i.s<=d.end):(i.d>=soldFrom)));
+  const hits=fsItems(o).filter(i=>(i.c==="Membership"||i.sq)&&i.n>0&&(i.s?(i.s>=from&&i.s<=d.end):(i.d>=soldFrom)));
   if(!hits.length)return null;hits.sort((a,b)=>a.d.localeCompare(b.d));return {d:hits[0].d,n:hits.reduce((a,i)=>a+i.n,0),o:hits[0].o};}
 /* the team marking a renewal Renewed or Payment in Process, or a prospect Joined, is a commitment: add it to the report automatically */
 async function autoCommit(o,type){if(!db||!canWrite)return;
@@ -6374,7 +6401,7 @@ function dealsShown(){dealFixAll();const m=$("dl-month").value,ap=$("dl-ap").val
     .sort((a,b)=>(a.sold||"").localeCompare(b.sold||"")||(a.orgName||"").localeCompare(b.orgName||""));}
 function days_(a,b){return Math.round((Date.parse(b)-Date.parse(a))/864e5);}
 function monthLabel(m){if(!m)return "All Months";const [y,mm]=m.split("-").map(Number);return MONTHS[mm-1]+" "+y;}
-function paidNotReported(m){const out=[];ORGS.forEach(o=>{fsItems(o).forEach(i=>{if(i.c!=="Membership"||i.n<=0||(m&&i.d.slice(0,7)!==m))return;
+function paidNotReported(m){const out=[];ORGS.forEach(o=>{fsItems(o).forEach(i=>{if((i.c!=="Membership"&&!i.sq)||i.n<=0||(m&&i.d.slice(0,7)!==m))return;
   /* new members only: a joined date before the term being paid for means it is a renewal */
   const j_=(joinedOf(o)||"").slice(0,10);if(j_&&j_<(i.s||i.d||"").slice(0,10))return;
   const rec=DEALS.some(d=>d.org===o.k&&dealPaid(d)&&((i.s&&i.s>=addDays(d.start,-62)&&i.s<=d.end)||(!i.s&&i.d>=addDays(d.sold||d.start,-45))));if(!rec)out.push({o,i});});});
@@ -7480,8 +7507,8 @@ let APT=null,APTR={noRecord:[],noTerm:[],changed:{}};
 function aptN(s){return String(s||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]/g,"");}
 function applyAptify(){
   const R={noRecord:[],noTerm:[],changed:{level:0,thru:0,life:0,joined:0,cu:0,addr:0}};
-  ORGS.forEach(o=>{if(o._apt0){Object.assign(o,o._apt0);}delete o.aptStart;delete o.aptTerm;delete o.aptAll;});
-  if(!APT||!APT.terms){certMatch(R);APTR=R;return;}
+  ORGS.forEach(o=>{if(o._sq0){Object.assign(o,o._sq0);delete o._sq0;}if(o._apt0){Object.assign(o,o._apt0);}delete o.aptStart;delete o.aptTerm;delete o.aptAll;});
+  if(!APT||!APT.terms){certMatch(R);APTR=R;try{sqApply();}catch(e){console.error("square",e);}return;}
   const byCid={},byName={};
   ORGS.forEach(o=>{if(o.cid&&!o.mm)(byCid[String(o.cid)]=byCid[String(o.cid)]||[]).push(o);
     if(o.pid&&!o.mm&&String(o.pid)!==String(o.cid))(byCid[String(o.pid)]=byCid[String(o.pid)]||[]).push(o);
@@ -7542,6 +7569,7 @@ function applyAptify(){
   ORGS.forEach(o=>{if(o.life==="Active"&&!seen.has(o.k)&&!o.mm&&!o.manual&&o.type!=="Lender")R.noTerm.push(o);});
   certMatch(R);
   APTR=R;
+  try{sqApply();}catch(e){console.error("square",e);}
 }
 /* A lender is a member by paying the Innovation Investment Fund, not by an
    Aptify membership term, so a wrong "Active" from the old tracker can't be
@@ -7924,7 +7952,7 @@ function openSend(opt){
    An order missing from the file is not unpaid: only orders in the file replace anything.
    Nothing is written back, and the page never writes MISMO Money's file. The Claude copy has no such file and
    is unchanged. */
-let ACT0={},MMF=null,MMINFO=null,REVIEW0=null;
+let ACT0={},MMF=null,MMINFO=null,REVIEW0=null,SQF=null,SQK={};
 const MMLEVEL=/champion|corporate membership|sole membership|mismo membership/i;
 function mmCat(p){p=String(p||"");
   if(/innovation investment/i.test(p))return "IIF";
@@ -8014,25 +8042,79 @@ function mmNewMember(name,cid,its,subs){
     thru,stage,level:lvl,hist:ys.slice().reverse().map((y,i)=>({y,status:"PAID - "+(i<ys.length-1?"Renewed":"New")+" (MISMO Money)",level:yrs[y]})),
     people:[...subs].map(n=>({email:"",name:n,title:"",phone:"",roles:["Subscriber"]}))};
 }
+/* the Square members file (see the relay's loadSquare) */
+function sqList(){const M=(SQF&&SQF.members)||{};return Object.keys(M).map(id=>Object.assign({id},M[id])).filter(q=>q&&String(q.company||"").trim());}
+function sqSp(q){const t=String(q.special||"").trim();return /^broker$/i.test(t)?"Broker":t.toUpperCase();}
+function sqLevel(sp,q){const m=specialsList().find(x=>x.name===sp);return (m&&m.level)||q.level||"Corporate";}
+function sqPeople(q){const out=[];
+  const add=(p,role)=>{if(!p||!(p.name||p.email))return;const em=String(p.email||"").trim(),x=em&&out.find(z=>z.email.toLowerCase()===em.toLowerCase());
+    if(x){if(!x.roles.includes(role))x.roles.push(role);if(!x.name&&p.name)x.name=String(p.name).trim();if(!x.phone&&p.phone)x.phone=String(p.phone).trim();return;}
+    out.push({email:em,name:String(p.name||"").trim(),title:"",phone:String(p.phone||"").trim(),roles:[role]});};
+  add(q.contact,"Primary");add(q.signer,"Authorized Signer");return out;}
+/* the Square payment as activity items, built the way an Aptify order is (its own payment and membership line when the file has them) */
+function sqPayItems(q,sp){const d=String(q.paidOn||"").slice(0,10),n=mmNum(q.amount);
+  const its=mmItems({order:"",lastPaidOn:d,net:n,payments:Array.isArray(q.payments)&&q.payments.length?q.payments:[{on:d,amount:n,type:"Square"}],
+    lines:Array.isArray(q.lines)&&q.lines.length?q.lines:[{product:"MISMO Corporate Membership",amount:n,description:sp+" Special, paid through Square",start:d}]});
+  its.forEach(i=>{i.sq=1;if(sp)i.sp=sp;if(q.membershipEnds)i.e=String(q.membershipEnds).slice(0,10);});return its;}
+/* a Square member Member 360 doesn't have yet, kept under a key that doesn't change ("c"+Company ID, or "m"+a hash of the name) */
+function sqNewRec(q,sp){const cid=String(q.companyId||"").trim().replace(/\.0$/,""),name=String(q.company).trim(),d=String(q.paidOn||"").slice(0,10);
+  const thru=String(q.membershipEnds||"").slice(0,10)||(d.slice(0,4)+"-12-31"),lvl=sqLevel(sp,q);
+  const stage=thru>=RY+"-12-31"?"Renewed":(thru===String(RY-1)+"-12-31"?"Not Renewed Yet":"");
+  return {k:cid?"c"+cid:"m"+mmHash(name),cid,row:0,name,sector:"",market:"",cu:sp==="ACUMA",addr:String((q.contact&&q.contact.address)||""),joined:d,created:d,
+    life:"Active",type:"Lender",lossReason:"",twoYear:false,viaForm:false,advisors:[],hand:[],notes:[],dupId:false,noId:!cid,auto:true,mm:true,sqm:q.id,
+    thru,stage,level:lvl,hist:[{y:thru.slice(0,4),status:"PAID - New ("+(sp?sp+" special, ":"")+"Square)",level:lvl}],people:sqPeople(q)};}
+/* a Square member already in Member 360 is a member through the file's end date, at the special's level, with the signer and
+   contact on the record. Laid on when read, never saved; Aptify wins once it shows the membership, and so does anything
+   staff set by hand. The membership is taken back first each time, so a set-up undone in MISMO Money comes off (the people stay until the page reloads). */
+function sqApply(){
+  ORGS.forEach(o=>{if(o._sq0){Object.assign(o,o._sq0);delete o._sq0;}});
+  Object.keys(SQK).forEach(k=>{let o=BY[k];for(let n=0;o&&ov(o).mergedInto&&BY[ov(o).mergedInto]&&n<5;n++)o=BY[ov(o).mergedInto];if(!o)return;
+    const q=SQK[k],sp=sqSp(q),thru=String(q.membershipEnds||"").slice(0,10),d=OV[o.k]||{};
+    if(o._base){const lc=x=>String(x||"").toLowerCase();
+      const add=sqPeople(q).filter(p=>!o._base.concat(o.people||[]).some(b=>(p.email&&lc(b.email)===lc(p.email))||(p.name&&samePerson(b,p.name))));
+      if(add.length){o._base=o._base.concat(add.map(p=>Object.assign(p,{_sqp:1})));applyContacts(o);}}
+    if(o.mm||!thru||(o.aptTerm&&o.aptTerm.e>=thru))return;
+    const was={},set=(f,v)=>{if(o[f]===v||(d[f]!==undefined&&d[f]!==""))return;if(!(f in was))was[f]=o[f];o[f]=v;};
+    const lapsed=o.life!=="Active";
+    if((o.thru||"")<thru)set("thru",thru);
+    set("life","Active");
+    if(!o.level||lapsed)set("level",sqLevel(sp,q));
+    if(!o.joined)set("joined",String(q.paidOn||"").slice(0,10));
+    if(Object.keys(was).length)o._sq0=was;});
+}
 let MMBUSY=false;
 function remergeAct(){
   if(MMBUSY)return;
   const out=Object.assign({},ACT0),unm={};let orders=0,matched=0,items=0;
-  const L=mmOrders(MMF);const newRecs=[];
-  if(L.length){
+  const L=mmOrders(MMF);const newRecs=[];const SQL=sqList();SQK={};
+  if(L.length||SQL.length){
     const from=String((MMF&&MMF.from)||"").slice(0,10);
-    const match=mmMatcher(),add={},drop=new Set();
+    const match=mmMatcher(),add={},drop=new Set(),ordKey={};
     L.forEach(r=>{orders++;const its=mmItems(r);const m=match(r);
       if(r.order!=null&&(!from||its[0].d>=from))drop.add(String(r.order).trim());
-      if(m.k){matched++;items+=its.length;(add[m.k]=add[m.k]||[]).push(...its);return;}
+      if(m.k){matched++;items+=its.length;(add[m.k]=add[m.k]||[]).push(...its);if(r.order!=null)ordKey[String(r.order).trim()]=m.k;return;}
       if(m.ignored||!m.name)return;
       const u=unm[m.name]=unm[m.name]||{name:m.name,cid:"",amb:false,its:[],subs:new Set()};
       if(m.cid&&!u.cid)u.cid=m.cid;if(m.ambiguous)u.amb=true;u.its.push(...its);
       (Array.isArray(r.lines)?r.lines:[]).forEach(l=>{const x=/Company Sub:\s*([^.#]+?)\s*\./.exec(String(l.description||""));if(x&&x[1])u.subs.add(x[1].trim());});
     });
+    /* Square members MISMO Money confirmed as set up (Jonna, Oct 30, 2026): the record that took the Aptify order, else the
+       Company ID or name; a company Member 360 doesn't have yet is added as a new member. Until the Aptify payment is in, the
+       Square payment stands in for it; once it is, that order is the payment (the same money is never counted twice). */
+    SQL.forEach(q=>{
+      const ord=String(q.aptifyOrder||"").trim(),sp=sqSp(q),nn=[q.company,q.aptifyName].filter(Boolean).map(mmNorm);
+      let k=ord&&ordKey[ord]||"";
+      if(!k){const r=match({companyId:q.companyId,company:q.company});if(r.k)k=r.k;else if(q.aptifyName){const r2=match({company:q.aptifyName});if(r2.k)k=r2.k;}}
+      const same=Object.values(unm).filter(u=>!u.added&&((ord&&u.its.some(i=>i.o===ord))||nn.includes(mmNorm(u.name))));
+      if(!k){const rec=sqNewRec(q,sp);if(!newRecs.some(x=>x.k===rec.k))newRecs.push(rec);k=rec.k;}
+      same.forEach(u=>{u.added=k;(add[k]=add[k]||[]).push(...u.its);});
+      const its=add[k]=add[k]||[],real=ord?its.filter(i=>i.o===ord):[];
+      if(real.length)real.forEach(i=>{i.sq=1;if(sp)i.sp=sp;if(q.membershipEnds)i.e=String(q.membershipEnds).slice(0,10);});
+      else its.push(...sqPayItems(q,sp));
+      SQK[k]=q;});
     /* who becomes a new member, who goes to the review */
     const since=String(RY-1)+"-01-01";
-    Object.values(unm).forEach(u=>{
+    Object.values(unm).forEach(u=>{if(u.added)return;
       const paidMem=u.its.some(i=>i.c==="Membership"&&i.n>0&&i.d>=since);
       u.suggest=u.amb?"":mmSuggest(u.name,match.byName);
       if(paidMem&&!u.amb&&!u.suggest){const rec=mmNewMember(u.name,u.cid,u.its,u.subs);if(rec&&!newRecs.some(x=>x.k===rec.k)){newRecs.push(rec);u.added=rec.k;add[rec.k]=(add[rec.k]||[]).concat(u.its);matched++;}}
@@ -8072,6 +8154,7 @@ function remergeAct(){
     u.its.forEach(i=>{t.count++;t.total+=i.n;if(i.d>t.last)t.last=i.d;t.cats.add(i.c);if(i.c==="Membership"||i.c==="Sponsorship"||(i.c==="IIF"&&i.n>=1000))t.member=true;});
     return t.member?{name:u.name,count:t.count,total:Math.round(t.total*100)/100,last:t.last,cats:[...t.cats].sort(),suggest:u.suggest||"",src:"MISMO Money"}:null;}).filter(Boolean);
   extra.sort((a,b)=>b.total-a.total);
+  try{sqApply();}catch(e){console.error("square",e);}
   REVIEW=REVIEW0||extra.length?Object.assign({},REVIEW0||{},{items:extra.concat(base)}):null;
   MMINFO=MMF?{orders,matched,items,unmatched:Object.keys(unm).length,review:extra.length,added:newRecs.length,from:String(MMF.from||"").slice(0,10),
     updated:MMF.writtenAt||MMF.savedAt||"",through:String(MMF.paymentsThrough||"").slice(0,10),paid:Object.values(out).filter(a=>a&&a.paid).length}:null;
@@ -8153,6 +8236,7 @@ async function boot(){
   /* resources.mismo.org: MISMO Money's payments, laid over the activity files (see remergeAct) */
   if(window.__m360Money)window.__m360Money.onData(d=>{MMF=d||null;remergeAct();paintDataDates();scheduleRefresh();
     const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderSync();});
+  if(window.__m360Square)window.__m360Square.onData(d=>{SQF=d||null;remergeAct();scheduleRefresh();try{iifNewRender();}catch(e){console.error(e);}});
   db.collection("prospects").onSnapshot(q=>{mergeProspects(q.docs.map(d=>Object.assign({id:d.id},d.data())));scheduleRefresh();},err);
   db.collection("issues").onSnapshot(q=>{ISSUES=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
   db.doc("aptify/iifnew").onSnapshot(sn=>{IFN=sn.exists?sn.data():null;try{iifNewRender();}catch(e){}},err);
