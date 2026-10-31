@@ -2299,6 +2299,21 @@ details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 .m3g-c.due .m3g-a span{color:#ffd88a}
 @media(max-width:900px){.m3g-src{grid-template-columns:1fr}#m3g-top .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* ---------- Figure boxes keep their navy face on hover and focus (Jonna, Oct 31, 2026) ---------- */
+.headline .tiles .tile:hover,.headline .tiles .tile:focus-visible,.headline > .tiles .tile:hover{color:#fff;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--k,#74bfeb) 34%,transparent),transparent 62%),linear-gradient(160deg,#143d5a,#0d2c42)!important;border-color:color-mix(in srgb,var(--k,#74bfeb) 60%,transparent)!important}
+.headline .tiles .tile:hover .lab,.headline .tiles .tile:focus-visible .lab{color:color-mix(in srgb,var(--k,#74bfeb) 70%,#fff)}
+.headline .tiles .tile:hover .val,.headline .tiles .tile:focus-visible .val{color:#fff}
+.headline .tiles .tile:hover .sub,.headline .tiles .tile:focus-visible .sub{color:rgba(255,255,255,.8)}
+.headline .tiles div.tile:hover,.headline .tiles .tile.static:hover{transform:none}
+/* day load bars and fold counts read in dark mode too */
+.m3w-load{background:rgba(116,191,235,.16)!important}
+.m3a-x{background:rgba(116,191,235,.16)!important;color:inherit!important}
+.m3a-x:hover,.m3a-x.on{background:#0d314c!important;color:#fff!important}
+/* organization names in lists stay on one line */
+.ty-i .p360-link,#v-settings .rv .linkbtn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:inline-block;vertical-align:bottom}
+/* the runway scrolls sideways on a phone instead of stacking its names */
+@media(max-width:760px){.m3p-band{overflow-x:auto!important;-webkit-overflow-scrolling:touch}.m3p-line{min-width:880px}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
