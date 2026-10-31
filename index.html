@@ -2166,6 +2166,14 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 @media(max-width:1100px){.m3m-band{grid-template-columns:1fr 1fr!important}.m3m-band .m3m-col:first-child{grid-column:1/-1}}
 @media(max-width:640px){.m3m-band{grid-template-columns:1fr!important}}
 
+/* ---------- Membership Stats band ---------- */
+.m3s-band{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.m3s-key{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.m3s-band .m3w-ring .seg{transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)}
+.m3s-band .m3w-ringmid b{font-size:22px}
+@media(max-width:1100px){.m3s-band{grid-template-columns:1fr 1fr!important}.m3s-band .m3m-col:first-child{grid-column:auto}}
+@media(max-width:640px){.m3s-band{grid-template-columns:1fr!important}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8019,6 +8027,38 @@ function m3mStage(raw,label){const v=$("v-members");if(!v)return;
   const list=v.querySelector("table")||sel;if(list)list.scrollIntoView({behavior:"smooth",block:"start"});}
 
 {const _m3mRH=renderMemHl;renderMemHl=function(){const r=_m3mRH.apply(this,arguments);try{m3mDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Membership Stats, MISMO Media look (Jonna, Oct 31, 2026): after the figure boxes, a navy band built from
+   Aptify's membership years: new and returning members for the year picked, how many of last year's members stayed,
+   and the champion share. Replaces the New and Renewing panel when that panel has no statuses on record. ---------- */
+function m3sDress(){const hl=$("st-hl");if(!hl)return;let band=$("m3s-band");if(band)band.remove();
+  const v=$("v-stats"),yb=v&&[...v.querySelectorAll("button.on")].map(b=>b.textContent.match(/(20\d\d)/)).find(Boolean);
+  const Y=yb?Number(yb[1]):Number(RY)-1,P=Y-1,YS=String(Y),PS=String(P);
+  const isM=(o,y)=>{try{return !!memberIn(o,y);}catch(e){return false;}},kind=(o,y)=>{try{return kindIn(o,y);}catch(e){return o.type||"";}};
+  const cur=ORGS.filter(o=>isM(o,YS)),prev=ORGS.filter(o=>isM(o,PS));if(!cur.length)return;
+  const ret=prev.filter(o=>isM(o,YS)),lapsed=prev.length-ret.length,nw=cur.filter(o=>!isM(o,PS));
+  const champ=cur.filter(o=>{let l="";try{l=levelIn(o,YS)||"";}catch(e){}return /Chair|Executive|Associate/.test(l);}).length;
+  /* ring helper */
+  const ring=(parts,mid,label)=>{const C=314.16,tot=parts.reduce((a,p)=>a+p[1],0)||1;let acc=0;const r=h("div",{class:"m3w-ring"});
+    r.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/>'+parts.map(p=>{const len=C*p[1]/tot,s='<circle class="seg" cx="60" cy="60" r="50" fill="none" stroke="'+p[2]+'" stroke-width="12" stroke-dasharray="0 '+C+'" data-len="'+Math.max(0,len-1).toFixed(1)+'" stroke-dashoffset="'+(-acc).toFixed(1)+'" transform="rotate(-90 60 60)"><title>'+p[0]+': '+p[1]+'</title></circle>';acc+=len;return s;}).join("")+'</svg>';
+    const m=h("div",{class:"m3w-ringmid"},h("b",null,mid),h("span",null,label));r.appendChild(m);setTimeout(()=>r.querySelectorAll(".seg").forEach(c=>c.setAttribute("stroke-dasharray",c.dataset.len+" "+C)),90);return r;};
+  const key=parts=>h("div",{class:"m3s-key"},...parts.map(p=>h("div",{class:"m3m-kr"},h("i",{style:"background:"+p[2]}),h("span",null,p[0]),h("b",null,n(p[1])),h("em",null,Math.round(100*p[1]/(parts.reduce((a,q)=>a+q[1],0)||1))+"%"))));
+  /* new and returning, split by type */
+  const nwL=nw.filter(o=>kind(o,YS)==="Lender").length,nwN=nw.length-nwL;
+  const A=[["Returning",cur.length-nw.length,"#74bfeb"],["New Non-Lender",nwN,"#5fd39a"],["New Lender",nwL,"#f0b94a"]];
+  const B=[["Stayed for "+Y,ret.length,"#5fd39a"],["Did Not Return",lapsed,"#ff8f7d"]];
+  const Cc=[["Champions",champ,"#b79cff"],["Everyone Else",cur.length-champ,"rgba(255,255,255,.25)"]];
+  const retPct=prev.length?Math.round(100*ret.length/prev.length):0;
+  const col=(t,sub,r,k)=>h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},t,h("span",null,sub)),h("div",{class:"m3m-lv"},r,k));
+  band=h("div",{class:"m3w-band m3m-band m3s-band",id:"m3s-band"},
+    col("New and Returning",n(cur.length)+" members in "+Y,ring(A,n(nw.length),"new"),key(A)),
+    col("Kept From "+P,n(prev.length)+" members in "+P,ring(B,retPct+"%","stayed"),key(B)),
+    col("Champion Share","Chair, Executive and Associate",ring(Cc,Math.round(100*champ/cur.length)+"%","champions"),key(Cc)));
+  hl.after(band);
+  /* the old New and Renewing panel only shows Status Not Recorded; hide it while that is all it has */
+  v.querySelectorAll(".panel").forEach(p=>{const t=(p.querySelector("h2")||{}).textContent||"";if(/^New and Renewing/.test(t)){const only=!/(New|Renew)[a-z]*\s+\d/i.test(p.innerText.replace(/New and Renewing in \d+/,""))&&/Status Not Recorded/.test(p.innerText);p.hidden=only;}});
+}
+
+{const _m3sRS=renderStats;renderStats=function(){const r=_m3sRS.apply(this,arguments);try{m3sDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
