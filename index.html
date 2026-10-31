@@ -2102,6 +2102,37 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 .m3w-pr b{text-align:right;font-variant-numeric:tabular-nums}
 .m3w-none{font-size:12.5px;color:rgba(255,255,255,.6)}
 
+/* ---------- Figure boxes on every page in the Home tile style (Jonna, Oct 31, 2026): the navy strip opens up and each
+   box becomes its own navy tile with a colored edge ---------- */
+.headline:has(.tiles){background:transparent;padding:0;box-shadow:none;border:0}
+.headline .tiles{gap:12px}
+.headline .tiles .tile{border-radius:10px;position:relative;overflow:hidden;color:#fff;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--k,#74bfeb) 22%,transparent),transparent 60%),linear-gradient(160deg,#10324a,#0b2436);border:1px solid rgba(116,191,235,.18);box-shadow:0 10px 22px -16px rgba(6,32,47,.6);transition:transform .15s,box-shadow .15s}
+.headline .tiles .tile::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--k,#74bfeb)}
+.headline .tiles .tile:nth-child(6n+1){--k:#74bfeb}.headline .tiles .tile:nth-child(6n+2){--k:#5fd39a}.headline .tiles .tile:nth-child(6n+3){--k:#b79cff}.headline .tiles .tile:nth-child(6n+4){--k:#ff8f7d}.headline .tiles .tile:nth-child(6n+5){--k:#f0b94a}.headline .tiles .tile:nth-child(6n+6){--k:#9fb3c8}
+.headline .tiles button.tile:hover{transform:translateY(-3px);box-shadow:0 0 0 1px color-mix(in srgb,var(--k) 55%,transparent),0 16px 28px -16px rgba(6,32,47,.7)}
+.headline .tiles .tile.on{box-shadow:0 0 0 2px var(--k),0 16px 28px -16px rgba(6,32,47,.7)}
+/* ---------- Renewals band ---------- */
+.m3r-next{font-size:24px;font-weight:700;line-height:1.2;margin:6px 0 8px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3r-next span{color:#74bfeb}
+.m3r-right{display:flex;flex-direction:column;gap:9px}
+.m3r-right .m3w-tl{margin-bottom:0}
+.m3r-bar{display:flex;height:14px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.08)}
+.m3r-seg{all:unset;cursor:pointer;display:block;height:100%;transition:width 1s cubic-bezier(.2,.8,.2,1),filter .15s}
+.m3r-seg:hover{filter:brightness(1.18)}
+.m3r-key{display:flex;flex-wrap:wrap;gap:4px 12px}
+.m3r-k{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:12px;color:rgba(255,255,255,.75);white-space:nowrap}
+.m3r-k:hover{color:#fff}
+.m3r-k i{width:9px;height:9px;border-radius:2px}
+.m3r-k b{color:#fff;font-variant-numeric:tabular-nums}
+.m3r-run{margin-top:4px}
+.m3r-track{position:relative;height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:20px}
+.m3r-track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#74bfeb,#f0b94a);transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.m3r-track .today{position:absolute;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(240,185,74,.45);transition:left 1.2s cubic-bezier(.2,.8,.2,1)}
+.m3r-track .today span{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);font-style:normal;font-size:11px;font-weight:700;color:#fff;white-space:nowrap}
+.m3r-ends{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.55);margin-top:6px;white-space:nowrap}
+.headline .tiles:has(> .tile:nth-child(8):last-child){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:760px){.headline .tiles:has(> .tile:nth-child(8):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -7869,6 +7900,50 @@ function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)retur
 }
 
 {const _m3wRT=renderThisWeek;renderThisWeek=function(){_m3wRT.apply(this,arguments);try{m3wDress();}catch(e){console.error(e);}};}
+/* ---------- Renewals, MISMO Media look (Jonna, Oct 31, 2026): after the figure boxes, a navy band with what happens next
+   on the runway, the share renewed as a ring, where the season stands as one bar, and the runway from start to Dec 31
+   with today marked. Reads the boxes renderTiles drew, so the counts are always the page's own. ---------- */
+function m3rDress(){const tiles=$("ren-tiles"),hl=$("ren-hl");if(!tiles||!hl)return;
+  let band=$("m3r-band");if(band)band.remove();
+  const V={};tiles.querySelectorAll(".tile").forEach(t=>{const l=(t.querySelector(".lab")||{}).textContent||"",v=Number(String((t.querySelector(".val")||{}).textContent||"").replace(/[^0-9.]/g,""));V[l.trim()]={v,el:t};});
+  const g=k=>(V[k]||{}).v||0,up=g("Up for Renewal"),ren=g("Renewed"),pay=g("Payment in Process"),lost=g("Lost"),still=g("Still to Renew"),hold=g("On Hold");
+  if(!up)return;
+  /* what happens next, from the page's own sentence */
+  const sayEl=$("ren-say"),txt=sayEl?sayEl.textContent.replace(/\s+/g," ").trim():"",ni=txt.indexOf("Next,");
+  const nextTxt=ni>=0?txt.slice(ni+5).trim():"";
+  const em=sayEl?[...sayEl.querySelectorAll("em")].map(e=>e.textContent.trim()):[];
+  const step=em.find(x=>/email|notice|invoice|reminder|thank/i.test(x))||"";
+  const dm=nextTxt.match(/on ([A-Z][a-z]{2}, [A-Z][a-z]{2} \d{1,2})/);
+  const head=h("div",{class:"m3r-next"},step?h("span",null,step):"The Runway",dm?" · "+dm[1]:"");
+  const p=h("p",null,nextTxt?nextTxt.charAt(0).toUpperCase()+nextTxt.slice(1):"Routine emails run on the renewal runway; members flagged for a personal touch go to their owner.");
+  /* ring: share renewed */
+  const pct=Math.round(100*ren/up),pctP=Math.round(100*(ren+pay)/up);
+  const ring=h("div",{class:"m3w-ring",title:ren+" renewed and "+pay+" paying of "+up});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="12"/><circle class="arc p" cx="60" cy="60" r="50" fill="none" stroke="#74bfeb" stroke-opacity=".55" stroke-width="12" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/><circle class="arc r" cx="60" cy="60" r="50" fill="none" stroke="#5fd39a" stroke-width="12" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/></svg>';
+  const rm=h("div",{class:"m3w-ringmid"},h("b",null,"0%"),h("span",null,"renewed"));ring.appendChild(rm);
+  setTimeout(()=>{ring.querySelector(".arc.r").setAttribute("stroke-dasharray",(3.142*pct)+" 314.2");ring.querySelector(".arc.p").setAttribute("stroke-dasharray",(3.142*pctP)+" 314.2");},80);m3hCount(rm.querySelector("b"),pct,x=>Math.round(x)+"%");
+  /* one bar for the season, each part opens its box */
+  const parts=[["Renewed",ren,"#5fd39a"],["Payment in Process",pay,"#74bfeb"],["Still to Renew",still-hold,"#f0b94a"],["On Hold",hold,"#b79cff"],["Lost",lost,"#ff8f7d"]].filter(x=>x[1]>0);
+  const tot=parts.reduce((a,x)=>a+x[1],0)||1;
+  const bar=h("div",{class:"m3r-bar"}),key=h("div",{class:"m3r-key"});
+  parts.forEach(([l,v,c],i)=>{const s=h("button",{type:"button",class:"m3r-seg",style:"width:0%;background:"+c,title:l+": "+v+" ("+Math.round(100*v/tot)+"%)",onclick:()=>{const t=V[l];if(t&&t.el)t.el.click();}});bar.appendChild(s);setTimeout(()=>{s.style.width=(100*v/tot)+"%";},100+i*90);
+    key.appendChild(h("button",{type:"button",class:"m3r-k",onclick:()=>{const t=V[l];if(t&&t.el)t.el.click();}},h("i",{style:"background:"+c}),l==="Payment in Process"?"Paying":l,h("b",null,String(v))));});
+  /* the runway: start date from the page, through Dec 31 */
+  const ry=Number(String(typeof RY!=="undefined"?RY:TODAY.slice(0,4)))||Number(TODAY.slice(0,4))+1,end=(ry-1)+"-12-31";
+  const ebt=($("ren-eb")||{}).textContent||"",sm=ebt.match(/Starts ([A-Z][a-z]{2}) (\d{1,2}), (\d{4})/);
+  const MO={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  const start=sm?sm[3]+"-"+String(MO[sm[1]]).padStart(2,"0")+"-"+String(sm[2]).padStart(2,"0"):(ry-1)+"-10-01";
+  const span=Math.max(1,days_(start,end)),gone=Math.max(0,Math.min(span,days_(start,TODAY))),left=Math.max(0,days_(TODAY,end));
+  const run=h("div",{class:"m3r-run"},h("div",{class:"m3r-track"},h("i",{class:"fill",style:"width:0%"}),h("em",{class:"today",style:"left:0%"},h("span",null,left?n(left)+" days left":"Ends today"))),
+    h("div",{class:"m3r-ends"},h("span",null,"Runway Starts "+fmtS(start)),h("span",null,"Memberships End "+fmtS(end))));
+  setTimeout(()=>{const pc=(100*gone/span)+"%";run.querySelector(".fill").style.width=pc;run.querySelector(".today").style.left=pc;},120);
+  band=h("div",{class:"m3w-band m3r-band",id:"m3r-band"},
+    h("div",{class:"m3w-hi"},h("div",{class:"m3h-eyebrow"},"Next on the Runway"),head,p),
+    h("div",{class:"m3w-mid"},ring),
+    h("div",{class:"m3w-trend m3r-right"},h("div",{class:"m3w-tl"},"Where the Season Stands",h("span",null,up+" up for renewal")),bar,key,run));
+  hl.after(band);
+}
+
+{const _m3rRT=renderTiles;renderTiles=function(){const r=_m3rRT.apply(this,arguments);try{m3rDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
