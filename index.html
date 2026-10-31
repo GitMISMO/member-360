@@ -2038,6 +2038,57 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 /* account button: squared corners, same as Team HQ */
 #rs-account{flex:0 0 auto;display:inline-flex;align-items:center}
 #rs-account .rs-who,#rs-account .rs-signin{border-radius:4px}
+/* ---------- No monospace anywhere (Jonna's standard): numbers use Plex Sans with tabular figures ---------- */
+:root:root{--mono:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.cnt,.pd-n,.num,.rail-lbl,.p360-tg.id{font-variant-numeric:tabular-nums;letter-spacing:0}
+/* ---------- Outreach Planner, MISMO Media look (Jonna, Oct 31, 2026) ---------- */
+.m3w-band{display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr);gap:22px;align-items:center;position:relative;overflow:hidden;color:#fff;border-radius:12px;padding:20px 24px;margin:0 0 14px;
+  background:radial-gradient(110% 120% at 100% 0%,rgba(116,191,235,.24),rgba(116,191,235,0) 55%),linear-gradient(160deg,#10324a,#0b2436);border:1px solid rgba(116,191,235,.18);box-shadow:0 10px 24px -14px rgba(6,32,47,.6)}
+.m3w-hi{min-width:0}
+.m3w-hi h2{font-size:26px;font-weight:700;line-height:1.15;margin:6px 0 8px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3w-hi p{font-size:14.5px;line-height:1.6;color:rgba(255,255,255,.84);margin:0}
+.m3w-em{color:#74bfeb;font-weight:600}
+.m3w-em.late{color:#ffb4a8}
+.m3w-ring{position:relative;width:112px;height:112px;flex:none}
+.m3w-ring .arc{transition:stroke-dasharray 1.1s cubic-bezier(.2,.8,.2,1)}
+.m3w-ringmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.m3w-ringmid b{font-size:24px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.m3w-ringmid span{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:4px;white-space:nowrap}
+.m3w-trend{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 14px;min-width:0}
+.m3w-tl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#74bfeb;display:flex;gap:8px;align-items:baseline;white-space:nowrap;margin-bottom:8px}
+.m3w-tl span{letter-spacing:0;text-transform:none;font-weight:500;color:rgba(255,255,255,.55)}
+.m3w-bars{display:flex;align-items:flex-end;gap:6px;height:78px}
+.m3w-b{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;min-width:0}
+.m3w-b em{font-style:normal;font-size:10.5px;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums;min-height:13px}
+.m3w-b i{display:block;width:100%;border-radius:3px 3px 0 0;background:rgba(183,156,255,.75);transition:height .8s cubic-bezier(.2,.8,.2,1)}
+.m3w-b:hover i{background:#cbb8ff}
+.m3w-b span{font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap}
+.m3w-b.now i{background:linear-gradient(180deg,#74bfeb,#5fd39a)}
+.m3w-b.now span,.m3w-b.now em{color:#fff;font-weight:700}
+/* number tiles: the navy strip becomes open tiles, each in the Home tile style */
+#wk-top.headline{background:transparent;padding:0;box-shadow:none;border:0}
+#wk-top .htiles{gap:12px}
+#wk-top .htile{border-radius:10px;position:relative;overflow:hidden;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--k,#74bfeb) 22%,transparent),transparent 60%),linear-gradient(160deg,#10324a,#0b2436);border:1px solid rgba(116,191,235,.18);box-shadow:0 10px 22px -16px rgba(6,32,47,.6);transition:transform .15s,box-shadow .15s}
+#wk-top .htile:nth-child(1){--k:#74bfeb}#wk-top .htile:nth-child(2){--k:#b79cff}#wk-top .htile:nth-child(3){--k:#f0b94a}#wk-top .htile:nth-child(4){--k:#ff8f7d}#wk-top .htile:nth-child(5){--k:#5fd39a}
+#wk-top .htile::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--k)}
+#wk-top .htile b{font-size:30px}
+#wk-top button.htile:hover{transform:translateY(-3px);box-shadow:0 0 0 1px color-mix(in srgb,var(--k) 55%,transparent),0 16px 28px -16px rgba(6,32,47,.7)}
+/* day columns */
+#wk-plan .pday{transition:box-shadow .2s,border-color .2s,transform .2s}
+#wk-plan .pday:hover{box-shadow:0 10px 22px -16px rgba(13,49,76,.45)}
+#wk-plan .pday.m3w-today{border-color:#74bfeb;box-shadow:0 0 0 2px rgba(116,191,235,.35),0 12px 24px -16px rgba(13,49,76,.5)}
+#wk-plan .pday.m3w-past{opacity:.72}
+.m3w-load{height:5px;border-radius:3px;background:var(--bg-2,#eef2f6);overflow:hidden;margin:6px 0 8px}
+.m3w-load i{display:block;height:100%;width:0;background:linear-gradient(90deg,#74bfeb,#0d314c);transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.m3w-now{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:#0d314c;border-radius:4px;padding:2px 6px}
+#wk-plan .pcard{transition:transform .15s,box-shadow .15s}
+#wk-plan .pcard:hover{transform:translateY(-2px);box-shadow:0 8px 16px -10px rgba(13,49,76,.5)}
+#wk-plan .pd-empty{transition:background .15s,border-color .15s}
+#wk-plan .pd-empty:hover{background:rgba(116,191,235,.08);border-color:#74bfeb}
+@media(max-width:1100px){.m3w-band{grid-template-columns:minmax(0,1fr) auto}.m3w-trend{grid-column:1/-1}}
+@media(max-width:640px){.m3w-band{grid-template-columns:1fr}.m3w-mid{display:flex;justify-content:center}.m3w-hi h2{white-space:normal}}
+@media(prefers-reduced-motion:reduce){.m3w-b i,.m3w-load i,.m3w-ring .arc{transition:none}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -7758,6 +7809,50 @@ function m3cJourney(o){const NB=String.fromCharCode(160);const wrap=h("div",{cla
 function m3cTab(el,name){const box=el.closest(".m3c-band")&&el.closest(".m3c-band").parentNode;if(!box)return;const b=[...box.querySelectorAll(".p360-tabs button,.p360-tabs [role=tab]")].find(x=>x.textContent.trim().indexOf(name)===0);if(b){b.click();b.scrollIntoView({block:"nearest",behavior:"smooth"});}}
 
 {const _m3cPD=p360Dress;p360Dress=function(o,box){_m3cPD(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};const _m3cPU=p360Update;p360Update=function(o,box){_m3cPU(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};}
+/* ---------- Outreach Planner, MISMO Media look (Jonna, Oct 31, 2026): a navy week band with the week's headline, a
+   progress ring for the week, touches over the last eight weeks, number tiles that count up, a load bar on each day and
+   today's column lit up. Runs after renderThisWeek and reads what it drew, so nothing about planning changes. ---------- */
+function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)return;
+  let band=$("m3w-band");if(band)band.remove();
+  const off=(typeof wkOff!=="undefined"?wkOff:0),due=off==="due",me=(typeof who==="function"?who():"")||"";
+  const days=[...grid.querySelectorAll(".pday[data-day]")].filter(d=>d.dataset.day),ws=(days[0]&&days[0].dataset.day)||weekStart(due?0:off),fri=addDays(ws,4),cards=days.map(d=>d.querySelectorAll(".pd-list .pcard").length),planned=cards.reduce((a,b)=>a+b,0);
+  const pastN=(grid.querySelector(".pday.catch")?grid.querySelector(".pday.catch").querySelectorAll(".pcard,.schip").length:0);
+  const mine=t=>!me||NAMES[t.by]===me;
+  const tpW=TP.filter(t=>(t.date||"")>=ws&&(t.date||"")<=addDays(ws,6)&&mine(t)).length;
+  /* the eight weeks up to this one */
+  const wk=[];for(let i=7;i>=0;i--){const s=addDays(ws,-7*i),e=addDays(s,6);wk.push({s,n:TP.filter(t=>(t.date||"")>=s&&(t.date||"")<=e&&mine(t)).length});}
+  const mx=Math.max(1,...wk.map(x=>x.n)),avg=Math.round(wk.slice(0,7).reduce((a,x)=>a+x.n,0)/7);
+  /* headline */
+  const goal=Math.max(planned+tpW,avg,1),pct=Math.min(100,Math.round(100*tpW/goal));
+  const busiest=cards.indexOf(Math.max(...cards)),DN=["Monday","Tuesday","Wednesday","Thursday","Friday"];
+  const say=h("p",null);
+  const em=(t,cls)=>h("b",{class:"m3w-em"+(cls?" "+cls:"")},t);
+  if(planned){say.append(em(planned+" to do"),(off?" next week":" this week")+(cards.filter(Boolean).length>1?", busiest on ":", on "),em(DN[busiest]||"—"),". ");}
+  else say.append(off?"Nothing planned for next week yet. ":"Nothing planned this week yet. ");
+  if(tpW)say.append(em(plural(tpW,"touch","touches")+" logged")," so far"+(avg?", against "+avg+" a week lately":"")+".");
+  else if(!off)say.append("No touches logged yet"+(avg?"; the team averages "+avg+" a week":"")+".");
+  if(pastN)say.append(" ",em(pastN+" past due","late")," from before this week.");
+  /* ring */
+  const ring=h("div",{class:"m3w-ring",title:tpW+" logged of "+goal+" planned or expected"});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="12"/><circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#m3wg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/><defs><linearGradient id="m3wg" x1="0" x2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#74bfeb"/></linearGradient></defs></svg>';
+  const rm=h("div",{class:"m3w-ringmid"},h("b",null,"0%"),h("span",null,"of the week"));ring.appendChild(rm);
+  setTimeout(()=>{const a=ring.querySelector(".arc");if(a){a.style.opacity=pct?1:0;a.setAttribute("stroke-dasharray",(3.142*pct)+" 314.2");}},80);m3hCount(rm.querySelector("b"),pct,x=>Math.round(x)+"%");
+  /* eight-week bars */
+  const bars=h("div",{class:"m3w-bars"});wk.forEach((x,i)=>{const b=h("div",{class:"m3w-b"+(i===7?" now":""),title:"Week of "+fmtS(x.s)+": "+plural(x.n,"touch","touches")},h("em",null,x.n?String(x.n):""),h("i",{style:"height:0%"}),h("span",null,i===7?(off?"Next":"This"):(i===0||x.s.slice(5,7)!==wk[i-1].s.slice(5,7))?fmtS(x.s).replace(/^[A-Za-z]+,\s*/,""):String(Number(x.s.slice(8,10)))));bars.appendChild(b);setTimeout(()=>{b.querySelector("i").style.height=Math.max(x.n?8:3,Math.round(100*x.n/mx))+"%";},60+i*45);});
+  band=h("div",{class:"m3w-band",id:"m3w-band"},
+    h("div",{class:"m3w-hi"},h("div",{class:"m3h-eyebrow"},(due?"Past Due · ":off?"Next Week · ":"This Week · ")+fmtS(ws)+" – "+fmtS(fri)+(me?" · "+me.split(" ")[0]:"")),h("h2",null,planned?plural(planned,"Touch","Touches")+" on the Board":"An Open Week"),say),
+    h("div",{class:"m3w-mid"},ring),
+    h("div",{class:"m3w-trend"},h("div",{class:"m3w-tl"},"Touches Logged",h("span",null,"last 8 weeks")),bars));
+  top.parentNode.insertBefore(band,top);
+  /* tiles count up */
+  top.querySelectorAll(".htile b").forEach(b=>{const v=Number(String(b.textContent).replace(/[^0-9.]/g,""));if(String(b.textContent).trim()===String(v)&&v>0)m3hCount(b,v,x=>String(Math.round(x)));});
+  /* day load bars and today */
+  const mxc=Math.max(3,...cards);days.forEach((d,i)=>{d.classList.toggle("m3w-today",d.dataset.day===TODAY);d.classList.toggle("m3w-past",d.dataset.day<TODAY);
+    let m=d.querySelector(".m3w-load");if(!m){m=h("div",{class:"m3w-load"},h("i",null));d.querySelector(".pd-h").after(m);}
+    const f=m.querySelector("i");f.style.width="0%";setTimeout(()=>{f.style.width=Math.round(100*cards[i]/mxc)+"%";},120+i*60);
+    const hd=d.querySelector(".pd-h");if(d.dataset.day===TODAY&&hd&&!hd.querySelector(".m3w-now"))hd.appendChild(h("span",{class:"m3w-now"},"Today"));});
+}
+
+{const _m3wRT=renderThisWeek;renderThisWeek=function(){_m3wRT.apply(this,arguments);try{m3wDress();}catch(e){console.error(e);}};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
