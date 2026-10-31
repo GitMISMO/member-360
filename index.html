@@ -2216,6 +2216,21 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 @media(max-width:640px){.m3i-band{grid-template-columns:1fr!important}}
 @media(prefers-reduced-motion:reduce){.m3i-dot.next{animation:none}}
 
+/* ---------- Issues Log band ---------- */
+.m3x-band{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr)!important;margin-bottom:16px!important}
+.m3x-go{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:10px minmax(0,1fr) auto 0;gap:8px;align-items:center;font-size:12.5px;color:rgba(255,255,255,.82);padding:3px 4px;border-radius:4px}
+.m3x-go:hover{background:rgba(255,255,255,.08);color:#fff}
+.m3x-go i{width:10px;height:10px;border-radius:2px}
+.m3x-go b{color:#fff;font-variant-numeric:tabular-nums}
+.m3x-fr{grid-template-columns:150px minmax(0,1fr) 30px}
+.m3x-old{display:flex;flex-direction:column;gap:6px}
+.m3x-oi{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.06);border-left:3px solid #ff8f7d;font-size:12.5px;color:rgba(255,255,255,.85)}
+.m3x-oi:hover{background:rgba(255,255,255,.12);color:#fff}
+.m3x-oi b{font-variant-numeric:tabular-nums;color:#ffb4a8}
+.m3x-oi span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:1100px){.m3x-band{grid-template-columns:1fr 1fr!important}.m3x-band .m3m-col:first-child{grid-column:1/-1}}
+@media(max-width:640px){.m3x-band{grid-template-columns:1fr!important}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8171,6 +8186,37 @@ function m3iDress(){const tb=$("iif-tiles"),hl=$("iif-hl");if(!tb||!hl)return;le
 }
 
 {const _m3iRI=renderIIF;renderIIF=function(){const r=_m3iRI.apply(this,arguments);try{m3iDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Issues Log, MISMO Media look (Jonna, Oct 31, 2026): a navy band over the list with where things stand (open,
+   waiting, resolved this month as a ring), open issues by category and by who is handling them. Selecting a category or
+   a person filters the list below to it. The figure boxes on this page stay hidden as they were. ---------- */
+function m3xDress(){const hl=$("is-hl"),view=$("v-issues");if(!hl||!view||view.hidden)return;let band=$("m3x-band");if(band)band.remove();
+  let all=[];try{all=isAll();}catch(e){return;}const live=all.filter(isLive),mo=TODAY.slice(0,7);
+  const op=all.filter(x=>x.status==="Open").length,wt=all.filter(x=>x.status==="Waiting on Someone").length,rs=all.filter(x=>x.status==="Resolved"&&String(x.resolvedAt||"").slice(0,7)===mo).length;
+  const setSel=(id,v)=>{const s=$(id);if(!s)return;s.value=v;if(typeof ISOPEN!=="undefined")ISOPEN=null;renderIssues();if(typeof goList==="function")goList("is-filters");};
+  /* ring */
+  const parts=[["Open",op,"#ff8f7d"],["Waiting on Someone",wt,"#f0b94a"],["Resolved This Month",rs,"#5fd39a"]],tot=parts.reduce((a,p)=>a+p[1],0)||1,C=314.16;let acc=0;
+  const ring=h("div",{class:"m3w-ring"});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/>'+parts.map(p=>{const len=C*p[1]/tot,s='<circle class="seg" cx="60" cy="60" r="50" fill="none" stroke="'+p[2]+'" stroke-width="12" stroke-dasharray="0 '+C+'" data-len="'+Math.max(0,len-1).toFixed(1)+'" stroke-dashoffset="'+(-acc).toFixed(1)+'" transform="rotate(-90 60 60)"><title>'+p[0]+': '+p[1]+'</title></circle>';acc+=len;return s;}).join("")+'</svg>';
+  ring.appendChild(h("div",{class:"m3w-ringmid"},h("b",null,String(op+wt)),h("span",null,"still open")));setTimeout(()=>ring.querySelectorAll(".seg").forEach(c=>c.setAttribute("stroke-dasharray",c.dataset.len+" "+C)),90);
+  const sk=h("div",{class:"m3s-key"});parts.forEach(p=>{const r=h("button",{type:"button",class:"m3m-kr m3x-go",onclick:()=>{const st=$("is-status");if(st){st.value=p[0]==="Resolved This Month"?"Resolved":p[0];}setSel("is-src","");}},h("i",{style:"background:"+p[2]}),h("span",null,p[0]),h("b",null,String(p[1])),h("em",null,""));sk.appendChild(r);});
+  /* bars helper */
+  const bars=(map,click,grad)=>{const ks=Object.keys(map).sort((a,b)=>a==="No One Yet"?1:b==="No One Yet"?-1:a.localeCompare(b)),mx=Math.max(1,...ks.map(k=>map[k]));const box=h("div",{class:"m3m-fun"});
+    ks.forEach((k,i)=>{const r=h("button",{type:"button",class:"m3m-fr m3x-fr",title:"Show "+k,onclick:()=>click(k)},h("span",null,k),h("div",{class:"b"},h("i",{style:"width:0%;background:"+grad})),h("b",null,String(map[k])));box.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.round(100*map[k]/mx)+"%";},100+i*60);});
+    if(!ks.length)box.appendChild(h("div",{class:"m3w-none"},"Nothing open."));return box;};
+  const cat={},own={};live.forEach(x=>{const c=x.cat||"Other";cat[c]=(cat[c]||0)+1;const o=(x.auto?(x.doc||{}).owner:x.owner)||"No One Yet";own[o]=(own[o]||0)+1;});
+  /* who is handling them; while nobody is assigned, the issues open longest instead */
+  const named=Object.keys(own).filter(k=>k!=="No One Yet");let third;
+  if(named.length)third=h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Who's Handling It",h("span",null,"open issues")),bars(own,k=>{const st=$("is-status");if(st)st.value="live";setSel("is-owner",k==="No One Yet"?"":k);},"linear-gradient(90deg,#b79cff,#d6c9ff)"));
+  else{const at=x=>String(x.at||(x.doc||{}).at||"").slice(0,10),old=live.filter(x=>at(x)).sort((a,b)=>at(a).localeCompare(at(b))).slice(0,4);
+    const ls=h("div",{class:"m3x-old"});old.forEach(x=>{const dd=Math.max(0,days_(at(x),TODAY));ls.appendChild(h("button",{type:"button",class:"m3x-oi",title:"Open this issue",onclick:()=>{const st=$("is-status");if(st)st.value="live";setSel("is-src","");const tt=isTitle(x);setTimeout(()=>{const row=[...$("v-issues").querySelectorAll(".islist .isrow")].find(r=>(r.querySelector(".is-t")||r).textContent.indexOf(tt)>=0);if(row){row.click();row.scrollIntoView({behavior:"smooth",block:"center"});}},60);}},h("b",null,dd+"d"),h("span",null,isTitle(x))));});
+    third=h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Open Longest",h("span",null,"no one assigned yet")),ls);}
+  band=h("div",{class:"m3w-band m3m-band m3x-band",id:"m3x-band"},
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Where Things Stand",h("span",null,"select one to list it")),h("div",{class:"m3m-lv"},ring,sk)),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Open by Category",h("span",null,plural(live.length,"issue","issues"))),bars(cat,k=>{const st=$("is-status");if(st)st.value="live";setSel("is-cat",k==="Other"&&![...$("is-cat").options].some(o=>o.value==="Other")?"":k);},"linear-gradient(90deg,#ff8f7d,#ffc2b6)")),
+    third);
+  hl.after(band);
+}
+
+{const _m3xRI=renderIssues;renderIssues=function(){const r=_m3xRI.apply(this,arguments);try{m3xDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
