@@ -2042,7 +2042,7 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 :root:root{--mono:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .cnt,.pd-n,.num,.rail-lbl,.p360-tg.id{font-variant-numeric:tabular-nums;letter-spacing:0}
 /* ---------- Outreach Planner, MISMO Media look (Jonna, Oct 31, 2026) ---------- */
-.m3w-band{display:grid;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr);gap:22px;align-items:center;position:relative;overflow:hidden;color:#fff;border-radius:12px;padding:20px 24px;margin:0 0 14px;
+.m3w-band{display:grid;margin-top:14px!important;grid-template-columns:minmax(0,1.5fr) auto minmax(0,1fr);gap:22px;align-items:center;position:relative;overflow:hidden;color:#fff;border-radius:12px;padding:20px 24px;margin:0 0 14px;
   background:radial-gradient(110% 120% at 100% 0%,rgba(116,191,235,.24),rgba(116,191,235,0) 55%),linear-gradient(160deg,#10324a,#0b2436);border:1px solid rgba(116,191,235,.18);box-shadow:0 10px 24px -14px rgba(6,32,47,.6)}
 .m3w-hi{min-width:0}
 .m3w-hi h2{font-size:26px;font-weight:700;line-height:1.15;margin:6px 0 8px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -2088,6 +2088,19 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 @media(max-width:1100px){.m3w-band{grid-template-columns:minmax(0,1fr) auto}.m3w-trend{grid-column:1/-1}}
 @media(max-width:640px){.m3w-band{grid-template-columns:1fr}.m3w-mid{display:flex;justify-content:center}.m3w-hi h2{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.m3w-b i,.m3w-load i,.m3w-ring .arc{transition:none}}
+.m3w-next{all:unset;box-sizing:border-box;cursor:pointer;display:block;font-size:24px;font-weight:700;line-height:1.2;margin:6px 0 8px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.m3w-next span{color:#74bfeb;border-bottom:1px dashed rgba(116,191,235,.5)}
+.m3w-next:hover span{color:#fff;border-bottom-color:#fff}
+.m3w-next:focus-visible{outline:2px solid #74bfeb;outline-offset:3px;border-radius:4px}
+.m3w-ppl{display:flex;flex-direction:column;gap:7px}
+.m3w-pr{display:grid;grid-template-columns:64px minmax(0,1fr) 30px;gap:10px;align-items:center;font-size:12.5px;color:rgba(255,255,255,.82)}
+.m3w-pr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3w-pr .b{height:10px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.m3w-pr .b i{display:block;height:100%;background:linear-gradient(90deg,#b79cff,#d6c9ff);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.m3w-pr.me .b i{background:linear-gradient(90deg,#74bfeb,#5fd39a)}
+.m3w-pr.me span{color:#fff;font-weight:700}
+.m3w-pr b{text-align:right;font-variant-numeric:tabular-nums}
+.m3w-none{font-size:12.5px;color:rgba(255,255,255,.6)}
 
 </style>
 </head><body>
@@ -7809,8 +7822,8 @@ function m3cJourney(o){const NB=String.fromCharCode(160);const wrap=h("div",{cla
 function m3cTab(el,name){const box=el.closest(".m3c-band")&&el.closest(".m3c-band").parentNode;if(!box)return;const b=[...box.querySelectorAll(".p360-tabs button,.p360-tabs [role=tab]")].find(x=>x.textContent.trim().indexOf(name)===0);if(b){b.click();b.scrollIntoView({block:"nearest",behavior:"smooth"});}}
 
 {const _m3cPD=p360Dress;p360Dress=function(o,box){_m3cPD(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};const _m3cPU=p360Update;p360Update=function(o,box){_m3cPU(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};}
-/* ---------- Outreach Planner, MISMO Media look (Jonna, Oct 31, 2026): a navy week band with the week's headline, a
-   progress ring for the week, touches over the last eight weeks, number tiles that count up, a load bar on each day and
+/* ---------- Outreach Planner, MISMO Media look (Jonna, Oct 31, 2026): number tiles first, then a navy band with what
+   to do next, a progress ring for the week, touches by person over 30 days, number tiles that count up, a load bar on each day and
    today's column lit up. Runs after renderThisWeek and reads what it drew, so nothing about planning changes. ---------- */
 function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)return;
   let band=$("m3w-band");if(band)band.remove();
@@ -7822,27 +7835,30 @@ function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)retur
   /* the eight weeks up to this one */
   const wk=[];for(let i=7;i>=0;i--){const s=addDays(ws,-7*i),e=addDays(s,6);wk.push({s,n:TP.filter(t=>(t.date||"")>=s&&(t.date||"")<=e&&mine(t)).length});}
   const mx=Math.max(1,...wk.map(x=>x.n)),avg=Math.round(wk.slice(0,7).reduce((a,x)=>a+x.n,0)/7);
-  /* headline */
-  const goal=Math.max(planned+tpW,avg,1),pct=Math.min(100,Math.round(100*tpW/goal));
-  const busiest=cards.indexOf(Math.max(...cards)),DN=["Monday","Tuesday","Wednesday","Thursday","Friday"];
-  const say=h("p",null);
+  /* what to do next: the first card still ahead on the board, then anything past due */
+  const goal=Math.max(planned+tpW,avg,1),pct=Math.min(100,Math.round(100*tpW/goal)),DN=["Monday","Tuesday","Wednesday","Thursday","Friday"];
+  let nx=null;days.some((d,i)=>{const c=d.querySelector(".pd-list .pcard");if(c&&d.dataset.day>=TODAY){nx={c,i};return true;}return false;});
+  const nxName=nx?String(nx.c.innerText||"").split("\n").map(s=>s.trim()).filter(s=>s&&s.length>2)[0]||"":"";
   const em=(t,cls)=>h("b",{class:"m3w-em"+(cls?" "+cls:"")},t);
-  if(planned){say.append(em(planned+" to do"),(off?" next week":" this week")+(cards.filter(Boolean).length>1?", busiest on ":", on "),em(DN[busiest]||"—"),". ");}
-  else say.append(off?"Nothing planned for next week yet. ":"Nothing planned this week yet. ");
-  if(tpW)say.append(em(plural(tpW,"touch","touches")+" logged")," so far"+(avg?", against "+avg+" a week lately":"")+".");
-  else if(!off)say.append("No touches logged yet"+(avg?"; the team averages "+avg+" a week":"")+".");
-  if(pastN)say.append(" ",em(pastN+" past due","late")," from before this week.");
+  const say=h("p",null);
+  if(pastN)say.append("Clear ",em(pastN+" past due","late")," first. ");
+  if(nxName)say.append("Open a card to email, log or move it.");
+  else say.append("The board is open. Pick companies from Who to Touch below and drag them onto a day.");
+  const head=nxName?h("button",{type:"button",class:"m3w-next",title:"Open "+nxName,onclick:()=>{nx.c.click();}},"Next Up: ",h("span",null,nxName)," · "+DN[nx.i]+" \u2192"):h("button",{type:"button",class:"m3w-next",onclick:()=>{const m=$("wk-mix");if(m)m.scrollIntoView({behavior:"smooth",block:"start"});}},"Fill the Week \u2192");
   /* ring */
   const ring=h("div",{class:"m3w-ring",title:tpW+" logged of "+goal+" planned or expected"});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="12"/><circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#m3wg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/><defs><linearGradient id="m3wg" x1="0" x2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#74bfeb"/></linearGradient></defs></svg>';
   const rm=h("div",{class:"m3w-ringmid"},h("b",null,"0%"),h("span",null,"of the week"));ring.appendChild(rm);
   setTimeout(()=>{const a=ring.querySelector(".arc");if(a){a.style.opacity=pct?1:0;a.setAttribute("stroke-dasharray",(3.142*pct)+" 314.2");}},80);m3hCount(rm.querySelector("b"),pct,x=>Math.round(x)+"%");
-  /* eight-week bars */
-  const bars=h("div",{class:"m3w-bars"});wk.forEach((x,i)=>{const b=h("div",{class:"m3w-b"+(i===7?" now":""),title:"Week of "+fmtS(x.s)+": "+plural(x.n,"touch","touches")},h("em",null,x.n?String(x.n):""),h("i",{style:"height:0%"}),h("span",null,i===7?(off?"Next":"This"):(i===0||x.s.slice(5,7)!==wk[i-1].s.slice(5,7))?fmtS(x.s).replace(/^[A-Za-z]+,\s*/,""):String(Number(x.s.slice(8,10)))));bars.appendChild(b);setTimeout(()=>{b.querySelector("i").style.height=Math.max(x.n?8:3,Math.round(100*x.n/mx))+"%";},60+i*45);});
+  /* touches logged by person, last 30 days, alphabetical */
+  const since=addDays(TODAY,-30),by={};TP.forEach(t=>{if((t.date||"")>=since&&(t.date||"")<=TODAY){const nm=(NAMES[t.by]||"Other").split(" ")[0];by[nm]=(by[nm]||0)+1;}});
+  const ppl=Object.keys(by).sort((a,b)=>a.localeCompare(b)),pmx=Math.max(1,...ppl.map(k=>by[k])),tot=ppl.reduce((a,k)=>a+by[k],0);
+  const rows=h("div",{class:"m3w-ppl"});ppl.forEach((k,i)=>{const r=h("div",{class:"m3w-pr"+(me&&me.split(" ")[0]===k?" me":"")},h("span",null,k),h("div",{class:"b"},h("i",{style:"width:0%"})),h("b",null,String(by[k])));rows.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.round(100*by[k]/pmx)+"%";},80+i*70);});
+  if(!ppl.length)rows.appendChild(h("div",{class:"m3w-none"},"No touches logged in the last 30 days."));
   band=h("div",{class:"m3w-band",id:"m3w-band"},
-    h("div",{class:"m3w-hi"},h("div",{class:"m3h-eyebrow"},(due?"Past Due · ":off?"Next Week · ":"This Week · ")+fmtS(ws)+" – "+fmtS(fri)+(me?" · "+me.split(" ")[0]:"")),h("h2",null,planned?plural(planned,"Touch","Touches")+" on the Board":"An Open Week"),say),
+    h("div",{class:"m3w-hi"},h("div",{class:"m3h-eyebrow"},(due?"Past Due · ":off?"Next Week · ":"This Week · ")+fmtS(ws)+" – "+fmtS(fri)+(me?" · "+me.split(" ")[0]:"")),head,say),
     h("div",{class:"m3w-mid"},ring),
-    h("div",{class:"m3w-trend"},h("div",{class:"m3w-tl"},"Touches Logged",h("span",null,"last 8 weeks")),bars));
-  top.parentNode.insertBefore(band,top);
+    h("div",{class:"m3w-trend"},h("div",{class:"m3w-tl"},"Touches by Person",h("span",null,plural(tot,"touch","touches")+" in 30 days")),rows));
+  top.after(band);
   /* tiles count up */
   top.querySelectorAll(".htile b").forEach(b=>{const v=Number(String(b.textContent).replace(/[^0-9.]/g,""));if(String(b.textContent).trim()===String(v)&&v>0)m3hCount(b,v,x=>String(Math.round(x)));});
   /* day load bars and today */
