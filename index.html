@@ -2314,6 +2314,29 @@ details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 /* the runway scrolls sideways on a phone instead of stacking its names */
 @media(max-width:760px){.m3p-band{overflow-x:auto!important;-webkit-overflow-scrolling:touch}.m3p-line{min-width:880px}}
 
+/* ---------- Opening screen ---------- */
+#m3o{position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(120% 90% at 100% 0%,rgba(116,191,235,.18),transparent 55%),linear-gradient(160deg,#10324a,#0b2436);transition:opacity .35s ease}
+#m3o.out{opacity:0;pointer-events:none}
+.m3o-card{max-width:440px;width:100%;box-sizing:border-box;background:var(--surface,#fff);color:var(--ink,#0d314c);border:1px solid rgba(116,191,235,.3);border-radius:12px;padding:28px 26px;box-shadow:0 24px 60px -24px rgba(0,0,0,.6);font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.m3o-ey{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3,#5a7184);margin-bottom:6px}
+.m3o-card h1{font-size:21px;font-weight:700;margin:0 0 10px;color:var(--ink,#0d314c)}
+.m3o-card p{font-size:14px;line-height:1.5;margin:0 0 16px;color:var(--ink-2,#3b5266)}
+.m3o-card p b{font-variant-numeric:tabular-nums}
+.m3o-clock{display:flex;align-items:baseline;gap:8px;margin:0 0 10px}
+.m3o-t{font-size:34px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink,#0d314c)}
+.m3o-of{font-size:12.5px;color:var(--ink-3,#5a7184);white-space:nowrap}
+.m3o-bar{height:5px;border-radius:3px;background:rgba(116,191,235,.2);overflow:hidden;margin:0 0 16px}
+.m3o-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#74bfeb,#0d314c);transition:width .4s ease}
+.m3o-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.m3o-list li{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--ink-3,#5a7184);white-space:nowrap}
+.m3o-list li i{width:16px;height:16px;border-radius:50%;border:2px solid rgba(116,191,235,.55);box-sizing:border-box;flex:none;position:relative;animation:m3oSpin 1s linear infinite;border-top-color:transparent}
+.m3o-list li.ok{color:var(--ink,#0d314c)}
+.m3o-list li.ok i{animation:none;border-color:#2e9e6a;background:#2e9e6a}
+.m3o-list li.ok i::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.m3o-note{font-size:12.5px;color:var(--ink-3,#5a7184);margin-top:12px;min-height:1px}
+@keyframes m3oSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.m3o-list li i{animation:none}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -7973,9 +7996,7 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
   {const mx=Math.max(1,...S.days),bars=h("div",{class:"m3h-bars"});["M","T","W","T","F"].forEach((l,i)=>{const dd=addDays(S.ws,i),v=S.days[i];
       const b=h("div",{class:"m3h-b"+(dd===TODAY?" today":"")},h("i",{style:"height:0%"}),h("span",null,l));bars.appendChild(b);const hh=Math.max(v?8:3,Math.round(100*v/mx))+"%";if(quiet||m3hCalm())b.firstChild.style.height=hh;else setTimeout(()=>{b.firstChild.style.height=hh;},100+i*60);});
     tile({lab:"Outreach This Week",k:"#b79cff",go:"week",body:[big(S.tpw.length,null,"touches"),bars,sub(h("b",null,plural(S.coW,"company","companies"))," reached since "+fmtS(S.ws))]});}
-  /* 5. issues */
-  tile({lab:"Issues Log",k:"#ff8f7d",go:"issues",pill:S.iss?"to tidy":"all clear",hot:S.iss>20,body:[big(S.iss,null,"open"),sub("Records that need a match, a type or a second look.")]});
-  /* 6. IIF cycle */
+    /* 6. IIF cycle */
   {const pc=S.inv?Math.min(100,100*S.paid/S.inv):0,bar=h("div",{class:"m3h-prog"},h("i",{style:"width:0%"}));if(quiet||m3hCalm())bar.firstChild.style.width=pc+"%";else setTimeout(()=>{bar.firstChild.style.width=pc+"%";},120);
     tile({lab:IIFY()+" IIF Cycle",k:"#5fd39a",go:"iif",cls:"w2",pill:S.newIif?plural(S.newIif,"new IIF member","new IIF members"):null,body:[big(S.paid,m3hMoney,"collected"),bar,
       sub(h("b",null,Math.round(pc)+"%")," of "+m3hMoney(S.inv)+" invoiced to "+n(S.L.length)+" lenders · ",h("b",null,n(S.iifMem))," members through the IIF"),
@@ -8409,6 +8430,52 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
 }
 
 {const _m3gRS=renderSettings;renderSettings=function(){const r=_m3gRS.apply(this,arguments);try{m3gDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Opening screen (Jonna, Oct 31, 2026), modeled on MISMO Money's: after sign-in, a card covers the app until
+   every source has loaded and the numbers have stopped moving, so the first numbers anyone sees are the final ones.
+   It shows each source as it arrives, a running clock, and how long opening usually takes on this computer (the
+   middle of the last five openings). If something is still loading after 60 seconds it opens anyway and says so. ---------- */
+(function(){
+  const T0=performance.now();let inflight=0,lastNet=performance.now(),lastRefresh=0,done=false,shownAt=0;
+  /* count the app's requests in flight, so "settled" means nothing is still on its way */
+  const f0=window.fetch;if(f0&&!f0.__m3o){const f1=function(){inflight++;lastNet=performance.now();return f0.apply(this,arguments).finally(()=>{inflight=Math.max(0,inflight-1);lastNet=performance.now();});};f1.__m3o=1;window.fetch=f1;}
+  const x0=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.send=function(){inflight++;lastNet=performance.now();this.addEventListener("loadend",()=>{inflight=Math.max(0,inflight-1);lastNet=performance.now();});return x0.apply(this,arguments);};
+  window.__m3oRefreshed=()=>{lastRefresh=performance.now();};
+  const usual=()=>{let a=[];try{a=JSON.parse(localStorage.getItem("m360.openSeconds")||"[]");}catch(e){}a=(Array.isArray(a)?a:[]).filter(x=>typeof x==="number"&&x>0&&x<600).sort((x,y)=>x-y);return a.length?Math.max(1,Math.ceil(a[Math.floor(a.length/2)])):15;};
+  const save=s=>{try{let a=JSON.parse(localStorage.getItem("m360.openSeconds")||"[]");if(!Array.isArray(a))a=[];a.push(Math.round(s*10)/10);localStorage.setItem("m360.openSeconds",JSON.stringify(a.slice(-5)));}catch(e){}};
+  const signedIn=()=>{try{return !!(window.ResourcesSession&&ResourcesSession.token&&ResourcesSession.token());}catch(e){return false;}};
+  const has=fn=>{try{return !!fn();}catch(e){return false;}};
+  const STEPS=[
+    ["Member and Prospect Records",()=>typeof ORGS!=="undefined"&&ORGS.length>0],
+    ["Aptify Membership Data",()=>typeof APT!=="undefined"&&!!APT&&!!(APT.uploadedAt||Object.keys(APT).length)],
+    ["MISMO Money Payments",()=>{const m=window.__m360Money,st=m&&m.status?m.status():null;return !!st&&(!!st.error||(st.has&&typeof MMINFO!=="undefined"&&!!MMINFO));}],
+    ["Touchpoints and Plans",()=>typeof TP!=="undefined"&&Array.isArray(TP)&&(TP.length>0||performance.now()-T0>8000)],
+    ["Final Counts",null]];
+  let box,clock,bar,list,note;
+  const build=()=>{box=document.createElement("div");box.id="m3o";box.setAttribute("role","status");box.setAttribute("aria-live","polite");
+    box.innerHTML='<div class="m3o-card"><div class="m3o-ey">Member 360</div><h1>Opening Member 360…</h1><p>Loading every source so the numbers you see are final. This usually takes about <b class="m3o-u"></b> seconds.</p><div class="m3o-clock"><span class="m3o-t">0:00</span><span class="m3o-of"></span></div><div class="m3o-bar"><i></i></div><ul class="m3o-list"></ul><div class="m3o-note"></div></div>';
+    document.body.appendChild(box);clock=box.querySelector(".m3o-t");bar=box.querySelector(".m3o-bar i");list=box.querySelector(".m3o-list");note=box.querySelector(".m3o-note");
+    box.querySelector(".m3o-u").textContent=usual();box.querySelector(".m3o-of").textContent="of about "+usual()+"s";
+    STEPS.forEach(s=>{const li=document.createElement("li");li.innerHTML='<i></i><span></span>';li.querySelector("span").textContent=s[0];list.appendChild(li);});
+    shownAt=performance.now();document.documentElement.classList.add("m3o-on");};
+  const finish=(late)=>{if(done)return;done=true;const secs=(performance.now()-T0)/1000;if(!late)save(secs);
+    if(box){bar.style.width="100%";box.classList.add("out");setTimeout(()=>{box.remove();document.documentElement.classList.remove("m3o-on");},late?2600:380);if(late)note.textContent="Opening now. A few numbers may still update for a moment.";}
+    try{const cur=[...document.querySelectorAll("main .view")].find(v=>!v.hidden);if(cur&&cur.id==="v-home"&&typeof renderHome==="function")setTimeout(()=>renderHome(),late?2600:400);}catch(e){}};
+  const tick=()=>{if(done)return;
+    if(!signedIn()){setTimeout(tick,250);return;}
+    if(!document.body){setTimeout(tick,100);return;}
+    if(!box)build();
+    const now=performance.now(),el=(now-shownAt)/1000;
+    clock.textContent=Math.floor(el/60)+":"+String(Math.floor(el%60)).padStart(2,"0");
+    const quiet=inflight===0&&now-lastNet>1200&&now-lastRefresh>900;
+    let n=0;[...list.children].forEach((li,i)=>{const fn=STEPS[i][1],ok=fn?has(fn):(n===STEPS.length-1&&quiet);li.classList.toggle("ok",ok);if(ok)n++;});
+    const u=usual(),f=Math.min(.97,Math.max(n/STEPS.length*.85,Math.min(.9,el/u)));bar.style.width=Math.round((n===STEPS.length?1:f)*100)+"%";
+    if(n===STEPS.length){finish(false);return;}
+    if(el>60){finish(true);return;}
+    setTimeout(tick,150);};
+  tick();
+})();
+
+{const _m3oRA=refreshAll;refreshAll=function(){const r=_m3oRA.apply(this,arguments);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
