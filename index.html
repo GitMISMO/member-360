@@ -2231,6 +2231,20 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 @media(max-width:1100px){.m3x-band{grid-template-columns:1fr 1fr!important}.m3x-band .m3m-col:first-child{grid-column:1/-1}}
 @media(max-width:640px){.m3x-band{grid-template-columns:1fr!important}}
 
+/* ---------- Activity ---------- */
+#m3a-top .headline{margin:0 0 14px}
+#m3a-top .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.m3a-band{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr)!important;margin-bottom:16px!important}
+.m3a-bars{height:84px}
+.m3a-bars .m3d-b{cursor:default}
+.m3a-bars .m3d-b.we span{color:rgba(255,255,255,.3)}
+.m3a-hide{display:none!important}
+.m3a-x{all:unset;cursor:pointer;margin-left:8px;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;background:var(--bg-2,#eef2f6);color:var(--ink-2,#3b5266);font-variant-numeric:tabular-nums;white-space:nowrap}
+.m3a-x:hover,.m3a-x.on{background:#0d314c;color:#fff}
+@media(max-width:1100px){.m3a-band{grid-template-columns:1fr 1fr!important}.m3a-band .m3m-col:first-child{grid-column:1/-1}#m3a-top .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.m3a-band{grid-template-columns:1fr!important}}
+.m3a-band .m3m-fr{grid-template-columns:124px minmax(0,1fr) 34px}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8217,6 +8231,53 @@ function m3xDress(){const hl=$("is-hl"),view=$("v-issues");if(!hl||!view||view.h
 }
 
 {const _m3xRI=renderIssues;renderIssues=function(){const r=_m3xRI.apply(this,arguments);try{m3xDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Activity, MISMO Media look (Jonna, Oct 31, 2026): figure boxes for the range picked (changes, touchpoints,
+   forwarded emails, people), a navy band with the last 14 days, who did what and what kind of work it was, and
+   repeated lines in a row folded into one with a count you can open. Selecting a box, a person or a kind filters the list. ---------- */
+function m3aDress(){const list=$("act-list"),q=$("act-q");if(!list||!q)return;
+  const bar=q.closest(".filters")||q.parentElement;let top=$("m3a-top");if(top)top.remove();
+  let rows=[];try{rows=actRows().filter(r=>actWhoOf(r).id!=="Member 360");}catch(e){return;}
+  const wd=$("act-days"),wt=$("act-what"),ws=$("act-who"),span=Number((wd&&wd.value)||0)||0,since=span?addDays(TODAY,-span+1):"";
+  const day=r=>{const d=new Date(r.at||"");return isNaN(d)?"":ymd(d);};
+  const inR=rows.filter(r=>{const d=day(r);return d&&(!since||d>=since);});
+  const cat=r=>{try{return actCat(r);}catch(e){return r.type;}};
+  const tp=inR.filter(r=>cat(r)==="tp").length,ml=inR.filter(r=>r.type==="mail").length,ppl=new Set(inR.map(r=>actWhoOf(r).name)).size;
+  const pick=(sel,match)=>{if(!sel)return;const op=[...sel.options].find(match);sel.value=op?op.value:"";sel.dispatchEvent(new Event("change",{bubbles:true}));};
+  const rangeT=span?"last "+span+" days":"all time";
+  const tile=(lab,val,sub,go)=>{const b=h("button",{type:"button",class:"tile",onclick:go},h("span",{class:"lab"},lab),h("span",{class:"val"},n(val)),h("span",{class:"sub"},sub));return b;};
+  const tiles=h("div",{class:"tiles"},
+    tile("Changes Saved",inR.length,rangeT,()=>{pick(wt,o=>!o.value);pick(ws,o=>!o.value);}),
+    tile("Touchpoints",tp,"logged by the team",()=>pick(wt,o=>/Touchpoint/i.test(o.textContent))),
+    tile("Forwarded Emails",ml,"sent to the 360 address",()=>pick(wt,o=>/Forward/i.test(o.textContent))),
+    tile("People Active",ppl,rangeT,()=>pick(ws,o=>!o.value)));
+  /* fourteen days */
+  const firstDay=rows.map(day).filter(Boolean).sort()[0]||TODAY,from=[addDays(TODAY,-13),firstDay<addDays(TODAY,-6)?firstDay:addDays(TODAY,-6)].sort()[1];const D=[];for(let d=from;d<=TODAY;d=addDays(d,1))D.push(d);const per=D.map(d=>rows.filter(r=>day(r)===d).length),mx=Math.max(1,...per);
+  const DW=["Su","Mo","Tu","We","Th","Fr","Sa"];
+  const cols=h("div",{class:"m3d-bars m3a-bars"});D.forEach((d,i)=>{const dt=new Date(d+"T12:00:00"),b=h("div",{class:"m3d-b"+(d===TODAY?" on":"")+(dt.getDay()%6===0?" we":""),title:fmt(d)+": "+plural(per[i],"change","changes")},h("em",null,per[i]?String(per[i]):""),h("i",{style:"height:0%"}),h("span",null,DW[dt.getDay()]));cols.appendChild(b);setTimeout(()=>{b.querySelector("i").style.height=Math.max(per[i]?8:2,Math.round(100*per[i]/mx))+"%";},60+i*35);});
+  /* by person, alphabetical, You last */
+  const bp={};inR.forEach(r=>{const w=actWhoOf(r);bp[w.name]=(bp[w.name]||0)+1;});
+  const pk=Object.keys(bp).sort((a,b)=>a==="You"?1:b==="You"?-1:a.localeCompare(b)),pmx=Math.max(1,...pk.map(k=>bp[k]));
+  const pf=h("div",{class:"m3m-fun"});pk.forEach((k,i)=>{const r=h("button",{type:"button",class:"m3m-fr",title:"Show "+k,onclick:()=>pick(ws,o=>k==="You"?o.value==="me":o.textContent.trim()===k)},h("span",null,k),h("div",{class:"b"},h("i",{style:"width:0%;background:linear-gradient(90deg,#b79cff,#d6c9ff)"})),h("b",null,n(bp[k])));pf.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.round(100*bp[k]/pmx)+"%";},100+i*60);});
+  if(!pk.length)pf.appendChild(h("div",{class:"m3w-none"},"Nothing saved in this range."));
+  /* by kind */
+  const KN={tp:"Touchpoints",mail:"Forwarded Emails",plans:"Outreach Planner",deal:"Commitments",issue:"Issues",prospect:"Prospects",email:"Emails and Playbooks",setup:"Company Details and Settings"},KC={tp:"#74bfeb",mail:"#5fd39a",plans:"#b79cff",deal:"#f0b94a",issue:"#ff8f7d",prospect:"#e7a6d8",email:"#4f8fc0",setup:"#9fb3c8"};
+  const bk={};inR.forEach(r=>{const c=cat(r);bk[c]=(bk[c]||0)+1;});const kk=Object.keys(bk).sort((a,b)=>(KN[a]||a).localeCompare(KN[b]||b)),kt=inR.length||1;
+  const kb=h("div",{class:"m3r-bar"}),kkey=h("div",{class:"m3r-key"});kk.forEach((k,i)=>{const lab=KN[k]||k,go=()=>pick(wt,o=>o.textContent.trim().indexOf(lab.split(" ")[0])===0);const s=h("button",{type:"button",class:"m3r-seg",style:"width:0%;background:"+(KC[k]||"#9fb3c8"),title:lab+": "+bk[k],onclick:go});kb.appendChild(s);setTimeout(()=>{s.style.width=(100*bk[k]/kt)+"%";},120+i*70);kkey.appendChild(h("button",{type:"button",class:"m3r-k",onclick:go},h("i",{style:"background:"+(KC[k]||"#9fb3c8")}),lab,h("b",null,n(bk[k]))));});
+  const band=h("div",{class:"m3w-band m3m-band m3a-band"},
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},(D.length>=14?"Last 14 Days":"Since "+fmtS(D[0])),h("span",null,plural(per.reduce((a,b)=>a+b,0),"change","changes"))),cols),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Who Did What",h("span",null,rangeT+" · select a name")),pf),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Kind of Work",h("span",null,rangeT)),kb,kkey));
+  top=h("div",{id:"m3a-top"},h("div",{class:"headline"},tiles),band);bar.parentNode.insertBefore(top,bar);
+  new Set([...list.querySelectorAll(".act-r")].map(r=>r.parentElement)).forEach(m3aFold);
+}
+/* fold repeated lines that sit next to each other (same person, same change, same company) into the first, with a count */
+function m3aFold(list){let prev=null,prevKey="",run=[];
+  const close=()=>{if(prev&&run.length){const chip=h("button",{type:"button",class:"m3a-x",title:"Show all "+(run.length+1)},"×"+(run.length+1));const hidden=run.slice();hidden.forEach(r=>r.classList.add("m3a-hide"));chip.addEventListener("click",e=>{e.stopPropagation();const open=chip.classList.toggle("on");hidden.forEach(r=>r.classList.toggle("m3a-hide",!open));});const l=prev.querySelector(".act-l");if(l)l.appendChild(chip);}run=[];};
+  [...list.children].forEach(el=>{if(!el.classList.contains("act-r")){close();prev=null;prevKey="";return;}
+    const k=((el.querySelector(".act-l")||{}).textContent||"")+"|"+((el.querySelector(".act-d")||{}).textContent||"");
+    if(prev&&k===prevKey)run.push(el);else{close();prev=el;prevKey=k;}});close();}
+
+{const _m3aRA=renderActivity;renderActivity=function(){const r=_m3aRA.apply(this,arguments);try{m3aDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
