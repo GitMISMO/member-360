@@ -104,6 +104,60 @@
 @media(max-width:700px){.m3h-grid{grid-template-columns:1fr}.m3h-tile.w2,.m3h-tile.w3{grid-column:auto}.m3h-tile.h2{grid-row:auto}.m3h-fr{grid-template-columns:110px minmax(0,1fr) 30px}}
 @media(prefers-reduced-motion:reduce){.m3h-tile{transition:none}}
 
+/* ---------- Company card band (Jonna, Oct 31, 2026), in the MISMO Media hero style ---------- */
+.m3c-band{position:relative;overflow:hidden;background:radial-gradient(120% 120% at 100% 0%,rgba(116,191,235,.22),rgba(116,191,235,0) 55%),linear-gradient(160deg,#10324a,#0b2436);color:#fff;border-radius:12px;padding:18px 20px 16px;margin:0 0 14px;border:1px solid rgba(116,191,235,.18);box-shadow:0 10px 24px -14px rgba(6,32,47,.6)}
+.m3c-band .p360-hero{margin:0 0 14px}
+.m3c-band .p360-badge{background:rgba(116,191,235,.2);color:#fff;border:1px solid rgba(116,191,235,.35);width:56px;height:56px;font-size:20px}
+.m3c-band .p360-name{color:#fff;font-size:24px;font-weight:700}
+.m3c-band .p360-tg{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.18)}
+.m3c-band .p360-tg.lv{background:rgba(116,191,235,.22);color:#d6efff;border-color:rgba(116,191,235,.4)}
+.m3c-band .p360-tg.st.ok{background:rgba(95,211,154,.18);color:#a8f0c9;border-color:rgba(95,211,154,.4)}
+.m3c-band .p360-owner{border-color:rgba(255,255,255,.22);border-radius:6px;background:rgba(255,255,255,.06)}
+.m3c-band .p360-owner span{color:rgba(255,255,255,.65)}
+.m3c-band .p360-owner b{color:#fff}
+.m3c-band .p360-owner.can:hover{border-color:rgba(255,255,255,.45)}
+.m3c-band .p360-owner i{border-radius:5px}
+.m3c-band .p360-metrics{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);margin:0 0 14px}
+.m3c-band .p360-metric{border-right-color:rgba(255,255,255,.1)}
+.m3c-band .p360-metric .k{color:rgba(255,255,255,.6)}
+.m3c-band .p360-metric .v{color:#fff}
+.m3c-band .p360-metric .v.muted,.m3c-band .p360-metric .muted{color:rgba(255,255,255,.55)}
+.m3c-jr{display:grid;grid-template-columns:minmax(0,2.2fr) repeat(3,minmax(0,1fr));gap:12px}
+.m3c-jcol{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.m3c-jl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#74bfeb;display:flex;gap:8px;align-items:baseline;white-space:nowrap}
+.m3c-jl span{letter-spacing:0;text-transform:none;font-weight:500;color:rgba(255,255,255,.55);overflow:hidden;text-overflow:ellipsis}
+.m3c-yrs{display:flex;gap:4px;align-items:flex-end}
+.m3c-y{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.m3c-y i{display:block;width:100%;height:22px;border-radius:4px;background:rgba(255,255,255,.1);transition:transform .15s}
+.m3c-y:hover i{transform:translateY(-2px)}
+.m3c-y.mem i{background:#4f8fc0}
+.m3c-y.champ i{background:#74bfeb;box-shadow:0 0 12px -2px rgba(116,191,235,.7)}
+.m3c-y.sole i{background:#5fd39a}
+.m3c-y.next i{outline:1px dashed rgba(255,255,255,.45);outline-offset:2px}
+.m3c-y span{font-size:10px;color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums}
+.m3c-y.now span{color:#fff;font-weight:700}
+.m3c-key{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:rgba(255,255,255,.6)}
+.m3c-key span{display:inline-flex;align-items:center;gap:5px}
+.m3c-key i{width:9px;height:9px;border-radius:2px;background:rgba(255,255,255,.18)}
+.m3c-key i.champ{background:#74bfeb}.m3c-key i.mem{background:#4f8fc0}.m3c-key i.sole{background:#5fd39a}
+.m3c-big{font-size:24px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:6px}
+.m3c-big small{font-size:12px;font-weight:600;color:#74bfeb}
+.m3c-js{font-size:12px;color:rgba(255,255,255,.65)}
+.m3c-spark{display:flex;align-items:flex-end;gap:3px;height:34px}
+.m3c-spark i{flex:1;background:rgba(255,255,255,.14);border-radius:2px 2px 0 0;transition:height .6s cubic-bezier(.2,.8,.2,1)}
+.m3c-spark i.on{background:#b79cff}
+.m3c-endrow{display:flex;align-items:center;gap:10px}
+.m3c-ring .arc{transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1)}
+@media(max-width:900px){.m3c-jr{grid-template-columns:repeat(2,minmax(0,1fr))}.m3c-jmain{grid-column:1/-1}}
+@media(max-width:560px){.m3c-jr{grid-template-columns:1fr}.m3c-band .p360-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.m3c-jr.three{grid-template-columns:minmax(0,2.2fr) repeat(2,minmax(0,1fr))}
+.m3c-jcol.go{cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.m3c-jcol.go:hover{background:rgba(255,255,255,.09);border-color:rgba(116,191,235,.4);transform:translateY(-2px)}
+.m3c-jcol.go:focus-visible{outline:2px solid #74bfeb;outline-offset:2px}
+.m3c-band .p360-tg,.m3c-band .p360-tags *{font-family:inherit!important}
+@media(max-width:900px){.m3c-jr.three{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.m3c-jr.three{grid-template-columns:1fr}}
+
 </style>
 <script>(function(){
   var out = true;
@@ -7665,6 +7719,45 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
   if(S.sum){const dd=Math.max(0,days_(TODAY,S.sum.date));tile({lab:"Next Summit",k:"#5fd39a",body:[big(dd,null,"days"),sub(h("b",null,S.sum.name)," · "+fmt(S.sum.date))]});}
 }
 
+/* ---------- Company card, MISMO Media look (Jonna, Oct 31, 2026): the name, tags and figures sit in a navy band, with the
+   membership journey year by year from Aptify, money on record, touches over the last twelve months and the days left. ---------- */
+function m3cDress(o,box){if(!o||!box)return;const hero=box.querySelector(".p360-hero");if(!hero)return;
+  let band=box.querySelector(".m3c-band");
+  if(!band){band=h("div",{class:"m3c-band"});hero.parentNode.insertBefore(band,hero);band.appendChild(hero);const met=box.querySelector(".p360-metrics");if(met)band.appendChild(met);}
+  else{const met=box.querySelector(".p360-metrics");if(met&&met.parentNode!==band)band.insertBefore(met,band.querySelector(".m3c-jr"));}
+  const old=band.querySelector(".m3c-jr");if(old)old.remove();band.appendChild(m3cJourney(o));}
+function m3cJourney(o){const NB=String.fromCharCode(160);const wrap=h("div",{class:"m3c-jr"});
+  /* years: from the first year on record (twelve at most) through the renewal year */
+  let first=Number(String((typeof sinceInfo==="function"&&sinceInfo(o).y)||"").slice(0,4))||0;const last=RY;const from=Math.max(first||last-5,last-11);
+  const yrs=h("div",{class:"m3c-yrs"});let on=0;
+  for(let y=from;y<=last;y++){const Y=String(y);let m=false,lv="";try{m=memberIn(o,Y);lv=m?(levelIn(o,Y)||""):"";}catch(e){}
+    if(y===last&&!m){try{const st=stageOf(o);if(st==="Renewed")m=true,lv=lv||o.level||"";}catch(e){}}
+    if(m)on++;const champ=/Chair|Executive|Associate/.test(lv),cls="m3c-y"+(m?(champ?" champ":lv==="Sole"?" sole":" mem"):"")+(y===last?" next":"")+(y===last-1?" now":"");
+    yrs.appendChild(h("div",{class:cls,title:Y+": "+(m?(lv||"Member"):(y===last?"Not renewed yet":"Not a member"))},h("i",null),h("span",null,"'"+Y.slice(2))));}
+  const shown=last-from;const lead=first&&first<=last?("Since "+first+" · a member "+on+" of the last "+shown+" years"):(o.life==="Prospect"?"Not a member yet":"Membership years from Aptify");
+  wrap.appendChild(h("div",{class:"m3c-jcol m3c-jmain"},h("div",{class:"m3c-jl"},"Membership Journey",h("span",null,lead)),yrs,
+    h("div",{class:"m3c-key"},h("span",null,h("i",{class:"champ"}),"Champion"),h("span",null,h("i",{class:"mem"}),"Member"),h("span",null,h("i",{class:"sole"}),"Sole"),h("span",null,h("i",null),"Not a Member"))));
+  /* money on record */
+  let paidAll=0,paidYr=0;try{fsItems(o).forEach(i=>{if(i.n>0){paidAll+=i.n;if(String(i.d||"").slice(0,4)===TODAY.slice(0,4))paidYr+=i.n;}});}catch(e){}
+  const mv=h("b",null,money(0));m3hCount(mv,paidAll,x=>money(Math.round(x)));
+  wrap.appendChild(h("div",{class:"m3c-jcol go",role:"button",tabindex:"0",title:"Open the Money tab",onclick:()=>m3cTab(wrap,"Money")},h("div",{class:"m3c-jl"},"On Record"),h("div",{class:"m3c-big"},mv),h("div",{class:"m3c-js"},paidYr?money(Math.round(paidYr))+" in "+TODAY.slice(0,4):"Nothing paid in "+TODAY.slice(0,4))));
+  /* touches, last twelve months */
+  const mon=[];for(let i=11;i>=0;i--){const d=new Date(TODAY+"T12:00:00");d.setDate(1);d.setMonth(d.getMonth()-i);mon.push(d.toISOString().slice(0,7));}
+  const tps=TP.filter(t=>t.org===o.k||(o.mergedIn||[]).some(x=>x.k===t.org)),cnt=mon.map(m=>tps.filter(t=>String(t.date||"").slice(0,7)===m).length),mx=Math.max(1,...cnt);
+  const sp=h("div",{class:"m3c-spark"});cnt.forEach((v,i)=>{const b=h("i",{title:mon[i]+": "+plural(v,"touch","touches"),style:"height:0%"});sp.appendChild(b);const hh=Math.max(v?14:4,Math.round(100*v/mx))+"%";setTimeout(()=>{b.style.height=hh;},60+i*25);if(v)b.className="on";});
+  const lt=tps.map(t=>t.date).sort().pop();
+  wrap.appendChild(h("div",{class:"m3c-jcol go",role:"button",tabindex:"0",title:"Open the Activity tab",onclick:()=>m3cTab(wrap,"Activity")},h("div",{class:"m3c-jl"},"Touches",h("span",null,"12 months")),sp,h("div",{class:"m3c-js"},lt?"Last "+fmtS(lt)+" · "+plural(tps.filter(t=>t.date>=mon[0]+"-01").length,"touch","touches"):"None logged in 12 months")));
+  /* days left */
+  if(o.life==="Active"&&o.thru){const dl=days_(TODAY,o.thru),pct=Math.max(0,Math.min(100,100-100*dl/365));
+    const ring=h("div",{class:"m3c-ring"});ring.innerHTML='<svg viewBox="0 0 44 44" width="54" height="54" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="5"/><circle class="arc" cx="22" cy="22" r="18" fill="none" stroke="'+(dl<=30?"#ff8f7d":dl<=90?"#f0b94a":"#74bfeb")+'" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 113.1" data-len="'+(113.1*pct/100)+'" transform="rotate(-90 22 22)"/></svg>';
+    setTimeout(()=>{const a=ring.querySelector(".arc");if(a)a.setAttribute("stroke-dasharray",a.dataset.len+" 113.1");},80);
+    wrap.appendChild(h("div",{class:"m3c-jcol m3c-jend"},h("div",{class:"m3c-jl"},"Days Left"),h("div",{class:"m3c-endrow"},ring,h("div",null,h("div",{class:"m3c-big"},dl>=0?n(dl):"0",h("small",null,"days")),h("div",{class:"m3c-js"},fmt(o.thru))))));}
+  else wrap.classList.add("three");
+  wrap.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.classList.contains("go")){e.preventDefault();e.target.click();}});
+  return wrap;}
+function m3cTab(el,name){const box=el.closest(".m3c-band")&&el.closest(".m3c-band").parentNode;if(!box)return;const b=[...box.querySelectorAll(".p360-tabs button,.p360-tabs [role=tab]")].find(x=>x.textContent.trim().indexOf(name)===0);if(b){b.click();b.scrollIntoView({block:"nearest",behavior:"smooth"});}}
+
+{const _m3cPD=p360Dress;p360Dress=function(o,box){_m3cPD(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};const _m3cPU=p360Update;p360Update=function(o,box){_m3cPU(o,box);try{m3cDress(o,box);}catch(e){console.error(e);}};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
