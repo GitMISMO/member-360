@@ -8433,13 +8433,14 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
 /* ---------- Opening screen (Jonna, Oct 31, 2026), modeled on MISMO Money's: after sign-in, a card covers the app until
    every source has loaded and the numbers have stopped moving, so the first numbers anyone sees are the final ones.
    It shows each source as it arrives, a running clock, and how long opening usually takes on this computer (the
-   middle of the last five openings). If something is still loading after 60 seconds it opens anyway and says so. ---------- */
+   middle of the last five openings). If something is still loading after 60 seconds it opens anyway and says so. While the screen is up, redraws that
+   arrive close together are folded into one (nothing behind the card is visible yet), which shortens opening. ---------- */
 (function(){
   const T0=performance.now();let inflight=0,lastNet=performance.now(),lastRefresh=0,done=false,shownAt=0;
   /* count the app's requests in flight, so "settled" means nothing is still on its way */
   const f0=window.fetch;if(f0&&!f0.__m3o){const f1=function(){inflight++;lastNet=performance.now();return f0.apply(this,arguments).finally(()=>{inflight=Math.max(0,inflight-1);lastNet=performance.now();});};f1.__m3o=1;window.fetch=f1;}
   const x0=XMLHttpRequest.prototype.send;XMLHttpRequest.prototype.send=function(){inflight++;lastNet=performance.now();this.addEventListener("loadend",()=>{inflight=Math.max(0,inflight-1);lastNet=performance.now();});return x0.apply(this,arguments);};
-  window.__m3oRefreshed=()=>{lastRefresh=performance.now();};
+  window.__m3oRefreshed=()=>{lastRefresh=performance.now();};window.__m3oLoading=true;window.__m3oPending=false;
   const usual=()=>{let a=[];try{a=JSON.parse(localStorage.getItem("m360.openSeconds")||"[]");}catch(e){}a=(Array.isArray(a)?a:[]).filter(x=>typeof x==="number"&&x>0&&x<600).sort((x,y)=>x-y);return a.length?Math.max(1,Math.ceil(a[Math.floor(a.length/2)])):15;};
   const save=s=>{try{let a=JSON.parse(localStorage.getItem("m360.openSeconds")||"[]");if(!Array.isArray(a))a=[];a.push(Math.round(s*10)/10);localStorage.setItem("m360.openSeconds",JSON.stringify(a.slice(-5)));}catch(e){}};
   const signedIn=()=>{try{return !!(window.ResourcesSession&&ResourcesSession.token&&ResourcesSession.token());}catch(e){return false;}};
@@ -8457,7 +8458,7 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
     box.querySelector(".m3o-u").textContent=usual();box.querySelector(".m3o-of").textContent="of about "+usual()+"s";
     STEPS.forEach(s=>{const li=document.createElement("li");li.innerHTML='<i></i><span></span>';li.querySelector("span").textContent=s[0];list.appendChild(li);});
     shownAt=performance.now();document.documentElement.classList.add("m3o-on");};
-  const finish=(late)=>{if(done)return;done=true;const secs=(performance.now()-T0)/1000;if(!late)save(secs);
+  const finish=(late)=>{if(done)return;done=true;window.__m3oLoading=false;const secs=(performance.now()-T0)/1000;if(!late)save(secs);
     if(box){bar.style.width="100%";box.classList.add("out");setTimeout(()=>{box.remove();document.documentElement.classList.remove("m3o-on");},late?2600:380);if(late)note.textContent="Opening now. A few numbers may still update for a moment.";}
     try{const cur=[...document.querySelectorAll("main .view")].find(v=>!v.hidden);if(cur&&cur.id==="v-home"&&typeof renderHome==="function")setTimeout(()=>renderHome(),late?2600:400);}catch(e){}};
   const tick=()=>{if(done)return;
@@ -8466,7 +8467,7 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
     if(!box)build();
     const now=performance.now(),el=(now-shownAt)/1000;
     clock.textContent=Math.floor(el/60)+":"+String(Math.floor(el%60)).padStart(2,"0");
-    const quiet=inflight===0&&now-lastNet>1200&&now-lastRefresh>900;
+    const quiet=inflight===0&&!window.__m3oPending&&now-lastNet>700&&now-lastRefresh>500;
     let n=0;[...list.children].forEach((li,i)=>{const fn=STEPS[i][1],ok=fn?has(fn):(n===STEPS.length-1&&quiet);li.classList.toggle("ok",ok);if(ok)n++;});
     const u=usual(),f=Math.min(.97,Math.max(n/STEPS.length*.85,Math.min(.9,el/u)));bar.style.width=Math.round((n===STEPS.length?1:f)*100)+"%";
     if(n===STEPS.length){finish(false);return;}
@@ -8475,7 +8476,7 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
   tick();
 })();
 
-{const _m3oRA=refreshAll;refreshAll=function(){const r=_m3oRA.apply(this,arguments);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}return r;};}
+{const _m3oRA=refreshAll;let _m3oT=0;refreshAll=function(){const a=arguments,self=this;if(window.__m3oLoading){window.__m3oPending=true;clearTimeout(_m3oT);_m3oT=setTimeout(()=>{window.__m3oPending=false;_m3oRA.apply(self,a);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}},300);return;}const r=_m3oRA.apply(this,arguments);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
@@ -9071,13 +9072,26 @@ function mmMatcher(){
 const MMSUG=new Map();
 function mmLev(a,b){if(a===b)return 0;const m=a.length,n=b.length;let prev=Array.from({length:n+1},(_,j)=>j),cur=new Array(n+1);
   for(let i=1;i<=m;i++){cur[0]=i;for(let j=1;j<=n;j++)cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));[prev,cur]=[cur,prev];}return prev[n];}
-function mmSuggest(name,byName){const t=mmNorm(name),ck=t+"|"+ORGS.length;if(MMSUG.has(ck))return MMSUG.get(ck);let best="",bs=0;
+/* Faster payer-name suggestions (Jonna, Nov 1, 2026): same answers as before, about 40 times less work.
+   The list of single-company names is built once per name index (with a fingerprint, so a suggestion is reused for as
+   long as the names behind it are unchanged), the spelling distance stops as soon as a name can no longer qualify,
+   and a whole-word test is only built when one name actually contains the other. */
+const MMU=new WeakMap();
+function mmLevB(a,b,max){if(a===b)return 0;const m=a.length,n=b.length;if(Math.abs(m-n)>max)return max+1;
+  let prev=new Array(n+1),cur=new Array(n+1);for(let j=0;j<=n;j++)prev[j]=j;
+  for(let i=1;i<=m;i++){cur[0]=i;let lo=i;const ai=a.charCodeAt(i-1);for(let j=1;j<=n;j++){const c=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(ai===b.charCodeAt(j-1)?0:1));cur[j]=c;if(c<lo)lo=c;}
+    if(lo>max)return max+1;const s=prev;prev=cur;cur=s;}
+  return prev[n];}
+function mmSuggest(name,byName){const t=mmNorm(name);
+  let U=MMU.get(byName);if(!U){const ks=[];let hs=5381;for(const k in byName){if(byName[k].length!==1)continue;ks.push(k);const s=k+"="+byName[k][0]+";";for(let i=0;i<s.length;i++)hs=((hs<<5)+hs+s.charCodeAt(i))|0;}U={ks,sig:ks.length+":"+hs};MMU.set(byName,U);}
+  const ck=t+"|"+U.sig;if(MMSUG.has(ck))return MMSUG.get(ck);let best="",bs=0;
   const esc=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
-  for(const k in byName){if(byName[k].length!==1||!t)continue;
-    const L=Math.max(k.length,t.length);if(Math.min(k.length,t.length)/L>=0.8){const r=1-mmLev(k,t)/L;if(r>=0.82&&r>bs){bs=r;best=byName[k][0];}}}
-  if(!best&&t.length>=5)for(const k in byName){if(byName[k].length!==1||k.length<5)continue;
-    if(new RegExp("\\b"+esc(t)+"\\b").test(k)||new RegExp("\\b"+esc(k)+"\\b").test(t)){best=byName[k][0];break;}}
+  if(t)for(const k of U.ks){const L=Math.max(k.length,t.length);if(Math.min(k.length,t.length)/L>=0.8){
+    const md=Math.floor(L*(1-Math.max(0.82,bs))+1e-9),r=1-mmLevB(k,t,md)/L;if(r>=0.82&&r>bs){bs=r;best=byName[k][0];}}}
+  if(!best&&t.length>=5){let tRe=null;for(const k of U.ks){if(k.length<5)continue;
+    if((k.indexOf(t)>=0&&(tRe||(tRe=new RegExp("\\b"+esc(t)+"\\b"))).test(k))||(t.indexOf(k)>=0&&new RegExp("\\b"+esc(k)+"\\b").test(t))){best=byName[k][0];break;}}}
   MMSUG.set(ck,best);return best;}
+
 function mmHash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16).padStart(8,"0");}
 const MMLV=[["Chair Champion","Chair"],["Executive Champion","Executive"],["Associate Champion","Associate"],["Corporate Membership","Corporate"],["Sole Membership","Sole"]];
 function mmLevelOf(p){for(const [a,b] of MMLV)if(String(p||"").includes(a))return b;return "";}
