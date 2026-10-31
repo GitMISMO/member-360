@@ -5232,6 +5232,8 @@ function iifPick(sel,cs,size){IIFSEL=sel;$("iif-cs").value=cs||"";$("iif-size").
    Each Aptify upload is compared with the one before it: anyone with an active term now who had none before is listed here, at the
    level Aptify gave them. The InvFee Member Contacts export brings in their Aptify contacts (only ever added). Kept in aptify/iifnew. */
 var IFN=null;
+/* Aptify order number to Bill To Company ID, from the orders export (Jonna, Oct 30, 2026): lets a payment with no Company ID find its company */
+var ORDMAP=null;
 function iifOrg(x){let o=null;
   if(x.cid){o=BY["c"+x.cid]||null;if(!o)o=ORGS.find(r=>String(r.cid||"")===String(x.cid)||String(r.pid||"")===String(x.cid))||null;
     if(!o&&x.co){const k=(ALIAS.map||{})[x.co];if(k&&BY[k])o=BY[k];}}
@@ -6916,9 +6918,7 @@ function isChecks(){
     {key:"speaker-names",cat:"Name Matching",title:"Speaker Companies Not Matched to a Record",
       why:"Summit HQ's speaker list has speakers from these companies, but no Member 360 record matched, so those speakers don't show on any record. Most are non-members. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
       fix:"match",items:()=>((SPK&&SPK.unmatched)||[]).map(u=>({id:"s:"+u.name,name:u.name==="(no company)"?"No Company Listed":u.name,note:u.count+" speaker"+(u.count>1?"s":""),r:u.name==="(no company)"?null:{name:u.name}}))},
-    {key:"meeting-names",cat:"Name Matching",title:"Meeting Tracker Companies Not Matched to a Record",
-      why:"The Meeting Trackers page lists people from these companies at monthly workgroup meetings, but no Member 360 record matched, so those meetings don't show on any record. Most are non-members, government agencies or consultants. Under each name, say Yes to the suggested record, or No to pick another one. Not a Member takes a name off for good; Not an Issue takes it off this list only.",
-      fix:"match",items:()=>((MTG&&MTG.unmatched)||[]).filter(u=>!/^(self-?employed|retired|independent|\(no company\))$/i.test(u.name)).map(u=>({id:"m:"+u.name,name:u.name,note:n(u.records)+" meeting attendance"+(u.records===1?"":"s"),r:{name:u.name}}))},
+    /* Meeting Tracker companies that can't be matched with confidence are left out of the trackers rather than listed here (Jonna, Oct 30, 2026) */
     {key:"dupes",cat:"Possible Duplicates",title:"Possible Duplicate Records",
       why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Where the rows already share one Aptify Company ID, Aptify holds them as one company and you can fold them together below \u2014 nothing is deleted and it can be put back. Where the IDs differ, either one of them is wrong (correct it on the record) or the companies really do need merging in Aptify.",
       items:()=>dupPairs()},
@@ -7669,7 +7669,7 @@ function aptDate(v){if(v==null||v==="")return "";if(v instanceof Date&&!isNaN(v)
   const s=String(v).trim();let m=/^(\d{4})-(\d{2})-(\d{2})/.exec(s);if(m)return m[1]+"-"+m[2]+"-"+m[3];
   m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(s);if(m)return m[3]+"-"+m[1].padStart(2,"0")+"-"+m[2].padStart(2,"0");return "";}
 async function aptRead(files){
-  const X=await loadXlsx();let comp=null,terms=null,ords=null,certs=null,cts=null;const names={};
+  const X=await loadXlsx();let comp=null,terms=null,ords=null,certs=null,cts=null;const OMAP={};const names={};
   for(const f of files){const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=X.utils.sheet_to_json(ws,{raw:true,defval:""});const cols=rows.length?Object.keys(rows[0]):[];
     if(cols.includes("Product")&&cols.includes("End Date")&&cols.includes("Subscriber Company")){terms=rows;names.terms={name:f.name,rows:rows.length};}
@@ -7693,6 +7693,7 @@ async function aptRead(files){
   let O=null;
   if(ords){O={c:{},w:{},wt:[],asOf:""};const wi={};
     const NOTWEB=/summit|boot camp|membership|champion|investment fee|certification|application fee|sponsorship|enrollment|exam|consultant|misc rev|access to mc|community link|revenue share|prepayment|deposit|cancellation/i;
+    ords.forEach(r=>{const oid=String(r["ID"]||r["Order ID"]||r["OrderID"]||"").replace(/\.0+$/,"").trim(),ocid=String(r["Bill To Company"]||"").replace(/\.0+$/,"").trim();if(oid&&ocid)OMAP[oid]=ocid;});
     ords.forEach(r=>{if(String(r["OrderType"]).trim()!=="Regular")return;const nm=String(r["Line1_ProductName"]||"").trim(),co=String(r["BillToCompany"]||"").trim();
       const cid=String(r["Bill To Company"]||"").replace(/\.0+$/,"").trim(),d=aptDate(r["Order Date (No Time)"]),tot=Number(r["Total"])||0;
       if(!cid||!d||/\btest\b/i.test(co))return;if(d>O.asOf)O.asOf=d;
@@ -7705,7 +7706,7 @@ async function aptRead(files){
     CP.push({n,e:String(r["E-mail address"]||"").trim().toLowerCase(),co:String(r["Company Name"]||"").trim(),cert:/cmsp/i.test(sh)?"CMSP":"AMSP",d:aptDate(r["Certification Date"]),x:aptDate(r["Certification Expiry Date"])});});}
   let CT=null;if(cts){CT={};cts.forEach(r=>{const c=String(r["ID"]||"").replace(/[.]0+$/,"").trim(),e=String(r["Primary Email"]||"").trim().toLowerCase();if(!c||!e)return;
     const x=CT[c]||(CT[c]={co:String(r["ShipToCompany"]||"").trim(),lv:APT_LV[String(r["Line1_ProductName"]||"").trim()]||"",p:[]});const fn=String(r["Other Function"]||"").trim();if(!x.p.some(p=>p[0]===e&&p[1]===fn))x.p.push([e,fn]);});}
-  return {contacts:CT,terms:terms?T:null,sole:terms?S:null,companies:comp?C:null,orders:O,certified:CP,files:names,kept,skipped};
+  return {ordermap:ords?OMAP:null,contacts:CT,terms:terms?T:null,sole:terms?S:null,companies:comp?C:null,orders:O,certified:CP,files:names,kept,skipped};
 }
 /* Two refreshes, two dates. The weekly Aptify upload sets APT.uploadedAt; the
    organization list itself is rebuilt separately and sets META.asOf. Showing only
@@ -7769,7 +7770,8 @@ function renderApt(){
       const doc={uploadedAt:now,uploadedBy:ME||"",uploadedByName:myName()||"",files:Object.assign({},old.files||{},r.files),
         kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null,
         certified:r.certified?{asOf:now.slice(0,10),people:r.certified}:(old.certified||null)};
-      await db.doc("aptify/main").set(doc);try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}APT=doc;applyAptify();ISGEN++;scheduleRefresh();
+      await db.doc("aptify/main").set(doc);try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}
+      try{if(r.ordermap&&Object.keys(r.ordermap).length){const M=Object.assign({},(ORDMAP&&ORDMAP.map)||{},r.ordermap);await db.doc("aptify/ordermap").set({map:M,updatedAt:now});ORDMAP={map:M,updatedAt:now};if(MMF)remergeAct();}}catch(e){console.error("order map",e);}APT=doc;applyAptify();ISGEN++;scheduleRefresh();
       toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":"",r.certified?n(r.certified.length)+" certified people":""].filter(Boolean).join(", ")+".");inp.value="";renderApt();
     }catch(e){msg.textContent=e&&e.message?e.message:"The files couldn't be read.";go.disabled=false;}});
 }
@@ -8048,7 +8050,8 @@ function mmMatcher(){
     if(o.nameWas){const n2=mmNorm(o.nameWas);if(n2&&n2!==n)(byName[n2]=byName[n2]||[]).push(o.k);}});
   const map=(ALIAS&&ALIAS.map)||{},ign=(ALIAS&&ALIAS.ignore)||[];
   const m=r=>{
-    const cid=r.companyId!=null&&r.companyId!==""?String(r.companyId).trim().replace(/\.0$/,""):"";
+    /* no Company ID on the payment: the Aptify order number gives the Bill To company (Jonna, Oct 30, 2026) */
+    const cid0=r.companyId!=null&&r.companyId!==""?String(r.companyId).trim().replace(/\.0$/,""):"";const cid=cid0||((typeof ORDMAP!=="undefined"&&ORDMAP&&ORDMAP.map&&r.order)?String(ORDMAP.map[String(r.order).trim()]||""):"");
     if(cid){const c=BY["c"+cid];if(c&&!c.mm)return {k:c.k};const ks=byCid[cid]||[];if(ks.length===1)return {k:ks[0]};}
     const name=String(r.company||"").trim();
     if(name&&ign.includes(name))return {ignored:true};
@@ -8285,6 +8288,7 @@ async function boot(){
   if(window.__m360Square)window.__m360Square.onData(d=>{SQF=d||null;remergeAct();scheduleRefresh();try{iifNewRender();}catch(e){console.error(e);}});
   db.collection("prospects").onSnapshot(q=>{mergeProspects(q.docs.map(d=>Object.assign({id:d.id},d.data())));scheduleRefresh();},err);
   db.collection("issues").onSnapshot(q=>{ISSUES=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
+  db.doc("aptify/ordermap").onSnapshot(sn=>{ORDMAP=sn.exists?sn.data():null;try{if(MMF)remergeAct();}catch(e){}scheduleRefresh();},err);
   db.doc("aptify/iifnew").onSnapshot(sn=>{IFN=sn.exists?sn.data():null;try{iifNewRender();}catch(e){}},err);
   db.doc("aptify/main").onSnapshot(sn=>{APT=sn.exists?sn.data():null;applyAptify();paintDataDates();ISGEN++;const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderApt();scheduleRefresh();},err);
   db.collection("outbox").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]=d.data());OUTBOX=m;scheduleRefresh();},err);
