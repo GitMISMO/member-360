@@ -2276,6 +2276,29 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 @media(max-width:900px){#m3p-top .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.m3p-lab em{display:none}}
 
+/* ---------- Settings ---------- */
+#m3g-top .headline{margin:0 0 14px}
+#m3g-top .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.m3g-band{display:block!important;margin-bottom:16px!important}
+.m3g-band .m3w-tl{margin-bottom:12px}
+.m3g-src{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.m3g-c{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);transition:background .15s,transform .15s}
+.m3g-c:hover{background:rgba(255,255,255,.1);transform:translateY(-2px)}
+.m3g-c:focus-visible{outline:2px solid #74bfeb}
+.m3g-c i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.3)}
+.m3g-c.ok i{background:#5fd39a;box-shadow:0 0 0 4px rgba(95,211,154,.2)}
+.m3g-c.due i{background:#f0b94a;box-shadow:0 0 0 4px rgba(240,185,74,.2);animation:m3iPulse 1.8s ease-in-out infinite}
+.m3g-c.none i{background:#ff8f7d}
+.m3g-c.info i{background:#74bfeb}
+.m3g-t,.m3g-a{display:flex;flex-direction:column;gap:2px;min-width:0}
+.m3g-t b{font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3g-t span{font-size:12px;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3g-a{align-items:flex-end}
+.m3g-a b{font-size:16px;color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap}
+.m3g-a span{font-size:11.5px;color:rgba(255,255,255,.6);white-space:nowrap}
+.m3g-c.due .m3g-a span{color:#ffd88a}
+@media(max-width:900px){.m3g-src{grid-template-columns:1fr}#m3g-top .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8343,6 +8366,34 @@ function m3pDress(){const v=$("v-plays");if(!v)return;let top=$("m3p-top");if(to
 }
 
 {const _m3pRP=renderPlays;renderPlays=function(){const r=_m3pRP.apply(this,arguments);try{m3pDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Settings, MISMO Media look (Jonna, Oct 31, 2026): figure boxes for what Member 360 holds, then a navy band that
+   shows how fresh each data source is, green when current and amber when an upload is due. Selecting a source opens
+   its section below. ---------- */
+function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if(top)top.remove();
+  const secs=[...v.querySelectorAll(":scope details")].filter(d=>!d.parentElement.closest("details"));
+  const openSec=name=>{const d=secs.find(x=>(x.querySelector("summary")||{}).textContent.trim().indexOf(name)===0);if(!d)return;secs.forEach(x=>{if(x!==d)x.open=false;});d.open=true;d.scrollIntoView({behavior:"smooth",block:"start"});d.classList.add("m3p-flash");setTimeout(()=>d.classList.remove("m3p-flash"),1400);};
+  const act=ORGS.filter(o=>o.life==="Active").length,pro=ORGS.filter(o=>o.life==="Prospect").length,staff=((typeof SET!=="undefined"&&SET.staff)||[]).length;
+  const tile=(lab,val,sub,go)=>h(go?"button":"div",{type:go?"button":null,class:"tile",onclick:go||null},h("span",{class:"lab"},lab),h("span",{class:"val"},val),h("span",{class:"sub"},sub));
+  const tiles=h("div",{class:"tiles"},
+    tile("Organizations",n(ORGS.length),n(act)+" members · "+n(pro)+" prospects"),
+    tile("Touchpoints",n(TP.length),"logged across every record"),
+    tile("Relationship Owners",n(staff),"people who can own a record",()=>openSec("Relationship Owners")),
+    tile("Membership Levels",n(new Set(ORGS.filter(o=>o.life==="Active"&&o.level).map(o=>o.level)).size),"levels in use today",()=>openSec("Membership Levels")));
+  /* freshness */
+  const wd=(a,b)=>{try{return weekdaysBetween(a,b);}catch(e){return days_(a,b);}};
+  const src=[];
+  const apt=typeof aptAsOf==="function"?aptAsOf():"";src.push({name:"Aptify Member Data",when:apt,age:apt?days_(apt,TODAY):null,limit:7,cad:"weekly upload",sec:"Aptify Member Data"});
+  const pu=typeof payUpdated==="function"?payUpdated():"",pt=typeof payThrough==="function"?payThrough():"";src.push({name:"Financial System Payments",when:pu,age:pu?wd(pu,TODAY):null,limit:2,cad:"daily from MISMO Money"+(pt?" · paid through "+fmtS(pt):""),sec:"Financial System Payments",wk:true});
+  const cards=h("div",{class:"m3g-src"});src.forEach(s=>{const st=s.age==null?"none":s.age<=s.limit?"ok":"due";
+    cards.appendChild(h("button",{type:"button",class:"m3g-c "+st,onclick:()=>openSec(s.sec)},h("i",null),h("div",{class:"m3g-t"},h("b",null,s.name),h("span",null,s.cad)),
+      h("div",{class:"m3g-a"},h("b",null,s.when?(s.age===0?"Today":fmtS(s.when)):"Not yet"),h("span",null,s.age==null?"no upload on record":st==="ok"?(s.age===0?"up to date":s.age+(s.wk?" weekday":" day")+(s.age===1?"":"s")+" ago"):"upload due · "+s.age+(s.wk?" weekdays":" days")+" old"))));});
+  ["Smartsheet Membership Tracker","MISMO Connect and Download Data"].forEach(nm=>{if(secs.some(x=>(x.querySelector("summary")||{}).textContent.trim().indexOf(nm)===0))cards.appendChild(h("button",{type:"button",class:"m3g-c info",onclick:()=>openSec(nm)},h("i",null),h("div",{class:"m3g-t"},h("b",null,nm),h("span",null,nm.indexOf("Smartsheet")===0?"Kelly's notes, contacts and new companies":"logins and library downloads")),h("div",{class:"m3g-a"},h("b",null,"Open"),h("span",null,"upload or check"))));});
+  const band=h("div",{class:"m3w-band m3g-band"},h("div",{class:"m3w-tl"},"Where the Data Comes From",h("span",null,"Aptify is the record for membership and payments · select a source")),cards);
+  top=h("div",{id:"m3g-top"},h("div",{class:"headline"},tiles),band);
+  const first=secs[0];if(first)first.parentNode.insertBefore(top,first);else v.appendChild(top);
+}
+
+{const _m3gRS=renderSettings;renderSettings=function(){const r=_m3gRS.apply(this,arguments);try{m3gDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
