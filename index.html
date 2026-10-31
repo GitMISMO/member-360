@@ -2133,6 +2133,39 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 .headline .tiles:has(> .tile:nth-child(8):last-child){display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:760px){.headline .tiles:has(> .tile:nth-child(8):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* selected figure box stays navy, with a ring in its color */
+.headline .tiles .tile.on,.headline .tiles .tile[aria-pressed="true"]{color:#fff;background:radial-gradient(120% 90% at 100% 0%,color-mix(in srgb,var(--k,#74bfeb) 40%,transparent),transparent 65%),linear-gradient(160deg,#143d5a,#0d2c42)!important;box-shadow:0 0 0 2px var(--k,#74bfeb),0 16px 28px -16px rgba(6,32,47,.7)!important}
+.headline .tiles .tile.on *{color:inherit}
+.headline .tiles .tile.on .lab,.headline .tiles .tile.on .sub{color:rgba(255,255,255,.8)}
+/* ---------- Members and Prospects band ---------- */
+.m3m-band{grid-template-columns:minmax(0,1.25fr) minmax(0,.9fr) minmax(0,1.1fr)!important;align-items:stretch!important}
+.m3m-col{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.m3m-col .m3w-tl{margin:0}
+.m3m-lv{display:flex;align-items:center;gap:16px}
+.m3m-ring{width:128px;height:128px}
+.m3m-ring .seg{transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1),opacity .2s}
+.m3m-ring .seg.dim{opacity:.22}
+.m3m-ring .m3w-ringmid span{max-width:90px;overflow:hidden;text-overflow:ellipsis;text-transform:none;letter-spacing:0;font-size:11px}
+.m3m-key{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0}
+.m3m-kr{display:grid;grid-template-columns:10px minmax(0,1fr) auto 34px;gap:8px;align-items:center;font-size:12.5px;color:rgba(255,255,255,.82);padding:2px 4px;border-radius:4px;cursor:default}
+.m3m-kr:hover{background:rgba(255,255,255,.08);color:#fff}
+.m3m-kr i{width:10px;height:10px;border-radius:2px}
+.m3m-kr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3m-kr b{font-variant-numeric:tabular-nums;color:#fff}
+.m3m-kr em{font-style:normal;font-size:11px;color:rgba(255,255,255,.55);text-align:right;font-variant-numeric:tabular-nums}
+.m3m-kseg{display:block;height:100%;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.m3m-say{margin-top:auto;font-size:13px;line-height:1.5;color:rgba(255,255,255,.8);border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
+.m3m-fun{display:flex;flex-direction:column;gap:5px}
+.m3m-fr{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:86px minmax(0,1fr) 34px;gap:10px;align-items:center;font-size:12.5px;color:rgba(255,255,255,.82);padding:2px 4px;border-radius:4px}
+.m3m-fr:hover{background:rgba(255,255,255,.08);color:#fff}
+.m3m-fr:focus-visible{outline:2px solid #74bfeb}
+.m3m-fr span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3m-fr .b{height:10px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.m3m-fr .b i{display:block;height:100%;background:linear-gradient(90deg,#f0b94a,#ffd88a);transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.m3m-fr b{text-align:right;font-variant-numeric:tabular-nums;color:#fff}
+@media(max-width:1100px){.m3m-band{grid-template-columns:1fr 1fr!important}.m3m-band .m3m-col:first-child{grid-column:1/-1}}
+@media(max-width:640px){.m3m-band{grid-template-columns:1fr!important}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -7944,6 +7977,48 @@ function m3rDress(){const tiles=$("ren-tiles"),hl=$("ren-hl");if(!tiles||!hl)ret
 }
 
 {const _m3rRT=renderTiles;renderTiles=function(){const r=_m3rRT.apply(this,arguments);try{m3rDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Members and Prospects, MISMO Media look (Jonna, Oct 31, 2026): after the figure boxes, a navy band that breaks
+   down who is in the book: current members by level as a ring, Lender and Non-Lender as one bar, and the prospect
+   pipeline by sales stage. Clicking a stage filters the list below to it. ---------- */
+const M3M_COL=["#74bfeb","#5fd39a","#b79cff","#f0b94a","#ff8f7d","#9fb3c8","#4f8fc0","#e7a6d8"];
+function m3mDress(){const hl=$("mem-hl");if(!hl)return;let band=$("m3m-band");if(band)band.remove();
+  const act=ORGS.filter(o=>o.life==="Active"),pro=ORGS.filter(o=>o.life==="Prospect");if(!act.length&&!pro.length)return;
+  /* levels, alphabetical */
+  const lv={};act.forEach(o=>{const l=o.level||"Level Not Recorded";lv[l]=(lv[l]||0)+1;});
+  const lk=Object.keys(lv).sort((a,b)=>a.localeCompare(b)),tot=act.length||1;
+  const R=50,C=2*Math.PI*R;let acc=0;const segs=lk.map((k,i)=>{const len=C*lv[k]/tot,s={k,v:lv[k],c:M3M_COL[i%M3M_COL.length],off:acc,len};acc+=len;return s;});
+  const ring=h("div",{class:"m3w-ring m3m-ring"});
+  ring.innerHTML='<svg viewBox="0 0 120 120" width="128" height="128" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="14"/>'+segs.map(s=>'<circle class="seg" data-k="'+h_esc(s.k)+'" cx="60" cy="60" r="50" fill="none" stroke="'+s.c+'" stroke-width="14" stroke-dasharray="0 '+C.toFixed(1)+'" stroke-dashoffset="'+(-s.off).toFixed(1)+'" transform="rotate(-90 60 60)"><title>'+h_esc(s.k)+': '+s.v+'</title></circle>').join("")+'</svg>';
+  const mid=h("div",{class:"m3w-ringmid"},h("b",null,"0"),h("span",null,"members"));ring.appendChild(mid);m3hCount(mid.querySelector("b"),act.length,x=>n(Math.round(x)));
+  setTimeout(()=>{ring.querySelectorAll(".seg").forEach((c,i)=>{const s=segs[i];c.setAttribute("stroke-dasharray",Math.max(0,s.len-1.2).toFixed(1)+" "+C.toFixed(1));});},90);
+  const key=h("div",{class:"m3m-key"});segs.forEach(s=>{const r=h("div",{class:"m3m-kr"},h("i",{style:"background:"+s.c}),h("span",null,s.k),h("b",null,n(s.v)),h("em",null,Math.round(100*s.v/tot)+"%"));
+    r.addEventListener("mouseenter",()=>{ring.querySelectorAll(".seg").forEach(c=>c.classList.toggle("dim",c.dataset.k!==s.k));mid.querySelector("b").textContent=n(s.v);mid.querySelector("span").textContent=s.k;});
+    r.addEventListener("mouseleave",()=>{ring.querySelectorAll(".seg").forEach(c=>c.classList.remove("dim"));mid.querySelector("b").textContent=n(act.length);mid.querySelector("span").textContent="members";});key.appendChild(r);});
+  /* lender split */
+  const kd={};act.forEach(o=>{let k="";try{k=typeof memKind==="function"?memKind(o):o.type;}catch(e){k=o.type;}k=k||"Type Not Recorded";kd[k]=(kd[k]||0)+1;});
+  const kk=Object.keys(kd).sort((a,b)=>a.localeCompare(b)),KC={"Lender":"#74bfeb","Non-Lender":"#5fd39a"};
+  const kb=h("div",{class:"m3r-bar"}),kkey=h("div",{class:"m3r-key"});kk.forEach((k,i)=>{const s=h("i",{class:"m3m-kseg",style:"width:0%;background:"+(KC[k]||"#9fb3c8"),title:k+": "+kd[k]});kb.appendChild(s);setTimeout(()=>{s.style.width=(100*kd[k]/tot)+"%";},120+i*90);kkey.appendChild(h("span",{class:"m3r-k"},h("i",{style:"background:"+(KC[k]||"#9fb3c8")}),k,h("b",null,n(kd[k]))));});
+  /* prospect pipeline by sales stage */
+  const ST=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid"];
+  const sc={},short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting");
+  let none=0;pro.forEach(o=>{const s=(ov(o)||{}).pstage||"";if(ST.indexOf(s)>=0)sc[s]=(sc[s]||0)+1;else if(!s||!/lost|won|hold/i.test(s))none++;});
+  const rows=[["Not Started",none,""]].concat(ST.map(s=>[short(s),sc[s]||0,s])),pmx=Math.max(1,...rows.map(r=>r[1]));
+  const fun=h("div",{class:"m3m-fun"});rows.forEach(([l,v,raw],i)=>{const r=h("button",{type:"button",class:"m3m-fr",title:raw?"Show prospects at "+l:"Prospects with no sales stage yet",onclick:()=>m3mStage(raw,l)},h("span",null,l),h("div",{class:"b"},h("i",{style:"width:0%"})),h("b",null,n(v)));fun.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.max(v?3:0,Math.round(100*v/pmx))+"%";},100+i*60);});
+  const say=$("mem-say")||hl.querySelector(".hl-say"),sayT=say?say.textContent.replace(/\s+/g," ").trim():"";
+  band=h("div",{class:"m3w-band m3m-band",id:"m3m-band"},
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Current Members by Level",h("span",null,"hover for detail")),h("div",{class:"m3m-lv"},ring,key)),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Lender and Non-Lender",h("span",null,n(act.length)+" current")),kb,kkey,sayT?h("div",{class:"m3m-say"},sayT.charAt(0).toUpperCase()+sayT.slice(1).replace(/\.*$/,".")):null),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Prospect Pipeline",h("span",null,n(pro.length)+" prospects · click a stage")),fun));
+  hl.after(band);
+}
+function h_esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function m3mStage(raw,label){const v=$("v-members");if(!v)return;
+  const tab=[...v.querySelectorAll("button")].find(b=>/^Prospect \(/.test(b.textContent.trim()));if(tab)tab.click();
+  const sel=[...v.querySelectorAll(".filters select, select")].find(s=>[...s.options].some(o=>/Sales Stages/.test(o.textContent)));
+  if(sel){const op=[...sel.options].find(o=>raw?(o.value===raw||o.textContent.trim()===raw||o.textContent.indexOf(label)>=0):/not set|no stage|none/i.test(o.textContent));sel.value=op?op.value:"";sel.dispatchEvent(new Event("change",{bubbles:true}));}
+  const list=v.querySelector("table")||sel;if(list)list.scrollIntoView({behavior:"smooth",block:"start"});}
+
+{const _m3mRH=renderMemHl;renderMemHl=function(){const r=_m3mRH.apply(this,arguments);try{m3mDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
