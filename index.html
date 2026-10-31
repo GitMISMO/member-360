@@ -5234,6 +5234,15 @@ function iifPick(sel,cs,size){IIFSEL=sel;$("iif-cs").value=cs||"";$("iif-size").
 var IFN=null;
 /* Aptify order number to Bill To Company ID, from the orders export (Jonna, Oct 30, 2026): lets a payment with no Company ID find its company */
 var ORDMAP=null;
+/* a payer name is settled when every one of its payments carries an Aptify company, from the payment or from its order number,
+   and that company has a record here, or the payments are only sponsorships or other non-membership items (Jonna, Oct 30, 2026) */
+var PAYRES={key:null,ok:{}};
+function payerResolved(name){if(!MMF)return false;const key=(MMF.updated||MMF.generated||"")+"|"+(ORDMAP&&ORDMAP.updatedAt||"")+"|"+ORGS.length;
+  if(PAYRES.key!==key){const byCo={},byCid={};mmOrders(MMF).forEach(r=>{const n=String(r.company||"").trim();(byCo[n]=byCo[n]||[]).push(r);});ORGS.forEach(o=>{if(o.cid&&!o.mm)byCid[String(o.cid)]=o;});
+    const ok={};Object.keys(byCo).forEach(n=>{ok[n]=byCo[n].every(r=>{const c=r.companyId!=null&&r.companyId!==""?String(r.companyId).replace(/\.0$/,""):String((ORDMAP&&ORDMAP.map&&ORDMAP.map[String(r.order).trim()])||"");
+      if(!c)return false;if(BY["c"+c]||byCid[c])return true;return !mmItems(r).some(i=>i.c==="Membership"||i.c==="IIF");});});PAYRES={key,ok};}
+  return !!PAYRES.ok[name];}
+
 function iifOrg(x){let o=null;
   if(x.cid){o=BY["c"+x.cid]||null;if(!o)o=ORGS.find(r=>String(r.cid||"")===String(x.cid)||String(r.pid||"")===String(x.cid))||null;
     if(!o&&x.co){const k=(ALIAS.map||{})[x.co];if(k&&BY[k])o=BY[k];}}
@@ -6911,7 +6920,7 @@ function isChecks(){
   const C=[
     {key:"payer-names",cat:"Name Matching",title:"Payer Names to Match",fix:"match",
       why:"These companies paid for a membership, IIF or a sponsorship under a name that doesn't match any record, so the payment isn't counted for anyone. Pick the record each one belongs to, or mark it as not a member. Matches apply at the next morning's payment sync.",
-      items:()=>((REVIEW&&REVIEW.items)||[]).filter(r=>!(ALIAS.map||{})[r.name]&&!(ALIAS.ignore||[]).includes(r.name)).map(r=>({id:"n:"+r.name,name:r.name,note:money(r.total)+" across "+r.count+" payment"+(r.count>1?"s":"")+" · last "+fmt(r.last)+" · "+(r.cats||[]).join(", "),r}))},
+      items:()=>((REVIEW&&REVIEW.items)||[]).filter(r=>!(ALIAS.map||{})[r.name]&&!(ALIAS.ignore||[]).includes(r.name)&&!payerResolved(r.name)).map(r=>({id:"n:"+r.name,name:r.name,note:money(r.total)+" across "+r.count+" payment"+(r.count>1?"s":"")+" · last "+fmt(r.last)+" · "+(r.cats||[]).join(", "),r}))},
     {key:"auto-added",cat:"Name Matching",title:"Members Added Automatically from a Payment",fix:"match",
       why:"These companies paid for a membership in the Financial System and weren't in Member 360, so they were added as new members. If one is an existing member under another name, merge it and the two records combine at the next morning's sync.",
       items:()=>ORGS.filter(o=>o.auto&&!(ALIAS.map||{})[o.name]&&!(ALIAS.ignore||[]).includes(o.name)).map(o=>({id:o.k,o,note:(o.level||"Membership")+" · joined "+fmt(joinedOf(o)),r:{name:o.name}}))},
