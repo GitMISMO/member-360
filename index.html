@@ -2174,6 +2174,26 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 @media(max-width:1100px){.m3s-band{grid-template-columns:1fr 1fr!important}.m3s-band .m3m-col:first-child{grid-column:auto}}
 @media(max-width:640px){.m3s-band{grid-template-columns:1fr!important}}
 
+/* ---------- Monthly Membership Report band ---------- */
+.m3d-band{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,.9fr)!important}
+.m3d-bars{display:flex;align-items:flex-end;gap:5px;height:96px}
+.m3d-b{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;height:100%;min-width:0;border-radius:4px;padding:0 1px}
+.m3d-b:hover{background:rgba(255,255,255,.06)}
+.m3d-b:focus-visible{outline:2px solid #74bfeb}
+.m3d-b em{font-style:normal;font-size:10.5px;color:rgba(255,255,255,.7);font-variant-numeric:tabular-nums;min-height:13px}
+.m3d-b i{display:block;width:100%;border-radius:3px 3px 0 0;background:rgba(116,191,235,.55);transition:height .8s cubic-bezier(.2,.8,.2,1)}
+.m3d-b:hover i{background:#9fd5f3}
+.m3d-b span{font-size:10px;color:rgba(255,255,255,.5);white-space:nowrap}
+.m3d-b.on i{background:linear-gradient(180deg,#5fd39a,#74bfeb)}
+.m3d-b.on span,.m3d-b.on em{color:#fff;font-weight:700}
+.m3d-b.now span{color:#74bfeb}
+.m3d-pt{display:flex;flex-direction:column;gap:4px}
+.m3d-pt b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.m3d-pt span{font-size:12px;color:rgba(255,255,255,.65);white-space:nowrap}
+#v-deals td,#v-deals td *{white-space:nowrap}
+@media(max-width:1100px){.m3d-band{grid-template-columns:1fr 1fr!important}.m3d-band .m3m-col:first-child{grid-column:1/-1}}
+@media(max-width:640px){.m3d-band{grid-template-columns:1fr!important}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8059,6 +8079,41 @@ function m3sDress(){const hl=$("st-hl");if(!hl)return;let band=$("m3s-band");if(
 }
 
 {const _m3sRS=renderStats;renderStats=function(){const r=_m3sRS.apply(this,arguments);try{m3sDress();}catch(e){console.error(e);}return r;};}
+/* ---------- Monthly Membership Report, MISMO Media look (Jonna, Oct 31, 2026): after the figure boxes, a navy band with
+   new members month by month (select a month to load it), the month's dollars by level, and how much of it is paid.
+   New members only, the same rows the report counts. ---------- */
+function m3dDress(){const hl=$("dl-hl"),ms=$("dl-month");if(!hl||!ms)return;let band=$("m3d-band");if(band)band.remove();
+  const all=DEALS.filter(d=>d.type==="New Member"&&!d.archived&&d.sold),sel=ms.value||"";
+  /* twelve months through this month, or through the month picked */
+  const endM=sel&&sel<TODAY.slice(0,7)?sel:TODAY.slice(0,7),mon=[];{let y=Number(endM.slice(0,4)),m=Number(endM.slice(5,7));for(let i=0;i<12;i++){mon.unshift(y+"-"+String(m).padStart(2,"0"));m--;if(!m){m=12;y--;}}}
+  const bm=mon.map(m=>{const L=all.filter(d=>d.sold.slice(0,7)===m);return {m,n:L.length,amt:L.reduce((a,d)=>a+(d.price||0),0)};});
+  const mx=Math.max(1,...bm.map(x=>x.amt)),ML=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const bars=h("div",{class:"m3d-bars"});bm.forEach((x,i)=>{const b=h("button",{type:"button",class:"m3d-b"+(x.m===sel?" on":"")+(x.m===TODAY.slice(0,7)?" now":""),title:ML[Number(x.m.slice(5,7))-1]+" "+x.m.slice(0,4)+": "+plural(x.n,"new member","new members")+", "+money(x.amt),
+    onclick:()=>{ms.value=x.m;ms.dispatchEvent(new Event("change",{bubbles:true}));if(typeof renderDeals==="function")renderDeals();}},
+    h("em",null,x.n?String(x.n):""),h("i",{style:"height:0%"}),h("span",null,ML[Number(x.m.slice(5,7))-1]+(x.m.slice(5,7)==="01"||i===0?" '"+x.m.slice(2,4):"")));
+    bars.appendChild(b);setTimeout(()=>{b.querySelector("i").style.height=Math.max(x.n?8:2,Math.round(100*x.amt/mx))+"%";},60+i*40);});
+  /* the month (or all months) picked: dollars by level, alphabetical */
+  const L=sel?all.filter(d=>d.sold.slice(0,7)===sel):all,tot=L.reduce((a,d)=>a+(d.price||0),0)||0;
+  const lv={};L.forEach(d=>{const o=BY[d.org]||{},k=d.level||o.level||"Level Not Recorded";lv[k]=(lv[k]||0)+(d.price||0);});
+  const lk=Object.keys(lv).sort((a,b)=>a.localeCompare(b)),COL=M3M_COL;
+  const lb=h("div",{class:"m3r-bar"}),lkey=h("div",{class:"m3s-key"});lk.forEach((k,i)=>{const c=COL[i%COL.length],s=h("i",{class:"m3m-kseg",style:"width:0%;background:"+c,title:k+": "+money(lv[k])});lb.appendChild(s);setTimeout(()=>{s.style.width=(tot?100*lv[k]/tot:0)+"%";},120+i*80);
+    lkey.appendChild(h("div",{class:"m3m-kr"},h("i",{style:"background:"+c}),h("span",null,k),h("b",null,money(lv[k])),h("em",null,tot?Math.round(100*lv[k]/tot)+"%":"")));});
+  if(!lk.length)lkey.appendChild(h("div",{class:"m3w-none"},"No new members committed "+(sel?"this month":"yet")+"."));
+  /* paid share */
+  let paid=0;L.forEach(d=>{try{const p=dealPaid(d);if(p)paid+=(p.n||0);}catch(e){}});
+  const pct=tot?Math.min(100,Math.round(100*paid/tot)):0;
+  const ring=h("div",{class:"m3w-ring",title:money(paid)+" of "+money(tot)+" paid"});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="12"/><circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="#5fd39a" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/></svg>';
+  const rm=h("div",{class:"m3w-ringmid"},h("b",null,"0%"),h("span",null,"paid"));ring.appendChild(rm);
+  setTimeout(()=>{const a=ring.querySelector(".arc");a.style.opacity=pct?1:0;a.setAttribute("stroke-dasharray",(3.142*pct)+" 314.2");},80);m3hCount(rm.querySelector("b"),pct,x=>Math.round(x)+"%");
+  const lab=sel?ML[Number(sel.slice(5,7))-1]+" "+sel.slice(0,4):"All Months";
+  band=h("div",{class:"m3w-band m3m-band m3d-band",id:"m3d-band"},
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"New Members by Month",h("span",null,"dollars committed · select a month")),bars),
+    h("div",{class:"m3m-col"},h("div",{class:"m3w-tl"},"Dollars by Level",h("span",null,lab+" · "+money(tot))),lb,lkey),
+    h("div",{class:"m3m-col m3d-paid"},h("div",{class:"m3w-tl"},"Paid in the Financial System",h("span",null,lab)),h("div",{class:"m3m-lv"},ring,h("div",{class:"m3d-pt"},h("b",null,money(paid)),h("span",null,"of "+money(tot)+" committed")))));
+  hl.after(band);
+}
+
+{const _m3dRD=renderDeals;renderDeals=function(){const r=_m3dRD.apply(this,arguments);try{m3dDress();}catch(e){console.error(e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
