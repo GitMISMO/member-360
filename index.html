@@ -4585,6 +4585,8 @@ function renderActivity(){
    the last tracker it saw and applies it after a look. Changes are kept in data/trkpatch (on top of the Sept 26 tracker in orgsdata), so
    Aptify and anything set by hand in Member 360 still win, as before. Nothing is deleted. (Jonna, Oct 29, 2026) ---------- */
 const TRK={base:{},meta:null,loaded:false,url:"https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/member-360/data/trkpatch",pending:null};
+/* a tracker that was read but not applied is easy to lose: warn before leaving the page (Jonna, Nov 1, 2026) */
+window.addEventListener("beforeunload",e=>{if(TRK.pending&&TRK.pending.list&&TRK.pending.list.length){e.preventDefault();e.returnValue="";}});
 const TRK_ROLES=["Primary","Alternate","Billing","Marketing"];
 const TRK_COL={Primary:"MISMO PRIMARY CONTACT (MPC)",Alternate:"MISMO ALTERNATE CONTACT (MAC)",Billing:"MISMO BILLING CONTACT (MBC)",Marketing:"MISMO MARKETING CONTACT (MMC)"};
 const TRK_PRE={Primary:"MPC",Alternate:"MAC",Billing:"MBC",Marketing:"MMC"};
@@ -4694,7 +4696,7 @@ async function trkSave(d,fileName){
     P.meta={at:new Date().toISOString(),by:ME||"",byName:myName()||"",file:fileName||"",rows:d.rows,fields:d.fields,notes:d.notes,news:d.news,companies:d.list.length};
     P.history=(P.history||[]).concat([P.meta]).slice(-60);
     const r=await fetch(TRK.url,{method:"PUT",headers:H,body:JSON.stringify({content:P,sha:g&&g.sha||undefined})});
-    if(r.ok){try{const lid=Date.now().toString(36)+"trk";const e={at:new Date().toISOString(),by:ME||"",byName:myName()||"",coll:"tracker",doc:"trkpatch",kind:"update",label:"Applied the weekly tracker update",detail:[d.fields+" change"+(d.fields===1?"":"s"),d.notes+" new note"+(d.notes===1?"":"s"),d.news?d.news+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" at "+d.list.length+" compan"+(d.list.length===1?"y":"ies"),org:"",orgName:"",fields:[],auto:false};ACTV.log[lid]=e;ACTV.rawDoc(actMonth()+"/"+lid).set(e).catch(()=>{});}catch(x){}return true;}
+    if(r.ok){try{const lid=Date.now().toString(36)+"trk";const e={at:new Date().toISOString(),by:ME||"",byName:myName()||"",coll:"tracker",doc:"trkpatch",kind:"update",label:d.list.length?"Applied the weekly tracker update":"Checked the weekly tracker (nothing new)",detail:[d.fields+" change"+(d.fields===1?"":"s"),d.notes+" new note"+(d.notes===1?"":"s"),d.news?d.news+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" at "+d.list.length+" compan"+(d.list.length===1?"y":"ies"),org:"",orgName:"",fields:[],auto:false};ACTV.log[lid]=e;ACTV.rawDoc(actMonth()+"/"+lid).set(e).catch(()=>{});}catch(x){}return true;}
     if(r.status!==409)throw new Error("The save didn't go through ("+r.status+").");}
   throw new Error("Someone else was saving at the same time. Try again.");
 }
@@ -4720,10 +4722,13 @@ function trkPanel(){
 }
 function trkReview(box){
   const d=TRK.pending;
-  if(!d.list.length){box.appendChild(h("div",{class:"trk-sum"},"Nothing has changed since the last tracker."));const b=h("button",{type:"button",class:"btn ghost"},"Done");b.addEventListener("click",()=>{TRK.pending=null;trkPanel();});box.appendChild(b);return;}
+  if(!d.list.length){/* nothing new still counts as a check: it is saved, so the date above moves (Jonna, Nov 1, 2026) */
+    const sum=h("div",{class:"trk-sum"},d.__msg||"Nothing has changed since the last tracker. Recording that it was checked…");box.appendChild(sum);
+    if(db&&canWrite&&!d.__checked){d.__checked=true;trkSave(d,d.file).then(ok=>{d.__msg=ok?"Nothing has changed since the last tracker. Saved as checked today.":"Nothing has changed since the last tracker. The check couldn't be recorded in this view.";if(ok)TRK.meta={at:new Date().toISOString(),by:ME||"",byName:myName()||"",file:d.file||"",companies:0};sum.textContent=d.__msg;}).catch(e=>{d.__msg="Nothing has changed since the last tracker, but recording the check didn't go through ("+(e.message||e)+").";sum.textContent=d.__msg;});}
+    const b=h("button",{type:"button",class:"btn ghost"},"Done");b.addEventListener("click",()=>{TRK.pending=null;trkPanel();});box.appendChild(b);return;}
   box.appendChild(h("div",{class:"trk-sum"},h("b",null,n(d.list.length)+" compan"+(d.list.length===1?"y":"ies")+" changed"),": "+[n(d.fields)+" contact"+(d.fields===1?"":"s")+", VIP"+(d.fields===1?"":"s")+" or advisor"+(d.fields===1?"":"s")+" to add",n(d.notes)+" new note"+(d.notes===1?"":"s"),d.news?n(d.news)+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" in "+d.file+"."));
   const row=h("div",{class:"btnrow",style:"margin:0 0 12px"});
-  if(db&&canWrite){const ap=h("button",{type:"button",class:"btn"},"Apply These Changes");ap.addEventListener("click",async()=>{ap.disabled=true;ap.textContent="Saving…";try{if(await trkSave(d,d.file)){toast("Tracker update applied. Reloading Member 360…");setTimeout(()=>location.reload(),1200);}else{ap.disabled=false;ap.textContent="Apply These Changes";}}catch(e){toast(e.message||"That didn't save.",true);ap.disabled=false;ap.textContent="Apply These Changes";}});row.appendChild(ap);}
+  if(db&&canWrite){const ap=h("button",{type:"button",class:"btn"},"Apply These Changes");ap.addEventListener("click",async()=>{ap.disabled=true;ap.textContent="Saving…";try{if(await trkSave(d,d.file)){TRK.pending=null;toast("Tracker update applied. Reloading Member 360…");setTimeout(()=>location.reload(),1200);}else{ap.disabled=false;ap.textContent="Apply These Changes";}}catch(e){toast(e.message||"That didn't save.",true);ap.disabled=false;ap.textContent="Apply These Changes";}});row.appendChild(ap);}
   const cx=h("button",{type:"button",class:"btn ghost"},"Cancel");cx.addEventListener("click",()=>{TRK.pending=null;trkPanel();});row.appendChild(cx);box.appendChild(row);
   const ul=h("div",{class:"trk-list"});
   d.list.slice(0,400).forEach(x=>{const o=BY[x.k];const det=h("details",{class:"trk-i"});
