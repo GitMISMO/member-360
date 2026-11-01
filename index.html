@@ -2315,7 +2315,7 @@ details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 @media(max-width:760px){.m3p-band{overflow-x:auto!important;-webkit-overflow-scrolling:touch}.m3p-line{min-width:880px}}
 
 /* ---------- Opening screen ---------- */
-#m3o{position:fixed;inset:0;z-index:9400;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(120% 90% at 100% 0%,rgba(116,191,235,.18),transparent 55%),linear-gradient(160deg,#10324a,#0b2436);transition:opacity .35s ease}
+#m3o{position:fixed;inset:0;z-index:9450;display:flex;align-items:center;justify-content:center;padding:16px;background:radial-gradient(120% 90% at 100% 0%,rgba(116,191,235,.18),transparent 55%),linear-gradient(160deg,#10324a,#0b2436);transition:opacity .35s ease}
 #m3o.out{opacity:0;pointer-events:none}
 .m3o-card{max-width:440px;width:100%;box-sizing:border-box;background:var(--surface,#fff);color:var(--ink,#0d314c);border:1px solid rgba(116,191,235,.3);border-radius:12px;padding:28px 26px;box-shadow:0 24px 60px -24px rgba(0,0,0,.6);font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .m3o-ey{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3,#5a7184);margin-bottom:6px}
@@ -2336,6 +2336,11 @@ details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 .m3o-note{font-size:12.5px;color:var(--ink-3,#5a7184);margin-top:12px;min-height:1px}
 @keyframes m3oSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.m3o-list li i{animation:none}}
+#m3o.m3o-yield{display:none}
+#hq-gate.m3o-under{visibility:hidden!important}
+/* before the opening card is drawn, the data store's card sits on the same navy backdrop so the hand-off is seamless */
+html #hq-gate:has(h1){background:radial-gradient(120% 90% at 100% 0%,rgba(116,191,235,.18),transparent 55%),linear-gradient(160deg,#10324a,#0b2436)!important}
+html #hq-gate:has(h1) .card{border-color:rgba(116,191,235,.3)!important;box-shadow:0 24px 60px -24px rgba(0,0,0,.6)!important;max-width:440px!important}
 
 </style>
 </head><body>
@@ -8465,6 +8470,8 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
     if(!signedIn()){setTimeout(tick,250);return;}
     if(!document.body){setTimeout(tick,100);return;}
     if(!box)build();
+    /* the data store's own "Opening" card sits under this one; any other message it shows (it can't reach the data) comes to the front */
+    const gate=document.getElementById("hq-gate");if(gate){const loading=!gate.hidden&&/Opening Member 360/.test(gate.textContent);gate.classList.toggle("m3o-under",loading||gate.hidden);box.classList.toggle("m3o-yield",!gate.hidden&&!loading&&!!gate.querySelector("h1"));}
     const now=performance.now(),el=(now-shownAt)/1000;
     clock.textContent=Math.floor(el/60)+":"+String(Math.floor(el%60)).padStart(2,"0");
     const quiet=inflight===0&&!window.__m3oPending&&now-lastNet>700&&now-lastRefresh>500;
