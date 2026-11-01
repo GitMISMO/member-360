@@ -4657,13 +4657,18 @@ function trkFind(T){const nm=aptN(String(T.name).replace(/ *[(][^)]*[)] */g," ")
   if(!c.length)return null;
   c.sort((a,b)=>b[0]-a[0]||((b[1].life==="Active")-(a[1].life==="Active"))||((a[1].mm?1:0)-(b[1].mm?1:0)));return c[0][1];}
 /* read the export and list what's new since Member 360 last saw it: new contacts, VIPs, senior advisors and notes from the last two years */
+/* Kelly's tracker sometimes keeps an old or related company's row under the same Company ID (an old name, a parent company, a company that was
+   bought). Such a row is left out so its people and notes don't land on the wrong company, and the review lists it (Jonna, Nov 1, 2026) */
+function trkNameIs(n,o){const a=aptN(String(n).replace(/ *[(][^)]*[)] */g," ")),b=aptN(n);return [o.name,o.nameWas,ov(o).pairName].concat((o.mergedIn||[]).map(x=>x.name)).some(x=>x&&(aptN(String(x).replace(/ *[(][^)]*[)] */g," "))===a||aptN(x)===b));}
+function trkTwin(T,o,ids){if(trkNameIs(T.name,o))return false;if(String(o.cid||"")!==T.cid)return true;return (ids[T.cid]||[]).some(n=>n!==T.name&&trkNameIs(n,o));}
 function trkDiff(rows,cm){
   const cut=String(new Date().getFullYear()-1)+"-01-01";
   const notesByRow={};(cm||[]).forEach(c=>{if(!c||!c[0]||!c[1])return;const m=/Row ([0-9]+)/.exec(String(c[0]));if(!m)return;(notesByRow[m[1]]=notesByRow[m[1]]||[]).push({t:trkS(c[1]),by:trkS(c[2]),d:trkDate(trkS(c[3]).split(" ")[0])});});
+  const ids={},skipped=[];rows.forEach(r=>{try{const T=trkFromRow(r,[]);if(T.cid&&T.name)(ids[T.cid]=ids[T.cid]||[]).push(T.name);}catch(e){}});
   const byK={};let fields=0,notes=0,news=0;
   rows.forEach((r,i)=>{const T=trkFromRow(r,notesByRow[i+1]);if(!T.name&&!T.cid)return;if(!T.cid&&/^note[: ]/i.test(T.name))return;
     const tn=T.notes.filter(n=>n.t).map(n=>({d:n.d,by:n.by,t:n.t,tags:trkTags(n.t)}));
-    const o=trkFind(T);
+    const o=trkFind(T);if(o&&T.cid&&trkTwin(T,o,ids)){skipped.push({name:T.name,cid:T.cid,to:o.name});return;}
     const k=o?o.k:(T.cid?"c"+T.cid:"t-"+T.name.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40));
     const x=byK[k]||(byK[k]={k:k,name:o?o.name:T.name,isNew:!o,f:o?{}:{name:T.name,cid:T.cid},ch:o?[]:[["New company","","Added as a prospect with its contacts and notes"]],notes:[]});
     const people=o?(o.people||[]):[];
@@ -4678,7 +4683,7 @@ function trkDiff(rows,cm){
   const list=Object.values(byK).filter(x=>x.isNew||x.ch.length||x.notes.length);
   list.forEach(x=>{x.notes.sort((a,b)=>String(b.d).localeCompare(String(a.d)));x.latest=x.notes.length?x.notes[0].d:"";if(x.isNew)news++;else fields+=x.ch.length;notes+=x.notes.length;});
   list.sort((a,b)=>(b.isNew?1:0)-(a.isNew?1:0)||String(b.latest).localeCompare(String(a.latest))||a.name.localeCompare(b.name));
-  return {list:list,fields:fields,notes:notes,news:news,rows:rows.length};
+  return {list:list,fields:fields,notes:notes,news:news,rows:rows.length,skipped:skipped};
 }
 async function trkRead(file){
   const X=await loadXlsx();const wb=X.read(new Uint8Array(await file.arrayBuffer()),{type:"array",cellDates:true});
@@ -4722,11 +4727,13 @@ function trkPanel(){
 }
 function trkReview(box){
   const d=TRK.pending;
+  const skipNote=()=>d.skipped&&d.skipped.length?h("details",{class:"trk-i",style:"margin:0 0 10px"},h("summary",null,h("b",null,d.skipped.length+" row"+(d.skipped.length===1?"":"s")+" left out"),h("span",{class:"hint"}," · each shares a Company ID with another company")),h("div",{class:"hint",style:"padding:6px 0 4px"},d.skipped.map(x=>x.name+" (Company ID "+x.cid+" is "+x.to+" in Aptify)").join("; ")+". If one of these should come in, fix its Company ID in the tracker.")):null;
   if(!d.list.length){/* nothing new still counts as a check: it is saved, so the date above moves (Jonna, Nov 1, 2026) */
-    const sum=h("div",{class:"trk-sum"},d.__msg||"Nothing has changed since the last tracker. Recording that it was checked…");box.appendChild(sum);
+    const sum=h("div",{class:"trk-sum"},d.__msg||"Nothing has changed since the last tracker. Recording that it was checked…");box.appendChild(sum);{const sk=skipNote();if(sk)box.appendChild(sk);}
     if(db&&canWrite&&!d.__checked){d.__checked=true;trkSave(d,d.file).then(ok=>{d.__msg=ok?"Nothing has changed since the last tracker. Saved as checked today.":"Nothing has changed since the last tracker. The check couldn't be recorded in this view.";if(ok)TRK.meta={at:new Date().toISOString(),by:ME||"",byName:myName()||"",file:d.file||"",companies:0};sum.textContent=d.__msg;}).catch(e=>{d.__msg="Nothing has changed since the last tracker, but recording the check didn't go through ("+(e.message||e)+").";sum.textContent=d.__msg;});}
     const b=h("button",{type:"button",class:"btn ghost"},"Done");b.addEventListener("click",()=>{TRK.pending=null;trkPanel();});box.appendChild(b);return;}
   box.appendChild(h("div",{class:"trk-sum"},h("b",null,n(d.list.length)+" compan"+(d.list.length===1?"y":"ies")+" changed"),": "+[n(d.fields)+" contact"+(d.fields===1?"":"s")+", VIP"+(d.fields===1?"":"s")+" or advisor"+(d.fields===1?"":"s")+" to add",n(d.notes)+" new note"+(d.notes===1?"":"s"),d.news?n(d.news)+" new compan"+(d.news===1?"y":"ies"):""].filter(Boolean).join(", ")+" in "+d.file+"."));
+  {const sk=skipNote();if(sk)box.appendChild(sk);}
   const row=h("div",{class:"btnrow",style:"margin:0 0 12px"});
   if(db&&canWrite){const ap=h("button",{type:"button",class:"btn"},"Apply These Changes");ap.addEventListener("click",async()=>{ap.disabled=true;ap.textContent="Saving…";try{if(await trkSave(d,d.file)){TRK.pending=null;toast("Tracker update applied. Reloading Member 360…");setTimeout(()=>location.reload(),1200);}else{ap.disabled=false;ap.textContent="Apply These Changes";}}catch(e){toast(e.message||"That didn't save.",true);ap.disabled=false;ap.textContent="Apply These Changes";}});row.appendChild(ap);}
   const cx=h("button",{type:"button",class:"btn ghost"},"Cancel");cx.addEventListener("click",()=>{TRK.pending=null;trkPanel();});row.appendChild(cx);box.appendChild(row);
