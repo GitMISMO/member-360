@@ -8148,9 +8148,10 @@ function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)retur
   const ring=h("div",{class:"m3w-ring",title:tpW+" logged of "+goal+" planned or expected"});ring.innerHTML='<svg viewBox="0 0 120 120" width="112" height="112" aria-hidden="true"><circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="12"/><circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#m3wg)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 314.2" transform="rotate(-90 60 60)"/><defs><linearGradient id="m3wg" x1="0" x2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#74bfeb"/></linearGradient></defs></svg>';
   const rm=h("div",{class:"m3w-ringmid"},h("b",null,"0%"),h("span",null,"of the week"));ring.appendChild(rm);
   setTimeout(()=>{const a=ring.querySelector(".arc");if(a){a.style.opacity=pct?1:0;a.setAttribute("stroke-dasharray",(3.142*pct)+" 314.2");}},80);m3hCount(rm.querySelector("b"),pct,x=>Math.round(x)+"%");
-  /* touches logged by person, last 30 days, alphabetical */
+  /* touches logged by Amy, Brian and Kelly, last 30 days */
   const since=addDays(TODAY,-30),by={};TP.forEach(t=>{if((t.date||"")>=since&&(t.date||"")<=TODAY){const nm=(NAMES[t.by]||"Other").split(" ")[0];by[nm]=(by[nm]||0)+1;}});
-  const ppl=Object.keys(by).sort((a,b)=>a.localeCompare(b)),pmx=Math.max(1,...ppl.map(k=>by[k])),tot=ppl.reduce((a,k)=>a+by[k],0);
+  /* only the people who do outreach: Amy, Brian and Kelly, always listed, even at zero (Jonna, Nov 1, 2026) */
+  const ppl=["Amy","Brian","Kelly"];ppl.forEach(k=>{by[k]=by[k]||0;});const pmx=Math.max(1,...ppl.map(k=>by[k])),tot=ppl.reduce((a,k)=>a+by[k],0);
   const rows=h("div",{class:"m3w-ppl"});ppl.forEach((k,i)=>{const r=h("div",{class:"m3w-pr"+(me&&me.split(" ")[0]===k?" me":"")},h("span",null,k),h("div",{class:"b"},h("i",{style:"width:0%"})),h("b",null,String(by[k])));rows.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.round(100*by[k]/pmx)+"%";},80+i*70);});
   if(!ppl.length)rows.appendChild(h("div",{class:"m3w-none"},"No touches logged in the last 30 days."));
   band=h("div",{class:"m3w-band",id:"m3w-band"},
