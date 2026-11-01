@@ -2342,6 +2342,11 @@ details.m3p-flash{box-shadow:0 0 0 2px #74bfeb;transition:box-shadow .3s}
 html #hq-gate:has(h1){background:radial-gradient(120% 90% at 100% 0%,rgba(116,191,235,.18),transparent 55%),linear-gradient(160deg,#10324a,#0b2436)!important}
 html #hq-gate:has(h1) .card{border-color:rgba(116,191,235,.3)!important;box-shadow:0 24px 60px -24px rgba(0,0,0,.6)!important;max-width:440px!important}
 
+
+/* Home: Team Activity runs the full width under the boxes above it, two columns of entries, so the last row has no empty space (Jonna, Nov 1, 2026) */
+#v-home .m3h-tile.full{grid-column:1/-1}
+#v-home .m3h-tile.full .m3h-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;row-gap:6px}
+@media(max-width:700px){#v-home .m3h-tile.full .m3h-feed{grid-template-columns:1fr}}
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8025,10 +8030,10 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
     if(!st.length)fun.appendChild(sub("No prospect has a sales stage yet."));
     tile({lab:"Sales Pipeline",k:"#f0b94a",go:"members",cls:"w2",pill:S.npw?"+"+n(S.npw)+" this week":null,body:[fun,sub(h("b",null,n(S.pros.length))," prospects · ",h("b",null,n(st.reduce((a,s)=>a+S.ps[s],0)))," in a sales stage")]});}
   /* 8. team activity */
-  {const L=h("div",{class:"m3h-feed"});S.acts.slice(0,5).forEach(r=>{const who=String(r.byName||r.by||"").split(" ")[0]||"Someone";
+  {const L=h("div",{class:"m3h-feed"});S.acts.slice(0,6).forEach(r=>{const who=String(r.byName||r.by||"").split(" ")[0]||"Someone";
       L.appendChild(h("div",{class:"m3h-fi"},h("span",{class:"av"},who.slice(0,1)),h("span",{class:"tx"},h("b",null,who)," "+String(r.label||"").replace(/^[A-Z]/,c=>c.toLowerCase())+(r.orgName?" · ":""),r.orgName?h("b",null,r.orgName):null),h("span",{class:"tm"},m3hAgo(r.at))));});
     if(!S.acts.length)L.appendChild(sub("Saves, logged emails and payments show here as the team works."));
-    tile({lab:"Team Activity",k:"#74bfeb",go:"activity",cls:"w3",body:[L]});}
+    tile({lab:"Team Activity",k:"#74bfeb",go:"activity",cls:"w3 full",body:[L]});}
   /* 9. next summit */
   if(S.sum){const dd=Math.max(0,days_(TODAY,S.sum.date));tile({lab:"Next Summit",k:"#5fd39a",body:[big(dd,null,"days"),sub(h("b",null,S.sum.name)," · "+fmt(S.sum.date))]});}
 }
