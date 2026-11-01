@@ -8640,6 +8640,41 @@ function m3jDress(){const band=$("m3d-band"),ms=$("dl-month");if(!band||!ms)retu
     if(sb&&!/by join date/.test(sb.textContent))sb.textContent="by join date · "+sb.textContent.replace("committed that month","in deals logged");}}
 {const _m3jD=m3dDress;m3dDress=function(){const r=_m3jD.apply(this,arguments);try{m3jDress();}catch(e){console.error("joins",e);}return r;};}
 
+/* ---------- Membership Desk (Jonna, Nov 1, 2026). A Membership Desk link in the menu, with how many set-ups are waiting on the
+   membership team, so Jonna, Amy and Kelly can follow along. Member 360 also keeps the desk's list of what's waiting current: new members
+   still to be set up in Aptify, and IIF lenders who have paid $1,000 or more but aren't members in Aptify yet. The desk keeps its own
+   records in its own data store; Member 360 reads them only to count what's still waiting. Needs access to the Membership Desk;
+   without it the link still opens the desk's sign-in and nothing is sent. ---------- */
+const DESK_R="https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/membership-desk/data/";
+let DESK_AT=0,DESK_T=0;
+const deskSlug=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+function deskTodos(){
+  const members=DEALS.filter(d=>d.type==="New Member"&&!d.archived&&d.ap==="Needs AP Update").map(d=>{const o=BY[d.org]||{};let p=null;try{p=dealPaid(d);}catch(e){}
+    return {name:d.orgName||o.name||"",cid:String(d.cid||o.cid||""),level:d.level||o.level||"",price:d.price||0,sold:d.sold||"",paid:(p&&p.d)||"",start:d.start||"",end:d.end||""};}).sort((a,b)=>String(a.sold).localeCompare(String(b.sold))||a.name.localeCompare(b.name));
+  const iif=ORGS.filter(o=>o.type==="Lender"&&o.life!=="Active"&&!ov(o).mergedInto&&lendPaid(o,IY)>=1000).map(o=>({name:o.name,cid:String(o.cid||""),level:"Corporate",price:Math.round(lendPaid(o,IY)),sold:"",paid:"",start:IY+"-01-01",end:IY+"-12-31"})).sort((a,b)=>a.name.localeCompare(b.name));
+  const cut=addDays(TODAY,-120),J=memberJoins();
+  const dm=J.filter(j=>j.kind==="nl"&&j.d>=cut&&j.srcs.includes("Aptify")).map(j=>[j.orgName,j.lv||"",j.d]),di=J.filter(j=>j.kind==="iif"&&j.d>=cut).map(j=>[j.orgName,j.lv||"Corporate",j.d]);
+  const Y=String(new Date().getFullYear());let free=0;ORGS.forEach(o=>{try{if(memberIn(o,Y)&&kindIn(o,Y)==="Free")free++;}catch(e){}});
+  return {todo:{members,free:[],iif},done:{members:dm,iif:di,freeActive:free}};}
+async function deskSync(){if(!window.ResourcesSession||!ResourcesSession.token||!ResourcesSession.token())return;
+  const H={Authorization:"Bearer "+ResourcesSession.token()},get=async n=>{const r=await fetch(DESK_R+n,{headers:H,cache:"no-store"});if(!r.ok)throw new Error(n+" "+r.status);return r.json();};
+  let T;try{T=await get("todos");}catch(e){return;}/* no access to the desk: nothing to send or count */
+  const body=deskTodos(),now=body;
+  if(db&&canWrite&&JSON.stringify({todo:(T.data||{}).todo,done:(T.data||{}).done})!==JSON.stringify(now)){
+    const r=await fetch(DESK_R+"todos",{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},H),body:JSON.stringify({content:Object.assign({asOf:TODAY,writtenAt:new Date().toISOString(),writtenBy:myName()||""},now),sha:T.sha||undefined})});
+    if(!r.ok&&r.status!==409)console.error("desk todos",r.status);}
+  let S={},Dn={};try{S=(await get("square")).data||{};}catch(e){}try{Dn=(await get("done")).data||{};}catch(e){}
+  const done=new Set(((Dn.items)||[]).filter(x=>!x.undone).map(x=>x.id)),id=(p,x)=>x.id||p+"-"+(x.cid||deskSlug(x.name));
+  const n=(S.pending||[]).filter(x=>!done.has(id("sq",x))).length+now.todo.members.filter(x=>!done.has(id("m",x))).length+now.todo.iif.filter(x=>!done.has(id("iif",x))).length;
+  const pip=document.getElementById("pip-desk");if(pip){pip.textContent=n?String(n):"";pip.hidden=!n;}}
+function deskNav(){const nav=document.querySelector(".hq nav");if(!nav||document.getElementById("nav-desk"))return;
+  const b=document.createElement("button");b.type="button";b.id="nav-desk";b.title="Membership Desk: the membership team's set-ups (opens in a new tab)";
+  b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M3 12h18"/></svg><span>Membership Desk</span><em class="pip" id="pip-desk" hidden></em>';
+  b.addEventListener("click",()=>window.open("/membership-desk/","_blank","noopener"));
+  const after=nav.querySelector('button[data-hq="deals"]');if(after&&after.nextSibling)nav.insertBefore(b,after.nextSibling);else nav.appendChild(b);}
+setTimeout(deskNav,0);
+{const _dRH=renderHome;renderHome=function(){const r=_dRH.apply(this,arguments);try{deskNav();clearTimeout(DESK_T);DESK_T=setTimeout(()=>{if(window.__m3oLoading||Date.now()-DESK_AT<120000)return;DESK_AT=Date.now();deskSync().catch(e=>console.error("desk",e));},5000);}catch(e){console.error("desk",e);}return r;};}
+
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
