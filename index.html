@@ -8548,8 +8548,12 @@ function m3rvLayout(){const g=document.getElementById("ren-tiles");if(!g||!g.off
   const pct=document.createElement("div");pct.className="m3rv-pct";pct.innerHTML="<b>"+Math.round(100*(val(1)+val(2))/tot)+"%</b> in: renewed or paying now";
   seg.append(pct,bar,key);T[0].appendChild(seg);
   if(n>=6){g.classList.add("m3rv");T[6].classList.add("m3rv-side");T[7].classList.add("m3rv-side");}else{T[6].classList.remove("m3rv-side");T[7].classList.remove("m3rv-side");m3Balance(g);}}
-{const _rt=renderTiles;renderTiles=function(){const r=_rt.apply(this,arguments);try{m3rvLayout();}catch(e){console.error("renewals layout",e);}return r;};}
-{const _tw=renderThisWeek;renderThisWeek=function(){const r=_tw.apply(this,arguments);try{m3Balance(document.getElementById("wk-lanes"),240);}catch(e){console.error("lanes layout",e);}return r;};}
+{const _rt=renderTiles;renderTiles=function(){const r=_rt.apply(this,arguments);m3fillSoon();return r;};}
+{const _tw=renderThisWeek;renderThisWeek=function(){const r=_tw.apply(this,arguments);m3fillSoon();return r;};}
+/* the boxes are often drawn while their page is still hidden, so the layout waits until the page shows */
+function m3fillNow(){try{m3rvLayout();}catch(e){console.error("renewals layout",e);}try{m3Balance(document.getElementById("wk-lanes"),240);}catch(e){console.error("lanes layout",e);}}
+function m3fillSoon(){requestAnimationFrame(()=>setTimeout(m3fillNow,30));}
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest(".hq nav button"))m3fillSoon();});
 {let rt=0;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{try{m3rvLayout();m3Balance(document.getElementById("wk-lanes"),240);}catch(e){}},150);});}
 
 function show(tab){
