@@ -8569,7 +8569,8 @@ function m3rvLayout(){const g=document.getElementById("ren-tiles");if(!g||!g.off
   const seg=document.createElement("div");seg.className="m3rv-seg";
   const bar=document.createElement("div");bar.className="m3rv-bar";parts.forEach(([i,,c])=>{const v=val(i);if(!v)return;const s=document.createElement("i");s.style.cssText="flex:"+v+" 0 0;background:"+c;s.title=T[i].querySelector(".lab").textContent+": "+v;bar.appendChild(s);});
   const key=document.createElement("div");key.className="m3rv-key";parts.forEach(([i,w,c])=>{const s=document.createElement("span");s.innerHTML='<i style="background:'+c+'"></i><b>'+val(i).toLocaleString("en-US")+"</b> "+w;key.appendChild(s);});
-  const pct=document.createElement("div");pct.className="m3rv-pct";pct.innerHTML="<b>"+Math.round(100*(val(1)+val(2))/tot)+"%</b> in: renewed or paying now";
+  const pct=document.createElement("div");pct.className="m3rv-pct";/* the same 21% the runway ring shows, then the share once those paying now come in (Jonna, Nov 1, 2026) */
+  pct.innerHTML="<b>"+Math.round(100*val(1)/tot)+"%</b> renewed · <b>"+Math.round(100*(val(1)+val(2))/tot)+"%</b> counting those paying now";
   seg.append(pct,bar,key);T[0].appendChild(seg);
   /* say plainly what the 177 leaves out: Kelly keeps asking (Jonna, Nov 1, 2026) */
   {const sb=T[0].querySelector(".sub");if(sb){if(!sb.dataset.base)sb.dataset.base=sb.textContent;sb.textContent=sb.dataset.base.replace(/\.?\s*$/,"")+". Does not include the "+val(6).toLocaleString("en-US")+" free members or the "+val(7).toLocaleString("en-US")+" already covered.";}}
