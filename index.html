@@ -8153,7 +8153,7 @@ function m3wDress(){const top=$("wk-top"),grid=$("wk-plan");if(!top||!grid)retur
   /* touches logged by Amy, Brian and Kelly, last 30 days */
   const since=addDays(TODAY,-30),by={};TP.forEach(t=>{if((t.date||"")>=since&&(t.date||"")<=TODAY){const nm=(NAMES[t.by]||"Other").split(" ")[0];by[nm]=(by[nm]||0)+1;}});
   /* only the people who do outreach: Amy, Brian and Kelly, always listed, even at zero (Jonna, Nov 1, 2026) */
-  const ppl=["Amy","Brian","Kelly"];ppl.forEach(k=>{by[k]=by[k]||0;});const pmx=Math.max(1,...ppl.map(k=>by[k])),tot=ppl.reduce((a,k)=>a+by[k],0);
+  const ppl=["Amy","Brian","Kelly"];ppl.forEach(k=>{by[k]=by[k]||0;});/* most touches first (Jonna, Nov 1, 2026) */ppl.sort((x,y)=>by[y]-by[x]||x.localeCompare(y));const pmx=Math.max(1,...ppl.map(k=>by[k])),tot=ppl.reduce((a,k)=>a+by[k],0);
   const rows=h("div",{class:"m3w-ppl"});ppl.forEach((k,i)=>{const r=h("div",{class:"m3w-pr"+(me&&me.split(" ")[0]===k?" me":"")},h("span",null,k),h("div",{class:"b"},h("i",{style:"width:0%"})),h("b",null,String(by[k])));rows.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.round(100*by[k]/pmx)+"%";},80+i*70);});
   if(!ppl.length)rows.appendChild(h("div",{class:"m3w-none"},"No touches logged in the last 30 days."));
   band=h("div",{class:"m3w-band",id:"m3w-band"},
