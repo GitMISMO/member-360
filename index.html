@@ -2368,6 +2368,26 @@ html #hq-gate:has(h1) .card{border-color:rgba(116,191,235,.3)!important;box-shad
 .m3rv-key span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.m3rv-key i{width:9px;height:9px;border-radius:2px;display:inline-block}.m3rv-key b{color:#fff}
 #ren-tiles.m3rv>.tile:nth-child(1){display:flex;flex-direction:column}
 
+
+/* new members by join date (Monthly Report) */
+.m3j-bars .m3j-st{display:flex!important;flex-direction:column-reverse;background:none!important;gap:1px;overflow:hidden}
+.m3j-bars .m3j-st span{display:block;width:100%;min-height:2px}
+.m3j-key{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12px;color:rgba(255,255,255,.78);margin-top:8px}
+.m3j-key span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.m3j-key i{width:9px;height:9px;border-radius:2px;display:inline-block}.m3j-key b{color:#fff}
+.m3j-list{background:var(--surface);border:1px solid var(--line,var(--rule));border-radius:10px;margin:14px 0 0;overflow:hidden}
+.m3j-h{display:flex;align-items:baseline;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line,var(--rule));flex-wrap:wrap}
+.m3j-h h3{margin:0;font-size:15px;white-space:nowrap}
+.m3j-rows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.m3j-r{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 16px;border-bottom:1px solid var(--line,var(--rule));font-size:13.5px}
+.m3j-rows .m3j-r:nth-child(odd){border-right:1px solid var(--line,var(--rule))}
+.m3j-r:hover{background:var(--sunk,var(--surface-2))}.m3j-r:disabled{cursor:default}
+.m3j-r>i{width:10px;height:10px;border-radius:3px}
+.m3j-r .nm{font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m3j-r .nm small{display:block;font-weight:400;font-size:12px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis}
+.m3j-r em{font-style:normal;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--sunk,var(--surface-2));color:var(--ink-2);white-space:nowrap}
+.m3j-pg{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:12.5px;color:var(--ink-3)}.m3j-pg span{margin-left:auto}.m3j-pg:empty{display:none}
+@media(max-width:800px){.m3j-rows{grid-template-columns:1fr}.m3j-rows .m3j-r:nth-child(odd){border-right:0}}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -7986,8 +8006,8 @@ function m3hData(){
   const ren=dc.Renewed||0,pip=dc["Payment in Process"]||0,lost=dc.Lost||0,todo=Math.max(0,Dd.length-ren-pip-lost);
   try{dealFixAll();}catch(e){}
   const mo=TODAY.slice(0,7),yr=TODAY.slice(0,4),nm=DEALS.filter(d=>d.type==="New Member"&&!d.archived);
-  const nmMo=nm.filter(d=>String(d.sold||"").slice(0,7)===mo).sort((a,b)=>String(b.sold).localeCompare(String(a.sold)));
-  const nmYr=nm.filter(d=>String(d.sold||"").slice(0,4)===yr);
+  const JN=memberJoins();const nmMo=JN.filter(j=>j.d.slice(0,7)===mo);
+  const nmYr=JN.filter(j=>j.d.slice(0,4)===yr);
   const Yi=IIFY(),L=iifSetFor(Yi);let inv=0,paid=0,iifMem=0;const ics={full:0,part:0,none:0};L.forEach(o=>{const y=iifY(o,Yi);inv+=y.inv||0;paid+=y.paid||0;if((y.paid||0)>=1000)iifMem++;if(y.cs==="Paid Full Amount"||y.cs==="Paid")ics.full++;else if(y.cs==="Partial Payment Received")ics.part++;else ics.none++;});
   let newIif=0;try{const P=IFN||{},Dn=P.done||{};newIif=(P.items||[]).filter(x=>!Dn[x.id]&&x.cid).length;}catch(e){}
   const pros=ORGS.filter(o=>!ov(o).mergedInto&&o.life==="Prospect"),ps={};pros.forEach(o=>{const s=ov(o).pstage||"";if(s)ps[s]=(ps[s]||0)+1;});
@@ -8555,6 +8575,62 @@ function m3fillNow(){try{m3rvLayout();}catch(e){console.error("renewals layout",
 function m3fillSoon(){requestAnimationFrame(()=>setTimeout(m3fillNow,30));}
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest(".hq nav button"))m3fillSoon();});
 {let rt=0;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{try{m3rvLayout();m3Balance(document.getElementById("wk-lanes"),240);}catch(e){}},150);});}
+
+/* ---------- New members by join date (Jonna, Nov 1, 2026). A new member is counted on the day they joined, from every place a join shows up,
+   not only from deals logged here:
+   - Non-Lenders: the start of their first Aptify membership term, or of the first term after more than a year away. A New Member deal that
+     isn't in Aptify yet counts from the day it was sold.
+   - Lenders through Square: lenders who joined at a special corporate rate (TMC, Broker, ACUMA), on the day they paid in Square.
+   - Lenders through the IIF: the first time a lender ever reaches $1,000 in IIF payments in a cycle, on the day it got there. Lenders
+     coming back in a later cycle aren't new (Aptify starts every IIF lender's term on Jan 1, so its date isn't the join date).
+   The same company showing up in more than one place within four months counts once, on the earliest date. ---------- */
+let MJ_CACHE=null,MJ_KEY="";
+const MJ_KIND={nl:{lab:"Non-Lender",c:"#5fd39a"},sq:{lab:"Lender · Square Special",c:"#74bfeb"},iif:{lab:"Lender · IIF",c:"#f0b94a"}};
+function memberJoins(){
+  const sqm=(typeof SQF!=="undefined"&&SQF&&SQF.members)?SQF.members:{};
+  const key=ORGS.length+"|"+Object.keys(ACT||{}).length+"|"+Object.keys(sqm).length+"|"+DEALS.length+"|"+DEALS.filter(d=>d.archived).length;
+  if(MJ_CACHE&&MJ_KEY===key)return MJ_CACHE;
+  const day=d=>Date.parse(d)/864e5,byCid={},ev=[];ORGS.forEach(o=>{if(o.cid)byCid[String(o.cid)]=o;});
+  ORGS.forEach(o=>{if(ov(o).mergedInto)return;
+    const T=(o.aptAll||[]).filter(t=>t.s).slice().sort((a,b)=>a.s.localeCompare(b.s));
+    if(o.type!=="Lender"){let lastE=null;T.forEach(t=>{if(lastE===null||day(t.s)-day(lastE)>365)ev.push({o,d:t.s,src:"Aptify",kind:"nl",lv:t.lv||o.level||""});if(!lastE||(t.e||t.s)>lastE)lastE=t.e||t.s;});}
+    else{const it=(((ACT||{})[o.k]||{}).items||[]).filter(i=>i.c==="IIF"&&i.d).sort((a,b)=>a.d.localeCompare(b.d)),cyc={};
+      it.forEach(i=>{(cyc[i.d.slice(0,4)]=cyc[i.d.slice(0,4)]||[]).push(i);});
+      const first=Object.keys(cyc).sort().map(y=>{let c=0,hit=null;cyc[y].forEach(i=>{c+=+i.n||0;if(!hit&&c>=1000)hit=i.d;});return hit;}).find(Boolean);
+      if(first&&!T.some(t=>t.s<first.slice(0,4)+"-01-01"))ev.push({o,d:first,src:"IIF",kind:"iif",lv:o.level||"Corporate"});}});
+  Object.values(sqm).forEach(m=>{const d=((m.payments||[]).map(p=>p.on).filter(Boolean).sort())[0];if(!d)return;
+    const o=byCid[String(m.companyId||"")]||ORGS.find(x=>x.name===m.company)||null;ev.push({o,name:m.company,d,src:"Square"+(m.special?" "+m.special:""),kind:"sq",lv:(m.special?m.special+" ":"")+(m.level||"Corporate")});});
+  DEALS.filter(x=>x.type==="New Member"&&!x.archived&&x.sold).forEach(x=>{const o=BY[x.org]||null;ev.push({o,name:x.orgName,d:x.sold,src:"Deal",kind:o&&o.type==="Lender"?"sq":"nl",lv:x.level||""});});
+  const grp={};ev.sort((a,b)=>a.d.localeCompare(b.d)).forEach(e=>{const k=e.o?e.o.k:"n:"+String(e.name||"").toLowerCase();const g=(grp[k]=grp[k]||[]),last=g[g.length-1];
+    if(last&&Math.abs(day(e.d)-day(last.d))<=120){if(!last.srcs.includes(e.src))last.srcs.push(e.src);if(e.kind==="sq")last.kind="sq";return;}
+    g.push({o:e.o,k:e.o?e.o.k:"",orgName:e.o?e.o.name:e.name,d:e.d,kind:e.kind,lv:e.lv,srcs:[e.src]});});
+  MJ_CACHE=Object.values(grp).flat().sort((a,b)=>b.d.localeCompare(a.d));MJ_KEY=key;return MJ_CACHE;}
+/* the Monthly Report's month chart counts these, stacked by kind; select a month to see who joined (the deals and the AP file below are unchanged) */
+let MJ_PAGE=0;
+function m3jDress(){const band=$("m3d-band"),ms=$("dl-month");if(!band||!ms)return;const sel=ms.value||"",J=memberJoins(),ML=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const endM=sel&&sel<TODAY.slice(0,7)?sel:TODAY.slice(0,7),mon=[];{let y=Number(endM.slice(0,4)),m=Number(endM.slice(5,7));for(let i=0;i<12;i++){mon.unshift(y+"-"+String(m).padStart(2,"0"));m--;if(!m){m=12;y--;}}}
+  const cnt=m=>{const r={nl:0,sq:0,iif:0};J.forEach(j=>{if(j.d.slice(0,7)===m)r[j.kind]++;});r.t=r.nl+r.sq+r.iif;return r;},bm=mon.map(m=>({m,...cnt(m)})),mx=Math.max(1,...bm.map(x=>x.t));
+  const bars=h("div",{class:"m3d-bars m3j-bars"});bm.forEach((x,i)=>{const st=h("i",{class:"m3j-st",style:"height:"+(x.t?Math.max(8,Math.round(100*x.t/mx)):2)+"%"});["iif","sq","nl"].forEach(k=>{if(x[k])st.appendChild(h("span",{style:"flex:"+x[k]+" 0 0;background:"+MJ_KIND[k].c}));});
+    bars.appendChild(h("button",{type:"button",class:"m3d-b"+(x.m===sel?" on":"")+(x.m===TODAY.slice(0,7)?" now":""),title:ML[Number(x.m.slice(5,7))-1]+" "+x.m.slice(0,4)+": "+x.t+" joined ("+x.nl+" Non-Lender, "+x.sq+" Square special, "+x.iif+" IIF lender)",
+      onclick:()=>{MJ_PAGE=0;ms.value=x.m;ms.dispatchEvent(new Event("change",{bubbles:true}));if(typeof renderDeals==="function")renderDeals();}},h("em",null,x.t?String(x.t):"0"),st,h("span",null,ML[Number(x.m.slice(5,7))-1]+(x.m.slice(5,7)==="01"||i===0?" '"+x.m.slice(2,4):""))));});
+  const inSel=J.filter(j=>sel?j.d.slice(0,7)===sel:j.d>=mon[0]&&j.d.slice(0,7)<=mon[11]),kc={nl:0,sq:0,iif:0};inSel.forEach(j=>kc[j.kind]++);
+  const key=h("div",{class:"m3j-key"},...["nl","sq","iif"].map(k=>h("span",null,h("i",{style:"background:"+MJ_KIND[k].c}),MJ_KIND[k].lab,h("b",null,String(kc[k])))));
+  const col=band.querySelector(".m3m-col");if(col){col.textContent="";col.append(h("div",{class:"m3w-tl"},"New Members by Month",h("span",null,"by join date · select a month")),bars,key);}
+  /* who joined */
+  let box=$("m3j-list");if(box)box.remove();const lab=sel?ML[Number(sel.slice(5,7))-1]+" "+sel.slice(0,4):"the Last 12 Months",PER=12,pages=Math.max(1,Math.ceil(inSel.length/PER));MJ_PAGE=Math.min(MJ_PAGE,pages-1);
+  const rows=h("div",{class:"m3j-rows"});inSel.slice(MJ_PAGE*PER,MJ_PAGE*PER+PER).forEach(j=>rows.appendChild(h("button",{type:"button",class:"m3j-r",disabled:j.k?null:"",onclick:()=>{if(j.k)openOrg(j.k);}},h("i",{style:"background:"+MJ_KIND[j.kind].c}),h("span",{class:"nm"},j.orgName,h("small",null,fmt(j.d)+" · "+(j.lv||MJ_KIND[j.kind].lab)+" · from "+j.srcs.join(" and "))),h("em",null,MJ_KIND[j.kind].lab))));
+  if(!inSel.length)rows.appendChild(h("div",{class:"hint",style:"padding:12px 16px"},"No one joined in "+lab+"."));
+  const pg=h("div",{class:"m3j-pg"});if(pages>1){const b1=h("button",{type:"button",class:"btn ghost",disabled:MJ_PAGE===0?"":null,onclick:()=>{MJ_PAGE--;m3jDress();}},"← Newer"),b2=h("button",{type:"button",class:"btn ghost",disabled:MJ_PAGE>=pages-1?"":null,onclick:()=>{MJ_PAGE++;m3jDress();}},"Older →");pg.append(b1,b2,h("span",null,(MJ_PAGE*PER+1)+"–"+Math.min(inSel.length,MJ_PAGE*PER+PER)+" of "+inSel.length));}
+  box=h("section",{class:"m3j-list",id:"m3j-list"},h("div",{class:"m3j-h"},h("h3",null,"Joined in "+lab),h("span",{class:"hint"},inSel.length+" new member"+(inSel.length===1?"":"s")+" by join date, from Aptify, Square, the IIF and deals not in Aptify yet")),rows,pg);
+  band.after(box);
+  /* the boxes and columns that are about deals logged here say so, so they don't read as a different count of new members */
+  const tl=[...band.querySelectorAll(".m3w-tl")];if(tl[1]&&tl[1].querySelector("span")&&!/deals logged/.test(tl[1].textContent))tl[1].querySelector("span").textContent+=" · deals logged";
+  if(tl[2]&&tl[2].querySelector("span")&&!/deals logged/.test(tl[2].textContent))tl[2].querySelector("span").textContent+=" · deals logged";
+  band.querySelectorAll(".m3w-none").forEach(x=>{x.textContent=x.textContent.replace("No new members committed","No deals logged");});
+  const t0=[...document.querySelectorAll("#dl-tiles .tile")].find(t=>/^New Members in /.test((t.querySelector(".lab")||{}).textContent||""));
+  if(t0){const m=sel||TODAY.slice(0,7),n=J.filter(j=>j.d.slice(0,7)===m).length,v=t0.querySelector(".val"),sb=t0.querySelector(".sub");if(v)v.textContent=String(n);
+    if(sb&&!/by join date/.test(sb.textContent))sb.textContent="by join date · "+sb.textContent.replace("committed that month","in deals logged");}}
+{const _m3jD=m3dDress;m3dDress=function(){const r=_m3jD.apply(this,arguments);try{m3jDress();}catch(e){console.error("joins",e);}return r;};}
 
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
