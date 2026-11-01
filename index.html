@@ -2347,6 +2347,27 @@ html #hq-gate:has(h1) .card{border-color:rgba(116,191,235,.3)!important;box-shad
 #v-home .m3h-tile.full{grid-column:1/-1}
 #v-home .m3h-tile.full .m3h-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px;row-gap:6px}
 @media(max-width:700px){#v-home .m3h-tile.full .m3h-feed{grid-template-columns:1fr}}
+
+/* Renewals: the season's boxes regrouped so no row ends short (Jonna, Nov 1, 2026) */
+#ren-tiles.m3rv>.tile:nth-child(1){grid-column:1/3;grid-row:1/3}
+#ren-tiles.m3rv>.tile:nth-child(2){grid-column:3;grid-row:1}
+#ren-tiles.m3rv>.tile:nth-child(3){grid-column:4;grid-row:1}
+#ren-tiles.m3rv>.tile:nth-child(4){grid-column:5;grid-row:1}
+#ren-tiles.m3rv>.tile:nth-child(7){grid-column:6;grid-row:1}
+#ren-tiles.m3rv>.tile:nth-child(5){grid-column:3/5;grid-row:2}
+#ren-tiles.m3rv>.tile:nth-child(6){grid-column:5;grid-row:2}
+#ren-tiles.m3rv>.tile:nth-child(8){grid-column:6;grid-row:2}
+#ren-tiles.m3rv>:nth-child(9){grid-column:1/-1;grid-row:3}
+#ren-tiles.m3rv>.tile:nth-child(1) .val{font-size:44px}
+#ren-tiles .tile.m3rv-side{background:linear-gradient(160deg,#173d58,#0f2c42);outline:1px dashed rgba(116,191,235,.35);outline-offset:-1px}
+.m3rv-seg{margin-top:auto;padding-top:12px;display:flex;flex-direction:column;gap:7px;width:100%}
+.m3rv-pct{font-size:12.5px;color:rgba(255,255,255,.75)}.m3rv-pct b{color:#fff;font-size:15px}
+.m3rv-bar{display:flex;height:12px;border-radius:3px;overflow:hidden;background:rgba(255,255,255,.08);gap:2px}
+.m3rv-bar i{display:block;min-width:4px}
+.m3rv-key{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:rgba(255,255,255,.78)}
+.m3rv-key span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.m3rv-key i{width:9px;height:9px;border-radius:2px;display:inline-block}.m3rv-key b{color:#fff}
+#ren-tiles.m3rv>.tile:nth-child(1){display:flex;flex-direction:column}
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8501,6 +8522,36 @@ function m3gDress(){const v=$("v-settings");if(!v)return;let top=$("m3g-top");if
 })();
 
 {const _m3oRA=refreshAll;let _m3oT=0;refreshAll=function(){const a=arguments,self=this;if(window.__m3oLoading){window.__m3oPending=true;clearTimeout(_m3oT);_m3oT=setTimeout(()=>{window.__m3oPending=false;_m3oRA.apply(self,a);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}},300);return;}const r=_m3oRA.apply(this,arguments);try{window.__m3oRefreshed&&__m3oRefreshed();}catch(e){}return r;};}
+/* ---------- No empty gaps at the end of a row of boxes (Jonna, Nov 1, 2026). Renewals: the season's boxes are regrouped, with "Up for Renewal"
+   as the big box and a bar showing where those 177 stand; Free and Already Covered sit together on the right. Any other row of boxes that
+   would end short (the Outreach Planner's lanes) is spread evenly over its rows, so every row is full. ---------- */
+function m3Balance(g,minW){if(!g||!g.isConnected||!g.offsetParent)return;
+  const kids=[...g.children].filter(k=>!k.hidden&&getComputedStyle(k).display!=="none");
+  g.classList.remove("m3b");g.style.removeProperty("display");g.style.removeProperty("flex-wrap");kids.forEach(k=>{if(k.dataset.m3b){k.style.removeProperty("flex");delete k.dataset.m3b;}});
+  const cs=getComputedStyle(g);if(cs.display!=="grid")return;
+  const n=cs.gridTemplateColumns.split(" ").filter(Boolean).length,cards=kids.filter(k=>!/1 *\/ *-1/.test(k.style.gridColumn||"")),N=cards.length;
+  if(n<2||N<=1||N%n===0&&N>=n)return;
+  const gap=parseFloat(cs.columnGap)||0,maxk=(g.clientWidth-(n*gap))/(n+1)>=(minW||250)?n+1:n,rows=Math.ceil(N/maxk),base=Math.floor(N/rows),extra=N%rows;
+  g.classList.add("m3b");g.style.display="flex";g.style.flexWrap="wrap";let i=0;
+  for(let r=0;r<rows;r++){const k=base+(r<extra?1:0);for(let j=0;j<k;j++){const c=cards[i++];c.dataset.m3b="1";c.style.flex="1 1 calc((100% - "+(k-1)*gap+"px) / "+k+" - 1px)";}}
+  kids.filter(k=>!cards.includes(k)).forEach(k=>{k.dataset.m3b="1";k.style.flex="0 0 100%";});}
+function m3rvLayout(){const g=document.getElementById("ren-tiles");if(!g||!g.offsetParent)return;
+  g.classList.remove("m3rv");const n=getComputedStyle(g).gridTemplateColumns.split(" ").filter(Boolean).length,T=[...g.querySelectorAll(":scope>.tile")];
+  g.querySelectorAll(".m3rv-seg").forEach(x=>x.remove());
+  if(T.length!==8){m3Balance(g);return;}
+  const lab=T.map(t=>(t.querySelector(".lab")||{}).textContent||"");if(lab[0]!=="Up for Renewal"||lab[4]!=="Still to Renew"){m3Balance(g);return;}
+  const val=i=>+String((T[i].querySelector(".val")||{}).textContent||"0").replace(/[^0-9]/g,"")||0,tot=val(0)||1;
+  const parts=[[1,"renewed","var(--good)"],[2,"paying now","#7c8cff"],[3,"lost","var(--bad)"],[4,"still to renew","var(--warn,#f0b94a)"]];
+  const seg=document.createElement("div");seg.className="m3rv-seg";
+  const bar=document.createElement("div");bar.className="m3rv-bar";parts.forEach(([i,,c])=>{const v=val(i);if(!v)return;const s=document.createElement("i");s.style.cssText="flex:"+v+" 0 0;background:"+c;s.title=T[i].querySelector(".lab").textContent+": "+v;bar.appendChild(s);});
+  const key=document.createElement("div");key.className="m3rv-key";parts.forEach(([i,w,c])=>{const s=document.createElement("span");s.innerHTML='<i style="background:'+c+'"></i><b>'+val(i).toLocaleString("en-US")+"</b> "+w;key.appendChild(s);});
+  const pct=document.createElement("div");pct.className="m3rv-pct";pct.innerHTML="<b>"+Math.round(100*(val(1)+val(2))/tot)+"%</b> in: renewed or paying now";
+  seg.append(pct,bar,key);T[0].appendChild(seg);
+  if(n>=6){g.classList.add("m3rv");T[6].classList.add("m3rv-side");T[7].classList.add("m3rv-side");}else{T[6].classList.remove("m3rv-side");T[7].classList.remove("m3rv-side");m3Balance(g);}}
+{const _rt=renderTiles;renderTiles=function(){const r=_rt.apply(this,arguments);try{m3rvLayout();}catch(e){console.error("renewals layout",e);}return r;};}
+{const _tw=renderThisWeek;renderThisWeek=function(){const r=_tw.apply(this,arguments);try{m3Balance(document.getElementById("wk-lanes"),240);}catch(e){console.error("lanes layout",e);}return r;};}
+{let rt=0;window.addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{try{m3rvLayout();m3Balance(document.getElementById("wk-lanes"),240);}catch(e){}},150);});}
+
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
