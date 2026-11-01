@@ -8570,6 +8570,8 @@ function m3rvLayout(){const g=document.getElementById("ren-tiles");if(!g||!g.off
   const key=document.createElement("div");key.className="m3rv-key";parts.forEach(([i,w,c])=>{const s=document.createElement("span");s.innerHTML='<i style="background:'+c+'"></i><b>'+val(i).toLocaleString("en-US")+"</b> "+w;key.appendChild(s);});
   const pct=document.createElement("div");pct.className="m3rv-pct";pct.innerHTML="<b>"+Math.round(100*(val(1)+val(2))/tot)+"%</b> in: renewed or paying now";
   seg.append(pct,bar,key);T[0].appendChild(seg);
+  /* say plainly what the 177 leaves out: Kelly keeps asking (Jonna, Nov 1, 2026) */
+  {const sb=T[0].querySelector(".sub");if(sb){if(!sb.dataset.base)sb.dataset.base=sb.textContent;sb.textContent=sb.dataset.base.replace(/\.?\s*$/,"")+". Does not include the "+val(6).toLocaleString("en-US")+" free members or the "+val(7).toLocaleString("en-US")+" already covered.";}}
   if(n>=6){g.classList.add("m3rv");T[6].classList.add("m3rv-side");T[7].classList.add("m3rv-side");}else{T[6].classList.remove("m3rv-side");T[7].classList.remove("m3rv-side");m3Balance(g);}}
 {const _rt=renderTiles;renderTiles=function(){const r=_rt.apply(this,arguments);m3fillSoon();return r;};}
 {const _tw=renderThisWeek;renderThisWeek=function(){const r=_tw.apply(this,arguments);m3fillSoon();return r;};}
@@ -8616,7 +8618,7 @@ function m3jDress(){const band=$("m3d-band"),ms=$("dl-month");if(!band||!ms)retu
   const cnt=m=>{const r={nl:0,sq:0,iif:0};J.forEach(j=>{if(j.d.slice(0,7)===m)r[j.kind]++;});r.t=r.nl+r.sq+r.iif;return r;},bm=mon.map(m=>({m,...cnt(m)})),mx=Math.max(1,...bm.map(x=>x.t));
   const bars=h("div",{class:"m3d-bars m3j-bars"});bm.forEach((x,i)=>{const st=h("i",{class:"m3j-st",style:"height:"+(x.t?Math.max(8,Math.round(100*x.t/mx)):2)+"%"});["iif","sq","nl"].forEach(k=>{if(x[k])st.appendChild(h("span",{style:"flex:"+x[k]+" 0 0;background:"+MJ_KIND[k].c}));});
     bars.appendChild(h("button",{type:"button",class:"m3d-b"+(x.m===sel?" on":"")+(x.m===TODAY.slice(0,7)?" now":""),title:ML[Number(x.m.slice(5,7))-1]+" "+x.m.slice(0,4)+": "+x.t+" joined ("+x.nl+" Non-Lender, "+x.sq+" Square special, "+x.iif+" IIF lender)",
-      onclick:()=>{MJ_PAGE=0;ms.value=x.m;ms.dispatchEvent(new Event("change",{bubbles:true}));if(typeof renderDeals==="function")renderDeals();}},h("em",null,x.t?String(x.t):"0"),st,h("span",null,ML[Number(x.m.slice(5,7))-1]+(x.m.slice(5,7)==="01"||i===0?" '"+x.m.slice(2,4):""))));});
+      onclick:()=>{MJ_PAGE=0;ms.value=x.m;ms.dispatchEvent(new Event("change",{bubbles:true}));if(typeof renderDeals==="function")renderDeals();}},h("em",null,x.t?String(x.t):"0"),st,h("span",null,ML[Number(x.m.slice(5,7))-1]+(x.m.slice(5,7)==="01"||(i===0&&!bm.slice(0,3).some(y=>y.m.slice(5,7)==="01"))?" '"+x.m.slice(2,4):""))));});
   const inSel=J.filter(j=>sel?j.d.slice(0,7)===sel:j.d>=mon[0]&&j.d.slice(0,7)<=mon[11]),kc={nl:0,sq:0,iif:0};inSel.forEach(j=>kc[j.kind]++);
   const key=h("div",{class:"m3j-key"},...["nl","sq","iif"].map(k=>h("span",null,h("i",{style:"background:"+MJ_KIND[k].c}),MJ_KIND[k].lab,h("b",null,String(kc[k])))));
   const col=band.querySelector(".m3m-col");if(col){col.textContent="";col.append(h("div",{class:"m3w-tl"},"New Members by Month",h("span",null,"by join date · select a month")),bars,key);}
