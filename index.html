@@ -2388,6 +2388,9 @@ html #hq-gate:has(h1) .card{border-color:rgba(116,191,235,.3)!important;box-shad
 .m3j-pg{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:12.5px;color:var(--ink-3)}.m3j-pg span{margin-left:auto}.m3j-pg:empty{display:none}
 @media(max-width:800px){.m3j-rows{grid-template-columns:1fr}.m3j-rows .m3j-r:nth-child(odd){border-right:0}}
 
+
+#m3d-band .m3w-tl{flex-wrap:wrap;row-gap:2px}
+#m3d-band .m3w-tl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="mismo-logo" viewBox="0 0 708 108"><g transform="translate(0.000000,108.000000) scale(0.100000,-0.100000)" fill="var(--logo-body, #0f314c)"><path d="M5917 1065 c-169 -46 -279 -153 -335 -323 -21 -65 -25 -96 -25 -197
@@ -8608,7 +8611,8 @@ function memberJoins(){
 /* the Monthly Report's month chart counts these, stacked by kind; select a month to see who joined (the deals and the AP file below are unchanged) */
 let MJ_PAGE=0;
 function m3jDress(){const band=$("m3d-band"),ms=$("dl-month");if(!band||!ms)return;const sel=ms.value||"",J=memberJoins(),ML=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const endM=sel&&sel<TODAY.slice(0,7)?sel:TODAY.slice(0,7),mon=[];{let y=Number(endM.slice(0,4)),m=Number(endM.slice(5,7));for(let i=0;i<12;i++){mon.unshift(y+"-"+String(m).padStart(2,"0"));m--;if(!m){m=12;y--;}}}
+  /* always the twelve months through this month, so the latest months stay in view; only a month picked from further back moves the window */
+  const cur=TODAY.slice(0,7),back=(()=>{let y=+cur.slice(0,4),m=+cur.slice(5,7)-11;if(m<1){m+=12;y--;}return y+"-"+String(m).padStart(2,"0");})(),endM=sel&&sel<back?sel:cur,mon=[];{let y=Number(endM.slice(0,4)),m=Number(endM.slice(5,7));for(let i=0;i<12;i++){mon.unshift(y+"-"+String(m).padStart(2,"0"));m--;if(!m){m=12;y--;}}}
   const cnt=m=>{const r={nl:0,sq:0,iif:0};J.forEach(j=>{if(j.d.slice(0,7)===m)r[j.kind]++;});r.t=r.nl+r.sq+r.iif;return r;},bm=mon.map(m=>({m,...cnt(m)})),mx=Math.max(1,...bm.map(x=>x.t));
   const bars=h("div",{class:"m3d-bars m3j-bars"});bm.forEach((x,i)=>{const st=h("i",{class:"m3j-st",style:"height:"+(x.t?Math.max(8,Math.round(100*x.t/mx)):2)+"%"});["iif","sq","nl"].forEach(k=>{if(x[k])st.appendChild(h("span",{style:"flex:"+x[k]+" 0 0;background:"+MJ_KIND[k].c}));});
     bars.appendChild(h("button",{type:"button",class:"m3d-b"+(x.m===sel?" on":"")+(x.m===TODAY.slice(0,7)?" now":""),title:ML[Number(x.m.slice(5,7))-1]+" "+x.m.slice(0,4)+": "+x.t+" joined ("+x.nl+" Non-Lender, "+x.sq+" Square special, "+x.iif+" IIF lender)",
