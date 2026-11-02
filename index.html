@@ -5642,7 +5642,7 @@ function renderTiles(){
     
     
     ["On Hold",th.hold,"Still to renew, emails paused","var(--ink-3)",{stage:"open",auto:"hold"}],
-    ["Free Members",free.length,(freeSet?n(freeSet)+" set up for "+RY+" · ":"")+"Complimentary: the membership team sets these up, no invoice","var(--c3)",{stage:"free"}],
+    ["Free Members",free.length,(freeSet?n(freeSet)+" set up for "+RY+" · ":"")+"Non-Lenders whose free year ends Dec 31; set up again, no invoice","var(--c3)",{stage:"free"}],
     ["Already Covered",cov,"Paid through "+RY+" before the season","var(--c4)",{stage:"covered"}]];
   const box=$("ren-tiles");box.textContent="";
   const cur={stage:$("ren-stage").value,auto:$("ren-auto").value};
@@ -7311,7 +7311,7 @@ function renderStats(){
   [["t-all",cur?"Current Members":"Members in "+Y,A.length,"Paid or free for "+Y,"var(--sky)",()=>A],
    ["t-nl","Non-Lender Members",K["Non-Lender"],"Paid membership dues","var(--c1)",()=>A.filter(o=>kindIn(o,Y)==="Non-Lender")],
    ["t-ln","Lender Members",K.Lender,cur?"Through the IIF \u00b7 "+n(A.filter(o=>kindIn(o,Y)==="Lender"&&lendPaid(o,Y)>=1000).length)+" paid $1,000+":"Through the IIF","var(--c2)",()=>A.filter(o=>kindIn(o,Y)==="Lender")],
-   ["t-free","Free Members",K.Free,"Complimentary memberships","var(--c3)",()=>A.filter(o=>kindIn(o,Y)==="Free")],
+   ["t-free","Free Members",K.Free,"All complimentary, incl. lenders and multi-year","var(--c3)",()=>A.filter(o=>kindIn(o,Y)==="Free")],
    ["t-ch","Champions",champ,"Chair, Executive and Associate","var(--c4)",()=>A.filter(isChamp)],
    ["t-cu","Credit Unions",cu,"Members that are credit unions","var(--c5)",()=>A.filter(o=>o.cu)]].forEach(t=>tb.appendChild(tile(t[0],t[1],t[2],t[3],t[4],t[5],"st-sppanel")));
   const TC={"Non-Lender":"var(--c1)","Lender":"var(--c2)","Free":"var(--c3)","Type Not Recorded":"var(--ink-3)"};
