@@ -6498,7 +6498,7 @@ const EXTRA={auto:[],manual:[],mm:[]};
 function prospectOrg(d){return {k:"p"+d.id,cid:d.cid||"",row:0,name:d.name||"New Prospect",sector:"",sector5:d.sector5||"",sectorSrc:d.sector5?"staff":"",market:"",cu:false,addr:"",
   joined:"",thru:"",created:(d.at||"").slice(0,10),life:"Prospect",stage:"",type:d.type||"Non-Lender",level:"",lossReason:"",hist:[],twoYear:false,viaForm:false,
   people:(d.people||[]).map(p=>Object.assign({email:"",name:"",title:"",phone:"",roles:["Primary"]},p)),advisors:[],hand:[],
-  notes:d.note?[{d:(d.at||"").slice(0,19),by:d.byName||"",t:d.note,tags:["Added as a prospect"]}]:[],dupId:false,noId:!d.cid,manual:true,source:d.source||"",addedBy:d.byName||"",addedAt:d.at||""};}
+  notes:d.note?[{d:(d.at||"").slice(0,10),by:d.byName||"",t:d.note,tags:["Added as a prospect"]}]:[],dupId:false,noId:!d.cid,manual:true,source:d.source||"",addedBy:d.byName||"",addedAt:d.at||""};}
 function mergeNew(list){EXTRA.auto=list;rebuildOrgs();}
 function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);rebuildOrgs();}
 /* ---------- MISMO Connect and work product downloads (Jonna, Oct 26, 2026) ----------
