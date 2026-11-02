@@ -8749,6 +8749,8 @@ function deskInvPaid(){const out={},byCid={},nm=s=>String(s||"").toLowerCase().r
     if(hit)out[v.id]={d:hit,n:Math.round(sum*100)/100,org:o.name};});return out;}
 {const _dT=deskTodos;deskTodos=function(){const r=_dT.apply(this,arguments);try{r.todo.free=deskSubTodo();r.pip=deskPip();r.invPaid=deskInvPaid();}catch(e){console.error("desk extra",e);}return r;};}
 
+/* an early renewal's payment pays the next year's renewal commitment, though Aptify starts its term earlier (Jonna, Nov 2, 2026) */
+{const _dPd=dealPaid;dealPaid=function(d){const r=_dPd.apply(this,arguments);if(r||!d||d.type!=="Renewal"||String(d.start||"").slice(0,10)!==RY+"-01-01")return r;const o=BY[d.org],er=o?earlyRenewal(o):null;return er?{d:er.d,n:er.n,o:er.o}:null;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
