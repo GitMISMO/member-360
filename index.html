@@ -5204,8 +5204,12 @@ const BEN_LEVEL={
   "Associate":["2 complimentary MISMO Summit registrations per Summit","3 complimentary MISMO Boot Camp registrations per year","3 complimentary CMSP and AMSP certification enrollments and renewals"],
   "Corporate":["1 complimentary enrollment in MISMO Boot Camp"]};
 BEN_LEVEL["Corporate (TMC)"]=BEN_LEVEL["Corporate (Broker)"]=BEN_LEVEL.Corporate;
-function levelBenefits(o){return BEN_LEVEL[o.level]||[];}
-function benefitsText(o){return levelBenefits(o).concat(BEN_COMMON).map(x=>"• "+x).join("\n");}
+function levelBenefits(o){return benSetLevel(o&&o.level)||BEN_LEVEL[o.level]||[];}
+/* the emails and the snapshot read the benefits saved under Settings > Membership Levels and Benefits; the built-in lists are only the fallback before anything is saved there (Jonna, Nov 2, 2026) */
+function benSetLevel(lv){const base=String(lv||"").replace(/ \(.*\)$/,"").trim().toLowerCase();if(!base||typeof levelsList!=="function")return null;const L=levelsList().find(x=>String(x.v||"").trim().toLowerCase()===base||String(x.l||"").trim().toLowerCase()===base);const b=L&&Array.isArray(L.benefits)?L.benefits.map(s=>String(s||"").trim()).filter(Boolean):[];return b.length?b:null;}
+function benCommonNow(){const c=(typeof commonBenefits==="function"?commonBenefits():[]).map(s=>String(s||"").trim()).filter(Boolean);return c.length?c:BEN_COMMON;}
+function benFmt(x){const i=x.indexOf(": ");return i>0&&i<90?"<b>"+escH(x.slice(0,i+1))+"</b> "+escH(x.slice(i+2)):escH(x);}
+function benefitsText(o){return levelBenefits(o).concat(benCommonNow()).map(x=>"• "+x).join("\n");}
 function wrapLines(ctx,t,w){const words=t.split(" "),out=[];let line="";words.forEach(wd=>{const tt=line?line+" "+wd:wd;if(ctx.measureText(tt).width>w&&line){out.push(line);line=wd;}else line=tt;});if(line)out.push(line);return out;}
 /* a membership counts in the year it covers (its start date), not the year it was paid */
 function memberItems_(o,r){return ((ACT[o.k]||{}).items||[]).filter(i=>{const d=i.c==="Membership"&&i.s?i.s:i.d;return !r||(d>=r.from&&d<=r.to);}).filter(i=>i.c!=="Other"&&!/cancellation fee/i.test(i.p||"")&&i.n>=0).sort((a,b)=>b.d.localeCompare(a.d));}
@@ -5364,7 +5368,7 @@ function drawSnapshot(canvas,o,opt){
         ctx.fillStyle=col;ctx.beginPath();ctx.arc(x0+6,yy-5,5,0,Math.PI*2);ctx.fill();
         ctx.fillStyle=SNAP_INK;ls.forEach((l,i)=>ctx.fillText(l,x0+24,yy+i*22));yy+=ls.length*22+12;});return yy;};
     let y1=y,y2=y;if(lv.length)y1=list(lv,P,"With Your Level",SNAP_SKY);
-    y2=list(BEN_COMMON,lv.length?P+colW+40:P,"Every Member Gets","#2477b8");
+    y2=list(benCommonNow(),lv.length?P+colW+40:P,"Every Member Gets","#2477b8");
     y=Math.max(y1,y2)+24;}
   closeCard();y+=36;
   const H=y+96;
@@ -9080,9 +9084,9 @@ function tplOf(st){const t=TPL[st.id]||{};return {subject:t.subject||"",body:t.b
 function tplProblem(st){const t=tplOf(st);if(!t.subject.trim()||!t.body.trim())return "This email has no wording yet.";
   const b=(t.subject+" "+t.body).match(/\[[^\]]{2,}\]/g);return b?"Fill in "+b.slice(0,3).join(", ")+(b.length>3?" and the rest":"")+" in Playbooks first.":"";}
 /* one recipient's values: plain for the subject, HTML-safe for the body */
-function recVals(o,p){const nm=splitName(p.name);const ben=levelBenefits(o).concat(BEN_COMMON);
+function recVals(o,p){const nm=splitName(p.name);const ben=levelBenefits(o).concat(benCommonNow());
   return {fn:nm[0]||"there",ln:nm[1]||"",co:o.name,lvl:o.level||"",type:o.type||"",ends:fmt(o.thru),
-    benH:'<ul style="margin:6px 0 0;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+escH(x)+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>",benT:ben.map(x=>"• "+x).join("\n")};}
+    benH:'<ul style="margin:6px 0 0;padding-left:22px">'+ben.map(x=>'<li style="margin:0 0 5px">'+benFmt(x)+"</li>").join("")+"</ul><div style='font-size:1px;line-height:18px;mso-line-height-rule:exactly'>&nbsp;</div>",benT:ben.map(x=>"• "+x).join("\n")};}
 function fillPlain(t,v,sender){return t.replace(/\{\{\s*([^}]+?)\s*\}\}/g,(m,k)=>{if(k==="Sender Name")return sender.name;if(k==="Sender First Name")return sender.name.split(" ")[0];
   const key=MTOK[k];if(!key)return m;return key==="ben"?v.benT:v[key];});}
 /* the email body with %%tokens%% where each recipient's values go */
