@@ -8747,7 +8747,9 @@ function deskInvPaid(){const out={},byCid={},nm=s=>String(s||"").toLowerCase().r
     const from=addDays(String(v.date||TODAY).slice(0,10),-3),want=(+v.amount||0)-1;let sum=0,hit="";
     fsItems(o).filter(i=>i&&i.d&&String(i.d).slice(0,10)>=from&&(+i.n||0)>0&&/member|iif/i.test(String(i.c||""))).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(i=>{sum+=+i.n||0;if(!hit&&sum>=want)hit=String(i.d).slice(0,10);});
     if(hit)out[v.id]={d:hit,n:Math.round(sum*100)/100,org:o.name};});return out;}
-{const _dT=deskTodos;deskTodos=function(){const r=_dT.apply(this,arguments);try{r.todo.free=deskSubTodo();r.pip=deskPip();r.invPaid=deskInvPaid();}catch(e){console.error("desk extra",e);}return r;};}
+/* a new member Aptify already has a term for is already set up: it leaves the desk's To Do on its own (Jonna, Nov 2, 2026) */
+function deskInAptify(x){const o=ORGS.find(z=>x.cid&&String(z.cid)===String(x.cid))||ORGS.find(z=>z.name===x.name);if(!o)return false;const from=String(x.start||x.sold||"").slice(0,10)||TODAY;return (o.aptAll||[]).some(t=>t&&t.s&&t.e&&String(t.e).slice(0,10)>=from&&String(t.s).slice(0,10)<=addDays(from,120));}
+{const _dT=deskTodos;deskTodos=function(){const r=_dT.apply(this,arguments);try{r.todo.members=(r.todo.members||[]).filter(x=>!deskInAptify(x));r.todo.free=deskSubTodo();r.pip=deskPip();r.invPaid=deskInvPaid();}catch(e){console.error("desk extra",e);}return r;};}
 
 /* an early renewal's payment pays the next year's renewal commitment, though Aptify starts its term earlier (Jonna, Nov 2, 2026) */
 {const _dPd=dealPaid;dealPaid=function(d){const r=_dPd.apply(this,arguments);if(r||!d||d.type!=="Renewal"||String(d.start||"").slice(0,10)!==RY+"-01-01")return r;const o=BY[d.org],er=o?earlyRenewal(o):null;return er?{d:er.d,n:er.n,o:er.o}:null;};}
