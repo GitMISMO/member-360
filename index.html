@@ -3125,7 +3125,12 @@ function freeRen(o){return /^free/i.test(curStatus(o)||"");}
 function inDue(o){return !covered(o)&&!freeRen(o);}
 function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||defAhead(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
-function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:null;}
+function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:earlyRenewal(o);}
+/* renewing early is not a dues deal (Jonna, Nov 2, 2026): a member whose membership already runs through Dec 31 of this year and who pays in the last quarter of the year has paid next year's renewal, even when Aptify starts the new term the month it was ordered. It counts as next year's payment, a standard 12-month renewal, never as extra months or a covered year. Square special-rate payments and mid-year upgrades (two lines on one order) are not renewals. */
+function earlyRenewal(o){if(!o)return null;const py=String(RY-1),pp=String(RY-2),its=fsItems(o).filter(i=>i&&i.c==="Membership"&&i.s&&(+i.n||0)>0);
+  const c=its.filter(i=>i.s>=py+"-10-01"&&i.s<RY+"-01-01"&&String(i.d||"")>=py+"-10-01"&&!i.sq&&!i.sp&&!its.some(j=>j!==i&&j.d===i.d&&j.s<i.s)).sort((a,b)=>String(b.d).localeCompare(String(a.d)))[0];if(!c)return null;
+  const before=its.some(j=>j!==c&&j.s<c.s&&(j.s.slice(0,4)===py||(j.s.slice(0,4)===pp&&j.s>=pp+"-07-01")))||(o.aptAll||[]).some(t=>t&&t.s&&t.e&&t.s<c.s&&String(t.e).slice(0,10)===py+"-12-31");
+  return before?{d:c.d,o:c.o||"",p:c.p||"",n:c.n,how:"Renewed early"}:null;}
 function prepaid(o){const a=ACT[o.k];return a&&a.prepaid?a.prepaid:null;}
 function iifPaid(o){if(!o.iif)return 0;const a=ACT[o.k];const fs=a&&a.iif?(a.iif[IY]||0):0;return Math.max(o.iif.y26.paid||0,fs);}
 function iifColl(o){if(!o.iif)return "";const p=iifPaid(o),inv=o.iif.y26.inv||0;if(o.iif.y26.cs==="Paid Full Amount"||(inv>0&&p>=inv))return "Paid Full Amount";if(p>0)return "Partial Payment Received";return "Not Paid";}
@@ -6884,8 +6889,8 @@ async function commitFromPayment(o,i){
      otherwise the standard dates for the month it was sold in. The end always follows the
      start's year, so a 2027 membership sold in 2026 never runs backwards. */
   const f=dealDefaults("Renewal","Standard",sold);
-  const start=(i.s||f.start).slice(0,10);
-  const end=(i.e&&i.e>=start?i.e.slice(0,10):start.slice(0,4)+"-12-31");
+  let start=(i.s||f.start).slice(0,10);
+  let end=(i.e&&i.e>=start?i.e.slice(0,10):start.slice(0,4)+"-12-31");{const er=earlyRenewal(o);if(er&&String(er.d||"").slice(0,10)===sold&&start<RY+"-01-01"){start=RY+"-01-01";end=RY+"-12-31";}}
   /* a renewal unless this is the first membership they have ever had: a joined date
      before the term being bought means they were already a member */
   const j=(joinedOf(o)||"").slice(0,10);
