@@ -8108,7 +8108,7 @@ function m3cJourney(o){const NB=String.fromCharCode(160);const wrap=h("div",{cla
     if(y===last&&!m){try{const st=stageOf(o);if(st==="Renewed")m=true,lv=lv||o.level||"";}catch(e){}}
     if(m)on++;const champ=/Chair|Executive|Associate/.test(lv),cls="m3c-y"+(m?(champ?" champ":lv==="Sole"?" sole":" mem"):"")+(y===last?" next":"")+(y===last-1?" now":"");
     yrs.appendChild(h("div",{class:cls,title:Y+": "+(m?(lv||"Member"):(y===last?"Not renewed yet":"Not a member"))},h("i",null),h("span",null,"'"+Y.slice(2))));}
-  const shown=last-from;const lead=first&&first<=last?("Since "+first+" · a member "+on+" of the last "+shown+" years"):(o.life==="Prospect"?"Not a member yet":"Membership years from Aptify");
+  const shown=last-from+1;const lead=first&&first<=last?("Since "+first+" · a member "+on+" of the last "+shown+" years"):(o.life==="Prospect"?"Not a member yet":"Membership years from Aptify");
   wrap.appendChild(h("div",{class:"m3c-jcol m3c-jmain"},h("div",{class:"m3c-jl"},"Membership Journey",h("span",null,lead)),yrs,
     h("div",{class:"m3c-key"},h("span",null,h("i",{class:"champ"}),"Champion"),h("span",null,h("i",{class:"mem"}),"Member"),h("span",null,h("i",{class:"sole"}),"Sole"),h("span",null,h("i",null),"Not a Member"))));
   /* money on record */
