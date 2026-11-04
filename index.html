@@ -8768,7 +8768,7 @@ function m360TagOrg(v){if(!v)return [];const live=o=>{let x=o,n=0;while(x&&(ov(x
   if(!L.length)L=ORGS.filter(o=>{const n=nz(o.name);return n&&(n.startsWith(k)||(n.length>=4&&k.startsWith(n)));});
   if(!L.length&&k.length>=4)L=ORGS.filter(o=>nz(o.name).includes(k));
   const out=[];L.map(live).forEach(o=>{if(o&&!out.includes(o))out.push(o);});
-  if(out.length>1){const act=out.filter(o=>o.life==="Active");if(act.length===1)return act;}
+  if(out.length>1&&out.every(o=>nz(o.name)===k)){const act=out.filter(o=>o.life==="Active");if(act.length===1)return act;}
   return out;}
 {const _mP=m360Parse;m360Parse=function(d){const m=_mP.apply(this,arguments);try{const t=m360TagOf(d);if(t){m.tag=t;if(m.body)m.body=String(m.body).replace(/^\s*360\s*[:：][^\n]*\n?/im,"");}}catch(e){console.error("360 tag",e);}return m;};}
 {const _pM=p360MatchMail;p360MatchMail=function(m){const r=_pM.apply(this,arguments);if(!m||!m.tag)return r;try{const T=m360TagOrg(m.tag);if(T.length)return T;return r.length===1?[]:r;}catch(e){console.error("360 tag",e);return r;}};}
