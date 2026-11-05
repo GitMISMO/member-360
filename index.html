@@ -9029,7 +9029,7 @@ function lrInit(){
   const after=document.querySelector('.hq nav button[data-hq="issues"]');
   if(after){const b=document.createElement("button");b.type="button";b.dataset.hq="logos";b.title="Logo Review";
     b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg><span>Logo Review</span><em class="pip" id="pip-logos"></em>';
-    after.parentNode.insertBefore(b,after);b.addEventListener("click",()=>{if(location.hash!=="#logos")history.replaceState(null,"","#logos");});}
+    after.parentNode.insertBefore(b,after);}
   const main=document.querySelector("main");if(!main)return;
   const sec=document.createElement("section");sec.className="view";sec.id="v-logos";sec.hidden=true;
   sec.innerHTML='<div class="vhead"><div><h1>Logo Review</h1><div class="vsub">Logos the Logo Finder found on members\' own websites. Member 360 has picked the likeliest one for each company: check the page, click a different one or choose None of These where it guessed wrong, then save the page.</div></div>'
@@ -9072,13 +9072,14 @@ function lrInit(){
   +'#v-logos .lr-nolist a{color:var(--ink);text-decoration:none;font-weight:600}#v-logos .lr-nolist a:hover{text-decoration:underline}'
   +'#v-logos .lr-nolist span{color:var(--ink-3);font-size:11.5px}';
   document.head.appendChild(st);
-  if(location.hash==="#logos")setTimeout(()=>show("logos"),400);
-  window.addEventListener("hashchange",()=>{if(location.hash==="#logos")show("logos");});
+  const lrWhen=()=>{if(ORGS.length)show("logos");else setTimeout(lrWhen,500);};
+  if(location.hash==="#logos")setTimeout(lrWhen,1500);
+  window.addEventListener("hashchange",()=>{if(location.hash==="#logos")lrWhen();});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",lrInit);else lrInit();
 show=(function(orig){return function(tab){orig(tab);if(tab==="logos")renderLogoReview();};})(show);
 async function renderLogoReview(){
-  const grid=document.getElementById("lr-grid");if(!grid)return;const tok=LR.tok=(LR.tok||0)+1;
+  const grid=document.getElementById("lr-grid");if(!grid)return;if(!ORGS.length){setTimeout(renderLogoReview,800);return;}const tok=LR.tok=(LR.tok||0)+1;
   try{await lrLoad();}catch(e){grid.innerHTML='<p class="lr-empty">The Logo Finder results could not be loaded. Try again in a minute.</p>';return;}
   if(tok!==LR.tok)return;
   const all=(LR.data||[]).filter(lrTodo),withC=all.filter(it=>(it.candidates||[]).length);
