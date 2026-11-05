@@ -6821,7 +6821,7 @@ function openSquarePay(o){
     const sender=mySender(),to=sqTo()||sender.email;
     go.disabled=true;msg.textContent="";
     try{
-      await saveOv(rec.k,{special:sp.value});
+      await saveOv(rec.k,{special:sp.value,sqPaid:{n:n,d:dt.value||TODAY,ref:ref.value.trim(),by:myName()||sender.name,at:new Date().toISOString()}});
       rec.special=sp.value;
       const rows=[["Company",rec.name],["Aptify Company ID",rec.cid||"Not on the record"],
         ["Special",sp.value],["Paid through Square",money(n)],["Date paid",fmt(dt.value)],
@@ -6830,8 +6830,8 @@ function openSquarePay(o){
       const html=internalEmail({tool:"Member 360",title:"Set Up a MISMO Member",sub:rec.name+" \u00b7 "+sp.value+" Special",
         intro:"Hi Membership Team,<br>"+escH(myName()||sender.name)+" has taken a Square payment for a membership special. Please set this company up in Aptify as a MISMO member at the Corporate level.",
         sections:[["The Payment",rows]],
-        done:["When It Is Done",(note.value.trim()?escH(note.value.trim())+"<br><br>":"")+"This payment was taken through Square, so it will not appear on the IIF invoice list or in the Financial System. Member 360 has already marked them as a "+escH(sp.value)+" member."],
-        cta:["https://resources.mismo.org/member-360/","Open Member 360"],
+        done:["When It Is Done",(note.value.trim()?escH(note.value.trim())+"<br><br>":"")+"This payment was taken through Square, so it will not appear on the IIF invoice list. It is on the Membership Desk under Your To Do: once the member is set up in Aptify, open it there, enter the Aptify Company ID and order number, and select Mark Set Up."],
+        cta:["https://resources.mismo.org/membership-desk/#todo/"+encodeURIComponent(deskSqId(rec)),"Open in the Membership Desk"],
         foot:'Sent by Member 360. Aptify remains the record.'});
       const nowId="sq"+Date.now().toString(36)+sender.key.slice(0,2);
       await db.doc("outbox/"+nowId).set({step:"square",stepName:"Square Special Payment",thru:"",test:false,
@@ -8832,6 +8832,13 @@ async function tpTell(o,who,note){try{
 {const _ff=fillForm;fillForm=function(o,box){const r=_ff.apply(this,arguments);try{tpTopicChips(box);}catch(e){console.error("topics",e);}try{tpTellBox(o,box);}catch(e){console.error("tell",e);}return r;};}
 /* a link to one company (#co/<key>) opens it once Member 360 has loaded */
 {const m=/^#co\/(.+)$/.exec(location.hash||"");if(m){const k=decodeURIComponent(m[1]);let n=0;const iv=setInterval(()=>{n++;if(typeof ORGS!=="undefined"&&ORGS.length&&BY[k]){clearInterval(iv);setTimeout(()=>{try{openOrg(k);}catch(e){console.error("open company",e);}},400);}else if(n>150)clearInterval(iv);},800);}}
+/* ---------- A Square payment recorded here goes on the Membership Desk (Jonna, Nov 5, 2026). Recording one keeps the payment on the
+   company (sqPaid), and until Aptify shows the membership it sits under Your To Do on the desk as a New Member to set up, with the
+   special named, so the set-up email's Open in the Membership Desk button lands on it. ---------- */
+function deskSqId(o){return "m-"+(o.cid?String(o.cid):String(o.name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""));}
+function deskSqTodo(){const cut=addDays(TODAY,-180);return ORGS.filter(o=>{const q=(ov(o)||{}).sqPaid;return q&&q.d&&q.d>=cut&&!(ov(o)||{}).mergedInto;}).map(o=>{const q=ov(o).sqPaid,sp=ov(o).special||o.special||"";
+  return {name:o.name,cid:String(o.cid||""),level:"Corporate",price:+q.n||0,sold:q.d,paid:q.d,start:q.d.slice(0,7)+"-01",end:q.d.slice(0,4)+"-12-31",special:(sp?sp+" special, ":"")+"paid through Square"};});}
+{const _dS=deskTodos;deskTodos=function(){const r=_dS.apply(this,arguments);try{const have=new Set((r.todo.members||[]).map(x=>x.cid||x.name));const add=deskSqTodo().filter(x=>!have.has(x.cid||x.name)&&!deskInAptify(x));r.todo.members=(r.todo.members||[]).concat(add);}catch(e){console.error("desk square",e);}return r;};}
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
