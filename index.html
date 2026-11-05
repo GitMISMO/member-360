@@ -9072,7 +9072,7 @@ function lrInit(){
   +'#v-logos .lr-nolist a{color:var(--ink);text-decoration:none;font-weight:600}#v-logos .lr-nolist a:hover{text-decoration:underline}'
   +'#v-logos .lr-nolist span{color:var(--ink-3);font-size:11.5px}';
   document.head.appendChild(st);
-  const lrWhen=()=>{if(ORGS.length)show("logos");else setTimeout(lrWhen,500);};
+  const lrWhen=()=>{if(!ORGS.length){setTimeout(lrWhen,500);return;}show("logos");[1500,4000].forEach(ms=>setTimeout(()=>{const v=document.getElementById("v-logos");if(location.hash==="#logos"&&v&&v.hidden)show("logos");},ms));};
   if(location.hash==="#logos")setTimeout(lrWhen,1500);
   window.addEventListener("hashchange",()=>{if(location.hash==="#logos")lrWhen();});
 }
