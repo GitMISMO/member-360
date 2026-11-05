@@ -9137,6 +9137,167 @@ async function lrSave(){if(LR.busy)return;if(typeof canWrite!=="undefined"&&canW
   try{if(typeof champFeedSync==="function")champFeedSync();}catch(e){}
   setTimeout(renderLogoReview,900);}
 
+/* ── Sales Detail for prospects (Jonna, Nov 5, 2026) ──
+   A Sales Detail button sits next to Log Touchpoint on a prospect's card and opens the sales stage, owner and pipeline
+   fields in one place. Only prospects show it: once a prospect becomes a member it goes away, and it comes back if
+   they become a prospect again. */
+function sdPop(o){
+  if(!o)return;let dl=$("sd-dlg");if(dl)dl.remove();
+  dl=h("dialog",{id:"sd-dlg",class:"p360-dlg","aria-label":"Sales detail for "+o.name});
+  const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
+  const body=h("div",{class:"p360-dlg-b"});
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Sales Detail and Owner"),h("h2",null,o.name)),x));dl.appendChild(body);
+  body.appendChild(h("p",{class:"hint",style:"margin:0 0 12px"},"Changes save as you make them."));
+  const c=h("div");body.appendChild(c);document.body.appendChild(dl);fillCtrls(o,c);
+  /* the owner first, then the sales stage */
+  const ow=[...c.querySelectorAll(".fld")].find(f=>/Relationship Owner/.test((f.querySelector("label")||{}).textContent||""));if(ow)c.insertBefore(ow,c.firstChild);
+  dl.addEventListener("close",()=>{try{const pb=$("m360-pane-body");if(pb&&paneK===o.k)refreshProfile(o,pb);}catch(e){}dl.remove();});
+  try{dl.showModal();}catch(e){dl.setAttribute("open","");}
+}
+p360Dress=(function(orig){return function(o,box){const r=orig.apply(this,arguments);
+  try{if(o&&o.life==="Prospect"&&box){const act=box.querySelector(".p360-actions");
+    if(act&&!act.querySelector(".sd-btn")){const b=h("button",{type:"button",class:"btn sd-btn",title:"Sales stage, owner, forecast and next step"},p360Icon("flag"),"Sales Detail");
+      b.addEventListener("click",()=>sdPop(o));const lt=[...act.children].find(z=>/Log Touchpoint/.test(z.textContent));
+      if(lt&&lt.nextSibling)act.insertBefore(b,lt.nextSibling);else act.appendChild(b);}}}catch(e){console.error("sales detail",e);}
+  return r;};})(p360Dress);
+
+/* ── Finding a company on Members and Prospects (Jonna, Nov 5, 2026) ──
+   Typing in the box looks through every organization (members, prospects, former, IIF invoiced), whatever tile,
+   letter or filter is picked, and ignores punctuation, so "us bank" finds "U.S. Bank". Clear the box to get the
+   filters back. */
+function srchNorm(s){return String(s||"").toLowerCase().replace(/&/g," and ").replace(/['’.]/g,"").replace(/[^a-z0-9@]+/g," ").replace(/\s+/g," ").trim();}
+memberItems=(function(orig){return function(){
+  const raw=String(($("mem-q")||{}).value||"").trim();if(!raw)return orig();
+  try{if(typeof ALPHA==="object"&&ALPHA)ALPHA.members="";}catch(e){}
+  const q=srchNorm(raw),qc=q.replace(/ /g,""),qt=q.split(" ").filter(Boolean);
+  const wsc=(n,c)=>{const w=n.split(" ");for(let i=0;i<w.length;i++){if(w.slice(i).join("").indexOf(c)===0)return true;}return false;};
+  const rank=o=>{const n=srchNorm(o.name),nc=n.replace(/ /g,"");
+    if(n===q||nc===qc)return 0;if(n.indexOf(q)===0||nc.indexOf(qc)===0)return 1;
+    if((" "+n).indexOf(" "+q)>=0||(qc.length>=3&&wsc(n,qc)))return 2;if(qc.length>=4&&n.indexOf(q)>=0)return 3;
+    if(qt.length>1&&qt.every(t=>(" "+n).indexOf(" "+t)>=0))return 4;
+    if(o.nameWas&&srchNorm(o.nameWas).replace(/ /g,"").indexOf(qc)>=0)return 5;
+    if(String(o.cid||"")===raw)return 0;
+    let site="";try{site=String(siteOf(o)||"").toLowerCase().replace(/^https?:\/\//,"").replace(/^www\./,"").replace(/[^a-z0-9]/g,"");}catch(e){}if(qc.length>=4&&site.indexOf(qc)===0)return 6;
+    const rl=raw.toLowerCase();if(q.length>=3&&(o.people||[]).some(p=>(" "+srchNorm(p.name)).indexOf(" "+q)>=0||((rl.indexOf("@")>=0||rl.length>=6)&&String(p.email||"").toLowerCase().indexOf(rl)>=0)))return 7;
+    return -1;};
+  return ORGS.map(o=>({o,r:rank(o)})).filter(x=>x.r>=0).sort((a,b)=>a.r-b.r||a.o.name.localeCompare(b.o.name)).map(x=>x.o);};})(memberItems);
+
+/* ── Ask Member 360 (Jonna, Nov 5, 2026) ──
+   On Help. Someone types any question; Claude (through the relay's POST /member-360/ask, which holds MISMO's key)
+   writes a small calculation over Member 360's own records; the page runs it here and shows the answer, the table,
+   and an Excel download. The records never leave the page: only the question, the field list and Help go to Claude. */
+const ASK={state:"",busy:false,last:null};
+function askLife(l){return {Active:"Current Member",Prospect:"Prospect","IIF Invoiced":"IIF Invoiced",Former:"Former Member",Lost:"Lost",Other:"Other"}[l]||l||"";}
+function askData(){
+  const g=(f,d)=>{try{const v=f();return v==null?d:v;}catch(e){return d;}};
+  const yy=String(IY||"").slice(2);
+  const orgs=ORGS.filter(o=>!(ov(o)||{}).mergedInto).map(o=>{const v=ov(o)||{},p=v.pipe||{},addr=String(o.addr||""),st=(addr.match(/,\s*([A-Z]{2})\b/)||[])[1]||"";
+    const pr=(o.people||[]).find(x=>(x.roles||[]).some(r=>/primary/i.test(r)))||(o.people||[])[0]||{};const iy=(o.iif||{})["y"+yy]||{};
+    return {name:o.name,companyId:o.cid||"",status:askLife(o.life),memberType:o.type||"",level:o.level||"",champion:/chair|executive|associate/i.test(o.level||""),
+      industrySector:g(()=>sectorLab(sectorOf(o)),""),market:o.market||"",creditUnion:!!o.cu,city:addr.split(",")[0].trim(),state:st,
+      memberSince:g(()=>sinceInfo(o).y,""),lastJoined:o.joined||"",paidThrough:o.thru||"",renewalStage:g(()=>stageOf(o),""),
+      owner:g(()=>owner(o),""),salesStage:v.pstage||"",forecast:p.forecast!=null?Number(p.forecast)||0:null,probability:p.prob!=null?Number(p.prob)||0:null,
+      leadSource:p.lead||o.source||"",nextStep:p.next||"",website:g(()=>siteOf(o),""),hasLogo:!!v.logo,contactCount:(o.people||[]).length,
+      primaryContact:pr.name||"",primaryEmail:pr.email||"",iifInvoice:iy.inv!=null?Number(iy.inv)||0:null,iifPaid:iy.paid!=null?Number(iy.paid)||0:null,
+      iifCollection:iy.cs||"",key:o.k};});
+  const byK={};ORGS.forEach(o=>{byK[o.k]=o;});
+  const contacts=[];ORGS.forEach(o=>{if((ov(o)||{}).mergedInto)return;(o.people||[]).forEach(p=>contacts.push({company:o.name,companyId:o.cid||"",status:askLife(o.life),name:p.name||"",email:p.email||"",title:p.title||"",phone:p.phone||"",roles:(p.roles||[]).join(", ")}));});
+  const touchpoints=(typeof TP!=="undefined"?TP:[]).map(t=>{const o=byK[t.org]||{};return {company:o.name||t.org||"",date:t.date||"",type:t.type||"",topic:Array.isArray(t.topic)?t.topic.join(", "):(t.topic||""),contact:t.contact||"",sentiment:t.sentiment||"",summary:String(t.summary||"").replace(/<[^>]+>/g," ").slice(0,500),by:t.by||""};});
+  const deals=(typeof DEALS!=="undefined"?(Array.isArray(DEALS)?DEALS:Object.values(DEALS)):[]).map(d=>({company:d.orgName||((byK[d.org]||{}).name)||"",companyId:d.cid||"",type:d.type||"",level:d.level||"",sold:d.sold||"",start:d.start||"",end:d.end||"",price:Number(d.price)||0,aptify:d.ap||"",notes:String(d.notes||"").slice(0,300)}));
+  const help=[...document.querySelectorAll("#v-help details.sect")].map(d=>({title:(d.querySelector("summary")||{}).textContent||"",text:(d.querySelector(".sbody")||d).innerText.slice(0,4000)}));
+  return {orgs,contacts,touchpoints,deals,help,today:TODAY,thisYear:String(IY||"")};}
+function askSchema(data){
+  const dv=(arr,k,n)=>{const m={};arr.forEach(r=>{const v=r[k];if(v===""||v==null)return;m[v]=(m[v]||0)+1;});return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,n||12).map(e=>e[0]).join(" | ");};
+  const O=data.orgs;
+  return ["data.orgs ("+O.length+" organizations, one row each). Fields:",
+    "name, companyId (Aptify ID), status: "+dv(O,"status"),
+    "memberType: "+dv(O,"memberType")+" (blank = not set). Lender members pay the Innovation Investment Fund (IIF); everyone else is a non-lender.",
+    "level: "+dv(O,"level",14)+" (blank = none). champion is true for Chair, Executive and Associate (the Champion levels).",
+    "industrySector: "+dv(O,"industrySector"),"market: "+dv(O,"market")+", creditUnion (true/false), city, state (two letters)",
+    "memberSince (year), lastJoined (YYYY-MM-DD), paidThrough (YYYY-MM-DD), renewalStage: "+dv(O,"renewalStage"),
+    "owner (relationship owner): "+dv(O,"owner"),"salesStage (prospects): "+dv(O,"salesStage"),"forecast (dollars or null), probability (percent or null), leadSource, nextStep",
+    "website, hasLogo, contactCount, primaryContact, primaryEmail",
+    "iifInvoice and iifPaid (dollars this IIF year, or null), iifCollection: "+dv(O,"iifCollection"),
+    "data.contacts ("+data.contacts.length+" rows): company, companyId, status, name, email, title, phone, roles",
+    "data.touchpoints ("+data.touchpoints.length+" rows): company, date, type, topic, contact, sentiment, summary, by",
+    "data.deals ("+data.deals.length+" rows, membership sales and renewals): company, companyId, type, level, sold, start, end, price, aptify, notes",
+    "data.help: Member 360's Help sections [{title, text}]. Titles: "+data.help.map(x=>x.title).join("; "),
+    "data.today = "+data.today+", data.thisYear = "+data.thisYear].join("\n");}
+function askPrompt(q,data,prior){
+  return ["You answer questions from MISMO staff about Member 360, MISMO's member and prospect CRM.",
+  "You cannot see the records. Instead you write the body of a JavaScript function that receives one argument, data, and returns the answer. The page runs it on the real records.",
+  "Reply with ONE JSON object and nothing else (no code fences): {\"code\": \"...function body...\"}",
+  "The function must return an object: {text, title, columns, rows, filename}.",
+  "- text: the answer in plain language, 1 to 4 sentences, built in the code with the real numbers (for example 'There are ' + n + ' current members.'). Never guess numbers.",
+  "- columns and rows: when the answer is a list or a table, columns is an array of headers in Title Case and rows is an array of arrays in the same order. Add a Total row when it helps.",
+  "- title: a short Title Case name for the table. filename: a short .xlsx name when a spreadsheet makes sense or was asked for (always for lists and breakdowns).",
+  "- For questions about how to use Member 360, look through data.help and put the steps in text (no table).",
+  "Rules: plain JavaScript only (no async, no fetch, no DOM). Match text case-insensitively. 'Members' means status 'Current Member' unless the question says otherwise. Lender means memberType 'Lender'; non-lender means anything else. Sort lists sensibly. Format dollars as numbers in rows (no $) so Excel can add them.",
+  "",askSchema(data),"",
+  prior?("Your last code failed with: "+prior.err+"\nThe code was:\n"+prior.code+"\nFix it."):"",
+  "Question: "+q].join("\n");}
+async function askCall(prompt){
+  const r=await fetch(M360_R+"/ask",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+m3tok()},body:JSON.stringify({prompt,tier:"complex"})});
+  const j=await r.json().catch(()=>({}));if(!r.ok){const e=new Error(j.message||("Ask failed ("+r.status+")"));e.status=r.status;e.code=j.error;throw e;}return String(j.text||"");}
+function askParse(t){const a=t.indexOf("{"),b=t.lastIndexOf("}");if(a<0||b<a)throw new Error("No answer came back.");const j=JSON.parse(t.slice(a,b+1));if(!j.code)throw new Error("No calculation came back.");return j.code;}
+function askRun(code,data){const fn=new Function("data","window","document","fetch","XMLHttpRequest","localStorage","sessionStorage","globalThis","self","parent","top","opener",'"use strict";'+code);
+  const out=fn(data);if(!out||typeof out!=="object")throw new Error("The calculation returned nothing.");return out;}
+async function askProbe(){if(ASK.state)return ASK.state;
+  try{const r=await fetch(M360_R+"/ask",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+m3tok()},body:JSON.stringify({prompt:""})});
+    const j=await r.json().catch(()=>({}));ASK.state=(r.status===400&&j.error==="NO_PROMPT")?"ready":(j.error==="ASK_OFF"?"off":"down");}catch(e){ASK.state="down";}
+  askShowState();return ASK.state;}
+function askShowState(){const n=$("ask-note");if(!n)return;
+  n.textContent=ASK.state==="off"?"Ask isn't switched on for Member 360 yet. It uses the same Claude connection as Team HQ's Ask, which has to be turned on for Member 360 in the save relay's settings. Once it is, this box works with no other change."
+    :ASK.state==="down"?"Ask can't be reached right now. Try again in a minute.":"";
+  n.hidden=!n.textContent;const b=$("ask-go");if(b)b.disabled=ASK.state==="off";}
+async function askGo(){if(ASK.busy)return;const qi=$("ask-q"),q=String(qi.value||"").trim();if(!q)return;
+  const res=$("ask-res"),stt=$("ask-status");ASK.busy=true;$("ask-go").disabled=true;res.innerHTML="";stt.textContent="Working on it…";
+  try{if(ASK.state!=="ready"){ASK.state="";await askProbe();if(ASK.state!=="ready")throw new Error(ASK.state==="off"?"Ask isn't switched on for Member 360 yet.":"Ask can't be reached right now.");}
+    const data=askData();let code=await askCall(askPrompt(q,data)),out;code=askParse(code);
+    try{out=askRun(code,data);}catch(e){stt.textContent="Checking the calculation…";code=askParse(await askCall(askPrompt(q,data,{err:String(e.message||e),code})));out=askRun(code,data);}
+    ASK.last={q,out};askShow(out);stt.textContent="";}
+  catch(e){stt.textContent="";res.innerHTML="";res.appendChild(h("p",{class:"ask-err"},String(e.message||e)));}
+  finally{ASK.busy=false;$("ask-go").disabled=ASK.state==="off";}}
+function askShow(out){const res=$("ask-res");res.innerHTML="";
+  if(out.text)res.appendChild(h("p",{class:"ask-text"},String(out.text)));
+  const cols=Array.isArray(out.columns)?out.columns.map(String):null,rows=Array.isArray(out.rows)?out.rows:null;
+  if(cols&&rows&&rows.length){
+    const bar=h("div",{class:"ask-bar"},h("b",null,out.title||"Results"),h("span",null,rows.length+(rows.length===1?" row":" rows")));
+    const xb=h("button",{type:"button",class:"btn"},"Download Excel");xb.addEventListener("click",()=>askExcel(out));bar.appendChild(xb);res.appendChild(bar);
+    const num=cols.map((c,i)=>rows.slice(0,20).some(r=>typeof (Array.isArray(r)?r[i]:r[c])==="number"));
+    const t=h("table",{class:"ask-t"}),th=h("tr");cols.forEach((c,i)=>th.appendChild(h("th",{class:num[i]?"n":null},c)));t.appendChild(h("thead",null,th));const tb=h("tbody");
+    rows.slice(0,200).forEach(r=>{const tr=h("tr");(Array.isArray(r)?r:cols.map(c=>r[c])).forEach(v=>tr.appendChild(h("td",{class:typeof v==="number"?"n":null},v==null?"":(typeof v==="number"?v.toLocaleString():String(v)))));tb.appendChild(tr);});
+    t.appendChild(tb);res.appendChild(h("div",{class:"ask-tw"},t));
+    if(rows.length>200)res.appendChild(h("p",{class:"hint"},"Showing the first 200 rows. The Excel file has all "+rows.length+"."));}
+  else if(out.filename&&cols){const xb=h("button",{type:"button",class:"btn"},"Download Excel");xb.addEventListener("click",()=>askExcel(out));res.appendChild(xb);}}
+function askExcel(out){loadXlsx().then(X=>{const cols=out.columns.map(String),rows=out.rows.map(r=>Array.isArray(r)?r:cols.map(c=>r[c]));
+  const ws=X.utils.aoa_to_sheet([cols].concat(rows));ws["!cols"]=cols.map((c,i)=>({wch:Math.min(48,Math.max(String(c).length,...rows.slice(0,300).map(r=>String(r[i]==null?"":r[i]).length))+2)}));
+  const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,String(out.title||"Results").replace(/[\\/?*[\]:]/g," ").slice(0,31));
+  let fn=String(out.filename||out.title||"Member 360 Results").replace(/[\\/:*?"<>|]/g," ").trim();if(!/\.xlsx$/i.test(fn))fn+=".xlsx";X.writeFile(wb,fn);}).catch(e=>toast("The Excel file could not be made: "+(e.message||e)));}
+function askInit(){const v=$("v-help");if(!v||$("ask-card"))return;const head=v.querySelector(".vhead");
+  const card=h("section",{class:"ask-card",id:"ask-card"});
+  card.innerHTML='<div class="ask-h"><h2>Ask Member 360</h2><span>Any question about members, prospects, contacts, touchpoints, sales or how Member 360 works. Lists come with an Excel download.</span></div>'
+   +'<div class="ask-row"><textarea id="ask-q" rows="2" placeholder="For example: members by industry sector, split into lender and non-lender, as an Excel file"></textarea><button type="button" class="btn" id="ask-go">Ask</button></div>'
+   +'<div class="ask-ex" id="ask-ex"></div><p class="ask-note" id="ask-note" hidden></p><p class="ask-status" id="ask-status" aria-live="polite"></p><div id="ask-res"></div>';
+  if(head&&head.nextSibling)v.insertBefore(card,head.nextSibling);else v.appendChild(card);
+  ["Members by industry sector, lender and non-lender, as an Excel file","Prospects with no owner","Champion members and their primary contacts","Touchpoints logged this month by person","How do I log an email to the right company?"].forEach(t=>{const b=h("button",{type:"button",class:"ask-chip"},t);b.addEventListener("click",()=>{$("ask-q").value=t;askGo();});$("ask-ex").appendChild(b);});
+  $("ask-go").addEventListener("click",askGo);$("ask-q").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();askGo();}});
+  const st=document.createElement("style");st.textContent=
+   '#ask-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin:0 0 18px}'
+  +'#ask-card .ask-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:0 0 10px}#ask-card .ask-h h2{margin:0;font-size:17px}#ask-card .ask-h span{color:var(--ink-3);font-size:12.5px}'
+  +'#ask-card .ask-row{display:flex;gap:8px;align-items:stretch}#ask-card textarea{flex:1;min-width:0;font:inherit;font-size:13.5px;border:1px solid var(--border-strong);border-radius:6px;padding:8px 10px;resize:vertical;background:var(--surface);color:var(--ink)}'
+  +'#ask-card .ask-ex{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}#ask-card .ask-chip{border:1px solid var(--border);background:var(--chip);color:var(--ink-2);border-radius:4px;padding:4px 9px;font:inherit;font-size:12px;cursor:pointer}'
+  +'#ask-card .ask-chip:hover{border-color:var(--sky)}#ask-card .ask-note{margin:10px 0 0;padding:8px 10px;border-radius:6px;background:var(--warn-soft);color:var(--warn);font-size:12.5px}'
+  +'#ask-card .ask-status{margin:10px 0 0;color:var(--ink-3);font-size:12.5px}#ask-card .ask-status:empty{display:none}'
+  +'#ask-card .ask-text{font-size:14px;line-height:1.55;margin:12px 0 8px}#ask-card .ask-err{color:var(--bad);font-size:13px;margin:12px 0 0}'
+  +'#ask-card .ask-bar{display:flex;align-items:center;gap:10px;margin:10px 0 8px}#ask-card .ask-bar span{color:var(--ink-3);font-size:12px;flex:1}'
+  +'#ask-card .ask-tw{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:6px}'
+  +'#ask-card .ask-t{border-collapse:collapse;width:100%;font-size:12.5px}#ask-card .ask-t th{position:sticky;top:0;background:var(--surface-3);text-align:left;padding:6px 9px;font-weight:700}'
+  +'#ask-card .ask-t td{padding:5px 9px;border-top:1px solid var(--line)}#ask-card .ask-t td.n,#ask-card .ask-t th.n{text-align:right;font-variant-numeric:tabular-nums}';
+  document.head.appendChild(st);}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",askInit);else askInit();
+show=(function(orig){return function(tab){orig(tab);if(tab==="help"){askInit();askProbe();}};})(show);
+
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   document.querySelectorAll("main .view").forEach(v=>{v.hidden=v.id!=="v-"+tab;});
