@@ -8985,7 +8985,7 @@ async function deskTermSync(){if(!db||canWrite===false||!ORGS.length)return;try{
    resources.mismo.org/champions/champions.json, which the website's champions block reads, so the website updates on its own. ---------- */
 async function champFeedSync(){if(!db||canWrite===false||!ORGS.length)return;try{
   const lvl=s=>{s=String(s||"");return /chair/i.test(s)?"Chair":/executive/i.test(s)?"Executive":/associate/i.test(s)?"Associate":"";};
-  const items=ORGS.filter(o=>o.life==="Active"&&!(ov(o)||{}).mergedInto&&!isSub(o)&&(lvl(o.level)||(o.type==="Lender"&&/corporate/i.test(o.level||"")&&(ov(o)||{}).logo))).map(o=>{const v=ov(o)||{};
+  const items=ORGS.filter(o=>o.life==="Active"&&!(ov(o)||{}).mergedInto&&!isSub(o)&&(lvl(o.level)||(o.type==="Lender"&&/corporate/i.test(o.level||"")&&(ov(o)||{}).logo&&!/\/fetch-/.test(((ov(o)||{}).logo||{}).path||"")))).map(o=>{const v=ov(o)||{};
     return {name:o.name,level:lvl(o.level)||"Corporate",type:o.type==="Lender"?"Lender":"Industry",website:siteOf(o),logo:v.logo&&v.logo.path?{path:v.logo.path,type:v.logo.type||""}:null};}).sort((a,b)=>a.name.localeCompare(b.name));
   const g=await fetch(M360_R+"/data/champions",{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});const j=g.ok?await g.json().catch(()=>({})):{};
   if(JSON.stringify(((j&&j.data)||{}).items||[])===JSON.stringify(items))return;
