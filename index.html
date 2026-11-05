@@ -4525,7 +4525,7 @@ function actLabel(c,kind,d,p,isNew){
   if(c==="prospects")return del?"Deleted a prospect":"Edited a prospect";
   if(c==="orgs")return "Updated company details";
   if(c==="sends")return del?"Cleared a sent email":"Recorded a sent email";
-  if(c==="outbox")return del?"Took emails out of the queue":(isNew?(d.step==="square"?"Recorded a Square payment":d.step==="mm-square"?"Square payment set-up email (MISMO Money)":"Sent Member 360 emails"):"Updated queued emails");
+  if(c==="outbox")return del?"Took emails out of the queue":(isNew?((d.step==="square"||d.step==="m360-square")?"Recorded a Square payment":d.step==="mm-square"?"Square payment set-up email (MISMO Money)":"Sent Member 360 emails"):"Updated queued emails");
   if(c==="templates")return del?"Deleted a playbook email":"Saved a playbook email";
   if(c==="settings")return "Changed settings";
   if(c==="sync")return "Changed company name matching";
@@ -6834,7 +6834,7 @@ function openSquarePay(o){
         cta:["https://resources.mismo.org/membership-desk/#todo/"+encodeURIComponent(deskSqId(rec)),"Open in the Membership Desk"],
         foot:'Sent by Member 360. Aptify remains the record.'});
       const nowId="sq"+Date.now().toString(36)+sender.key.slice(0,2);
-      await db.doc("outbox/"+nowId).set({step:"square",stepName:"Square Special Payment",thru:"",test:false,
+      await db.doc("outbox/"+nowId).set({step:"m360-square",stepName:"Square Special Payment (Member 360)",thru:"",test:false,
         from:sender.email,fromKey:sender.key,fromName:sender.name,html:html,benefits:{},
         recipients:[{to:to,name:"",org:rec.k,subject:"Set Up a MISMO Member: "+rec.name+" ("+sp.value+" Special)",
           fn:"",ln:"",co:escH(rec.name),lvl:"",type:"",ends:"",bk:"none"}],
