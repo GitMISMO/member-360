@@ -10173,6 +10173,56 @@ function noOrphans(){document.querySelectorAll(".hl-say, .vsub, .psub, .hint, .l
 {let fq=0;const fitSoon=()=>{if(fq)return;fq=requestAnimationFrame(()=>{fq=0;fitNums();noOrphans();});};
   new MutationObserver(fitSoon).observe(document.getElementById("main"),{childList:true,subtree:true,characterData:true});
   window.addEventListener("resize",fitSoon);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitSoon);}
+/* ---------- Everything the desk needs to set a new member up in Aptify (Jonna, Nov 5, 2026) ----------
+   Each set-up Member 360 sends the Membership Desk carries the company's details (legal name, doing business as,
+   address, phone, website, member type, sector, parent company), its contacts, how it paid, and the membership dates
+   by MISMO Money's start-month rule, plus a list of anything still missing so the desk knows what to ask for. */
+function deskSetupFor(x,kind){
+  const nz=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
+  const o=(x.cid&&ORGS.find(z=>String(z.cid)===String(x.cid)))||ORGS.find(z=>nz(z.name)===nz(x.name))||null;
+  const v=o?(ov(o)||{}):{};
+  const apps=M360_APPS||[];const app=apps.find(a=>a.id===x.app)||(v.app&&apps.find(a=>a.id===v.app.id))||null;
+  const A=(app&&app.addr)||{},B=(app&&app.billAddr)||{};
+  const line=(a)=>[a.street,a.suite].filter(Boolean).join(", ");
+  const par=v.parent?ORGS.find(z=>z.k===v.parent):null;
+  let payer=null;try{payer=typeof payerOf==="function"&&o?payerOf(o):null;}catch(e){}
+  const cityState=String((o&&o.addr)||"");
+  const address=app&&(A.street||A.city)?{street:line(A),city:A.city||"",state:A.state||"",zip:A.zip||"",country:A.country||""}:{street:"",city:cityState.split(",")[0].trim(),state:((cityState.match(/,\s*([A-Za-z]{2})\b/)||[])[1]||""),zip:"",country:""};
+  const billing=app&&(B.street||B.city)?{street:line(B),city:B.city||"",state:B.state||"",zip:B.zip||"",country:B.country||"",attn:B.attn||""}:null;
+  /* contacts: the application's when there is one, otherwise Member 360's */
+  const contacts=[];const seen={};
+  const add=(role,p)=>{if(!p||!(p.name||p.email))return;const k=String(p.email||p.name).toLowerCase()+"|"+role;if(seen[k])return;seen[k]=1;contacts.push({role,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||""});};
+  if(app){const C=app.contacts||{};[["primary","Primary"],["alternate","Alternate"],["billing","Billing"],["marketing","Marketing"]].forEach(r=>add(r[1],C[r[0]]));add("Signed the Application",app.signer);}
+  if(o)(o.people||[]).forEach(p=>add((p.roles||[]).filter(r=>!/^IIF /.test(r)).join(", ")||"Contact",p));
+  const parentContacts=(!contacts.length&&par)?(par.people||[]).filter(p=>(p.roles||[]).some(r=>/primary|billing/i.test(r))).map(p=>({role:(p.roles||[]).join(", ")+" at "+par.name,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||""})):[];
+  /* how it was paid */
+  let payment=null;
+  if(kind==="free")payment={how:"Complimentary: no invoice"+(par?" (a subsidiary of "+par.name+")":"")};
+  else if(kind==="iif"&&o){let n=0;try{n=Math.round(lendPaid(o,IY));}catch(e){}payment={how:"Innovation Investment Fund (IIF)",amount:n,date:x.paid||""};}
+  else{const d=o?DEALS.filter(z=>z.org===o.k&&z.type==="New Member"&&!z.archived).sort((a,b)=>String(b.sold||"").localeCompare(String(a.sold||"")))[0]:null;let p=null;try{p=d?dealPaid(d):null;}catch(e){}
+    payment={how:/square/i.test(x.special||"")?"Square":(d&&d.terms==="Dues Deal"?"Dues deal":(app?"Membership application":"Membership payment")),amount:p?p.n:(x.price||0),date:p?p.d:(x.paid||""),order:p?(p.o||""):(d?d.order||"":""),notes:d?d.notes||"":""};}
+  if(payer)payment=Object.assign(payment||{},{paidBy:payer.name+(payer.cid?" (Aptify ID "+payer.cid+")":"")});
+  /* the membership dates by MISMO Money's rule: IIF starts the month paid; others by the 15th rule; a subsidiary runs to its parent's end */
+  let start=x.start||"",end=x.end||"";
+  if(!start){const from=String(x.paid||x.sold||(o&&o.created)||String(v.updatedAt||"").slice(0,10)||TODAY).slice(0,10);
+    start=(kind==="iif"||(o&&o.type==="Lender"&&kind!=="free"))?from.slice(0,7)+"-01":levelSetStart(from);}
+  if(!end){end=(kind==="free"&&par&&par.thru&&String(par.thru)>=start)?String(par.thru).slice(0,10):start.slice(0,4)+"-12-31";}
+  const website=x.website||(o?siteOf(o):"")||(app&&app.website)||"";
+  const phone=(app&&app.mainPhone)||"";
+  let sector="";try{sector=o?sectorLab(sectorOf(o)):"";}catch(e){}if(!sector&&app)sector=app.sector==="Other"?(app.sectorOther||"Other"):(app.sector||"");
+  const missing=[];
+  if(!address.street)missing.push("street address and ZIP");if(!phone)missing.push("main phone");if(!website)missing.push("website");
+  if(!contacts.some(c=>/primary/i.test(c.role)&&c.email))missing.push("a primary contact with an email");
+  if(kind!=="free"&&!contacts.some(c=>/billing/i.test(c.role)&&c.email))missing.push("a billing contact");
+  if(!(o&&o.type))missing.push("Lender or Non-Lender");if(!sector)missing.push("industry sector");
+  return {key:o?o.k:"",legal:(o&&o.name)||x.name,dba:(app&&app.dba)||v.dba||"",aptifyId:x.cid||(o&&o.cid)||"",
+    parent:par?{name:par.name,cid:par.cid||""}:null,memberType:(o&&o.type)||"",sector,market:(o&&o.market)||"",creditUnion:!!(o&&o.cu),
+    address,billing,phone,website,contacts,parentContacts,payment,start,end,
+    application:app?{id:app.id,submitted:String(app.submittedAt||"").slice(0,10),notes:app.notes||"",po:app.po||"",focus:app.focus||"",subsidiaries:(app.subsidiaries||[]).map(s=>typeof s==="string"?s:(s.name||s.company||"")).filter(Boolean)}:null,
+    missing};}
+{const _dX=deskTodos;deskTodos=function(){const r=_dX.apply(this,arguments);
+  try{const t=r.todo||{};[["members","members"],["free","free"],["iif","iif"]].forEach(([g,kind])=>{(t[g]||[]).forEach(x=>{try{const s=deskSetupFor(x,kind);x.setup=s;if(!x.start)x.start=s.start;if(!x.end)x.end=s.end;if(!x.website&&s.website)x.website=s.website;}catch(e){console.error("desk set-up",x&&x.name,e);}});});}catch(e){console.error("desk set-up",e);}
+  return r;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
