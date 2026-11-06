@@ -9032,7 +9032,7 @@ function lrInit(){
     after.parentNode.insertBefore(b,after);}
   const main=document.querySelector("main");if(!main)return;
   const sec=document.createElement("section");sec.className="view";sec.id="v-logos";sec.hidden=true;
-  sec.innerHTML='<div class="vhead"><div><h1>Logo Review</h1><div class="vsub">Logos the Logo Finder found on members\' own websites. Member 360 has picked the likeliest one for each company: check the page, click a different one or choose None of These where it guessed wrong, then save the page.</div></div>'
+  sec.innerHTML='<div class="vhead"><div><h1>Logo Review</h1><div class="vsub">Logos the Logo Finder found on members\' own websites. Member 360 has picked the likeliest one for each company: check the page, click a different one or choose None of These where it guessed wrong, then save each company, or the whole page at once.</div></div>'
     +'<div class="vright"><button type="button" class="btn" id="lr-save">Save the Logos on This Page</button></div></div>'
     +'<div class="lr-bar"><div class="lr-tabs" id="lr-tabs"></div><div class="lr-pg" id="lr-pg"></div></div>'
     +'<div class="lr-grid" id="lr-grid"><p class="lr-empty">Loading…</p></div>'
@@ -9065,6 +9065,7 @@ function lrInit(){
   +'#v-logos .lr-x{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--ink-3)}'
   +'#v-logos .lr-x button{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);border-radius:4px;padding:4px 9px;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer}'
   +'#v-logos .lr-x button[aria-pressed="true"]{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}'
+  +'#v-logos .lr-x .lr-btns{display:flex;gap:6px}#v-logos .lr-x button.lr-one{background:var(--navy);border-color:var(--navy);color:#fff}#v-logos .lr-x button.lr-one:disabled{opacity:.6}'
   +'#v-logos .lr-tag{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10.5px;font-weight:700;background:var(--warn-soft);color:var(--warn)}'
   +'#v-logos .lr-empty{color:var(--ink-3);font-size:13px;grid-column:1/-1;padding:30px 0;text-align:center}'
   +'#v-logos .lr-nolist{grid-column:1/-1;columns:3 260px;column-gap:18px;font-size:13px}'
@@ -9101,7 +9102,7 @@ async function renderLogoReview(){
     return '<div class="lr-card'+(LR.none[it.key]?' isnone':'')+'" data-k="'+lrEsc(it.key)+'"><div class="lr-h"><a class="lr-n" href="#co/'+lrEsc(it.key)+'" data-lro="'+lrEsc(it.key)+'" title="'+lrEsc(it.name)+'">'+lrEsc(it.name)+'</a>'
       +'<a class="lr-d'+(domOk?'':' warn')+'" href="https://'+lrEsc(it.domain)+'" target="_blank" rel="noopener" title="'+(domOk?'Website':'This website came from a contact\'s email and may belong to another company')+'">'+lrEsc(it.domain)+'</a></div>'
       +'<div class="lr-c">'+(it.candidates||[]).map((c,i)=>'<button type="button" data-lrc="'+i+'" aria-pressed="false" title="'+lrEsc(c.src||"")+'"><img alt="" data-path="'+lrEsc(c.path)+'"></button>').join("")+'</div>'
-      +'<div class="lr-x"><span class="lr-why"></span><button type="button" data-lrnone="1" aria-pressed="'+(!!LR.none[it.key])+'">None of These</button></div></div>';}).join("");
+      +'<div class="lr-x"><span class="lr-why"></span><span class="lr-btns"><button type="button" data-lrnone="1" aria-pressed="'+(!!LR.none[it.key])+'">None of These</button><button type="button" class="lr-one" data-lrsave="1">Save</button></span></div></div>';}).join("");
   rows.forEach(it=>{const card=grid.querySelector('.lr-card[data-k="'+CSS.escape(it.key)+'"]');if(!card)return;
     const imgs=[...card.querySelectorAll("img[data-path]")];let left=imgs.length;
     imgs.forEach((im,i)=>{const c=it.candidates[i];logoUrl({path:c.path}).then(u=>{if(!u){im.parentElement.style.display="none";}else{im.src=u;}
@@ -9123,7 +9124,16 @@ function lrClick(e){const t=e.target.closest("button,a");if(!t)return;
     card.querySelectorAll("[data-lrc]").forEach(b=>b.setAttribute("aria-pressed",String(b===t)));card.querySelector("[data-lrnone]").setAttribute("aria-pressed","false");return;}
   if(card&&t.dataset.lrnone){const k=card.dataset.k;LR.none[k]=!LR.none[k];if(!LR.none[k])delete LR.none[k];card.classList.toggle("isnone",!!LR.none[k]);
     t.setAttribute("aria-pressed",String(!!LR.none[k]));card.querySelectorAll("[data-lrc]").forEach(b=>b.setAttribute("aria-pressed",String(!LR.none[k]&&+b.dataset.lrc===LR.pick[k])));return;}
+  if(card&&t.dataset.lrsave){lrSaveOne(card,t);return;}
   if(t.id==="lr-save"||t.id==="lr-save2")lrSave();}
+/* one company at a time: its own Save button (Jonna, Nov 5, 2026) */
+async function lrSaveOne(card,btn){if(typeof canWrite!=="undefined"&&canWrite===false){toast("You can look, but saving needs edit access.");return;}
+  const k=card.dataset.k,it=(LR.data||[]).find(x=>x.key===k);if(!it)return;const at=new Date().toISOString();
+  if(LR.none[k]){btn.disabled=true;await saveOv(k,{logoReview:{none:true,at,by:ME||""}});toast(it.name+": marked None of These.");}
+  else{const c=it.candidates[LR.pick[k]];if(!c){toast("Click the logo you want first.");return;}btn.disabled=true;
+    await saveOv(k,{logo:{path:c.path,name:c.path.split("/").pop(),type:c.type||"",at,by:ME||"",src:"Logo Finder"},logoReview:{picked:c.path,at,by:ME||""}});toast("Logo saved for "+it.name+".");
+    try{if(typeof mmFeedSync==="function")mmFeedSync();}catch(e){}}
+  card.classList.add("saved");btn.textContent="Saved";setTimeout(()=>{card.style.transition="opacity .3s";card.style.opacity="0";setTimeout(renderLogoReview,320);},700);}
 async function lrSave(){if(LR.busy)return;if(typeof canWrite!=="undefined"&&canWrite===false){toast("You can look, but saving needs edit access.");return;}
   const cards=[...document.querySelectorAll("#lr-grid .lr-card")];if(!cards.length)return;LR.busy=true;
   const at=new Date().toISOString();let n=0,none=0;
