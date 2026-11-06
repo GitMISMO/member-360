@@ -8960,7 +8960,7 @@ async function m360AppRun(){if(!db||canWrite===false||!ORGS.length)return;const 
    to fill the New Member Welcome in MISMO Matters and the monthly LinkedIn new member announcement request. ---------- */
 async function mmFeedSync(){if(!db||canWrite===false||!ORGS.length)return;try{
   const cut=addDays(TODAY,-150),seen={},items=[];
-  memberJoins().filter(j=>j&&j.o&&j.d>=cut).forEach(j=>{const o=j.o,v=ov(o)||{};if(seen[o.k]||!v.logo||!v.logo.path)return;seen[o.k]=1;let ch=false;try{ch=!!isChamp(o);}catch(e){ch=/associate|executive|chair/i.test(j.lv||o.level||"");}
+  memberJoins().filter(j=>j&&j.o&&j.d>=cut).forEach(j=>{const o=j.o,v=ov(o)||{};/* Sole memberships aren't welcomed in MISMO Matters (Jonna, Nov 6, 2026) */if(seen[o.k]||!v.logo||!v.logo.path||/sole/i.test(j.lv||o.level||""))return;seen[o.k]=1;let ch=false;try{ch=!!isChamp(o);}catch(e){ch=/associate|executive|chair/i.test(j.lv||o.level||"");}
     items.push({k:o.k,name:o.name,cid:String(o.cid||""),level:j.lv||o.level||"",champion:ch,type:o.type||"",joined:j.d,website:siteOf(o),logo:{path:v.logo.path,type:v.logo.type||"",name:v.logo.name||""}});});
   items.sort((a,b)=>String(a.joined).localeCompare(String(b.joined))||a.name.localeCompare(b.name));
   const g=await fetch(M360_R+"/data/mm-newmembers",{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});const j=g.ok?await g.json().catch(()=>({})):{};
