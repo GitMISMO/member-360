@@ -8638,7 +8638,8 @@ function memberJoins(){
       if(first&&!T.some(t=>t.s<first.slice(0,4)+"-01-01"))ev.push({o,d:first,src:"IIF",kind:"iif",lv:o.level||"Corporate"});}});
   Object.values(sqm).forEach(m=>{const d=((m.payments||[]).map(p=>p.on).filter(Boolean).sort())[0];if(!d)return;
     const o=byCid[String(m.companyId||"")]||ORGS.find(x=>x.name===m.company)||null;ev.push({o,name:m.company,d,src:"Square"+(m.special?" "+m.special:""),kind:"sq",lv:(m.special?m.special+" ":"")+(m.level||"Corporate")});});
-  DEALS.filter(x=>x.type==="New Member"&&!x.archived&&x.sold).forEach(x=>{const o=BY[x.org]||null;ev.push({o,name:x.orgName,d:x.sold,src:"Deal",kind:o&&o.type==="Lender"?"sq":"nl",lv:x.level||""});});
+  /* a lender's dues deal is paid through the IIF, not a Square special (MLD Mortgage dba The Money Store, Jonna, Nov 6, 2026) */
+  DEALS.filter(x=>x.type==="New Member"&&!x.archived&&x.sold).forEach(x=>{const o=BY[x.org]||null,dd=x.terms==="Dues Deal";ev.push({o,name:x.orgName,d:x.sold,src:dd?"Dues Deal":"Deal",kind:o&&o.type==="Lender"?(dd?"iif":"sq"):"nl",lv:x.level||""});});
   const grp={};ev.sort((a,b)=>a.d.localeCompare(b.d)).forEach(e=>{const k=e.o?e.o.k:"n:"+String(e.name||"").toLowerCase();const g=(grp[k]=grp[k]||[]),last=g[g.length-1];
     if(last&&Math.abs(day(e.d)-day(last.d))<=120){if(!last.srcs.includes(e.src))last.srcs.push(e.src);if(e.kind==="sq")last.kind="sq";return;}
     g.push({o:e.o,k:e.o?e.o.k:"",orgName:e.o?e.o.name:e.name,d:e.d,kind:e.kind,lv:e.lv,srcs:[e.src]});});
