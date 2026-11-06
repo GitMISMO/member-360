@@ -6862,10 +6862,14 @@ function termsOf(d){return d.terms||"Dues Deal";}
 function monthsIn(a,b){if(!a||!b||b<a)return 0;const [y1,m1]=a.split("-").map(Number),[y2,m2]=b.split("-").map(Number);return (y2-y1)*12+(m2-m1)+1;}
 /* the level-set rule: committed on or before the 15th starts that month, after the 15th starts the next month */
 function levelSetStart(d){const [y,m,dd]=d.split("-").map(Number);const dt=dd<=15?new Date(Date.UTC(y,m-1,1)):new Date(Date.UTC(y,m,1));return dt.toISOString().slice(0,10);}
-/* standard terms: a renewal covers the renewal year; a new membership runs to Dec 31 of its first year. A dues deal adds the following year. */
-function dealDefaults(type,terms,sold){const extra=terms==="Dues Deal"?1:0;
+/* standard terms: a renewal covers the renewal year; a new membership runs to Dec 31 of its first year. A dues deal adds the following year.
+   Start month, the same as MISMO Money (Jonna, Nov 5, 2026): an IIF lender's new membership starts the month it is paid;
+   a non-lender's follows the 15th rule (paid 1st to 15th starts that month, 16th or later starts the next month). */
+function iifStart(d){return String(d||TODAY).slice(0,7)+"-01";}
+function joinStart(o,d){return o&&o.type==="Lender"?iifStart(d):levelSetStart(d);}
+function dealDefaults(type,terms,sold,o){const extra=terms==="Dues Deal"?1:0;
   if(type==="Renewal"){const y=Number(RY);return {start:y+"-01-01",end:(y+extra)+"-12-31"};}
-  const st=levelSetStart(sold);return {start:st,end:(Number(st.slice(0,4))+extra)+"-12-31"};}
+  const st=type==="New Member"?joinStart(o,sold):levelSetStart(sold);return {start:st,end:(Number(st.slice(0,4))+extra)+"-12-31"};}
 function dealsOf(o){return DEALS.filter(d=>d.org===o.k).sort((a,b)=>(b.sold||"").localeCompare(a.sold||""));}
 function dealLine(d){const m=monthsIn(d.start,d.end);return [d.level,fmt(d.start)+" to "+fmt(d.end)+" ("+m+" months)",money(d.price||0)].join(" · ");}
 /* has the Financial System received the membership payment behind a commitment? */
@@ -6876,7 +6880,7 @@ function dealPaid(d){const o=BY[d.org];if(!o)return null;const from=addDays(d.st
 async function autoCommit(o,type){if(!db||!canWrite)return;
   const season=type==="Renewal"?RY:TODAY.slice(0,4);
   if(DEALS.some(d=>d.org===o.k&&d.type===type&&(d.start||"").slice(0,4)===season))return;
-  const f=dealDefaults(type,"Standard",TODAY),lv=o.level||"Corporate";
+  const f=dealDefaults(type,"Standard",TODAY,o),lv=o.level||"Corporate";
   const last=fsItems(o).filter(i=>i.c==="Membership"&&i.n>0).sort((a,b)=>b.d.localeCompare(a.d))[0];
   const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:lv,sold:TODAY,start:f.start,end:f.end,price:listPrice(lv)||(last?last.n:0),order:"",by:owner(o)||"",notes:"",ap:"Needs AP Update",auto:true,at:new Date().toISOString(),createdBy:myName()||""};
   try{await db.collection("deals").add(doc);toast(type==="Renewal"?"Recorded as a renewal under Sales and Renewals. Check the amount there.":"Added to the Monthly Report as a committed new member. Check the amount under Sales and Renewals.");}catch(e){onWriteErr(e);}}
@@ -6900,6 +6904,8 @@ async function commitFromPayment(o,i){
      before the term being bought means they were already a member */
   const j=(joinedOf(o)||"").slice(0,10);
   const type=(!j||j>=start)?"New Member":"Renewal";
+  /* a new membership with no service dates from MISMO Money starts by the start-month rule (IIF: the month paid; others: the 15th rule) */
+  if(type==="New Member"&&!i.s){start=joinStart(o,sold);end=start.slice(0,4)+"-12-31";}
   const doc={org:o.k,orgName:o.name,cid:o.cid||"",type,terms:"Standard",level:o.level||"Corporate",
     sold,start,end,price:Math.round((i.n||0)*100)/100,order:i.o||"",
     by:owner(o)||"",notes:"Recorded from the "+fmt(sold)+" payment in the Financial System.",
@@ -6917,7 +6923,7 @@ function dealForm(o,d,box){
   const ty=select(DEAL_TYPES,d.type||(o.life==="Active"?"Renewal":"New Member"),{id:id("type"),disabled:dis});
   const tm=select(DEAL_TERMS,d.id?termsOf(d):"Standard",{id:id("terms"),disabled:dis});
   const lv=select(DEAL_LEVELS,d.level||(DEAL_LEVELS.includes(o.level)?o.level:"Corporate"),{id:id("level"),disabled:dis});
-  const df=dealDefaults(ty.value,tm.value,sold.value);
+  const df=dealDefaults(ty.value,tm.value,sold.value,o);
   const st=h("input",{type:"date",id:id("start"),value:d.start||df.start,disabled:dis}),en=h("input",{type:"date",id:id("end"),value:d.end||df.end,disabled:dis});
   const pr=h("input",{type:"number",id:id("price"),min:"0",step:"0.01",value:d.price!=null?d.price:(listPrice(lv.value)||""),placeholder:"Total for the whole term",disabled:dis});
   const ord=h("input",{type:"text",id:id("order"),value:d.order||"",placeholder:"If Aptify has it",disabled:dis});
@@ -6928,7 +6934,7 @@ function dealForm(o,d,box){
   const upd=()=>{const m=monthsIn(st.value,en.value),p=Number(pr.value||0),lp=listPrice(lv.value);
     calc.textContent=m?(m+" months"+(p?" · "+money(Math.round(p/m*100)/100)+" a month":"")+(lp?" · list price "+money(lp)+" a year"+(m!==12&&p?" ("+money(Math.round(lp*m/12))+" for "+m+" months)":""):"")):"The end date needs to be after the start date.";};
   [st,en,pr,lv].forEach(x=>x.addEventListener("input",upd));
-  const reDefault=()=>{if(!isNew)return;const f=dealDefaults(ty.value,tm.value,sold.value);st.value=f.start;en.value=f.end;if(!pr.dataset.touched)pr.value=listPrice(lv.value)||"";upd();};
+  const reDefault=()=>{if(!isNew)return;const f=dealDefaults(ty.value,tm.value,sold.value,o);st.value=f.start;en.value=f.end;if(!pr.dataset.touched)pr.value=listPrice(lv.value)||"";upd();};
   pr.addEventListener("input",()=>{pr.dataset.touched="1";});
   ty.addEventListener("change",reDefault);tm.addEventListener("change",reDefault);sold.addEventListener("change",reDefault);lv.addEventListener("change",reDefault);upd();
   const paidNow=d.id?dealPaid(d):null;
