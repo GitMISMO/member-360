@@ -10223,6 +10223,33 @@ function deskSetupFor(x,kind){
 {const _dX=deskTodos;deskTodos=function(){const r=_dX.apply(this,arguments);
   try{const t=r.todo||{};[["members","members"],["free","free"],["iif","iif"]].forEach(([g,kind])=>{(t[g]||[]).forEach(x=>{try{const s=deskSetupFor(x,kind);x.setup=s;if(!x.start)x.start=s.start;if(!x.end)x.end=s.end;if(!x.website&&s.website)x.website=s.website;}catch(e){console.error("desk set-up",x&&x.name,e);}});});}catch(e){console.error("desk set-up",e);}
   return r;};}
+/* ---------- Details the membership team adds on the desk come back here (Jonna, Nov 5, 2026) ----------
+   The desk's Still Needed form saves to membership-desk/data/setupinfo. Member 360 reads it and adds each company's
+   address, phone, website, member type, sector and contacts, once per save (ov.deskInfoAt remembers which). */
+async function deskInfoSync(){if(!db||canWrite===false||!ORGS.length)return;
+  let d=null;try{const r=await fetch(DESK_R+"setupinfo",{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});if(!r.ok)return;const j=await r.json();d=(j&&(j.data||j.content))||null;}catch(e){return;}
+  const items=(d&&d.items)||{};let n=0;
+  for(const id of Object.keys(items)){const it=items[id]||{};const o=(it.key&&ORGS.find(z=>z.k===it.key))||(it.cid&&ORGS.find(z=>String(z.cid)===String(it.cid)))||null;
+    if(!o||!it.at)continue;const v=ov(o)||{};if(v.deskInfoAt&&v.deskInfoAt>=it.at)continue;
+    const patch={deskInfoAt:it.at};
+    if(it.address||it.phone)patch.deskInfo=Object.assign({},v.deskInfo||{},it.address?{address:it.address}:{},it.phone?{phone:it.phone}:{},{by:it.by||"",at:it.at});
+    if(it.website&&!siteOf(o))patch.website=it.website;
+    if(it.memberType&&!o.type){patch.type=it.memberType;o.type=it.memberType;}
+    if(it.sector&&!(v.sector5)){const code=(SECTORS.find(x=>x===it.sector||sectorLab(x)===it.sector))||it.sector;patch.sector5=code;patch.sector5By=(it.by||"Membership Desk")+" (Membership Desk)";}
+    const c=contactsOv(o);let addC=false;
+    [["primary","Primary"],["billing","Billing"]].forEach(([k,role])=>{const p=it[k];if(!p||!(p.email||p.name))return;
+      const em=String(p.email||"").toLowerCase();if(em&&((o.people||[]).some(z=>String(z.email||"").toLowerCase()===em)||c.added.some(z=>String(z.email||"").toLowerCase()===em)))return;
+      c.added.push({id:"desk"+Date.now().toString(36)+k,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||"",roles:[role],by:it.by||"Membership Desk",src:"Membership Desk",at:it.at});addC=true;});
+    if(addC)patch.contacts=c;
+    try{await saveOv(o.k,patch);n++;}catch(e){console.error("desk info",o.name,e);}}
+  if(n){try{if(typeof rebuildOrgs==="function")rebuildOrgs();}catch(e){}}}
+{let tries=0;const go=()=>{if(ORGS.length&&db&&canWrite!==false){deskInfoSync().catch(e=>console.error("desk info",e));}else if(++tries<40)setTimeout(go,5000);};setTimeout(go,30000);}
+/* the desk's address and phone count as known on the next set-up */
+{const _dsf=deskSetupFor;deskSetupFor=function(x,kind){const s=_dsf.apply(this,arguments);try{
+  const o=(s.key&&ORGS.find(z=>z.k===s.key))||null;const di=o?((ov(o)||{}).deskInfo||null):null;if(!di)return s;
+  if(di.address&&di.address.street&&!(s.address&&s.address.street))s.address=Object.assign({},s.address||{},di.address);
+  if(di.phone&&!s.phone)s.phone=di.phone;
+  s.missing=(s.missing||[]).filter(m=>!(/street/.test(m)&&s.address&&s.address.street)&&!(/phone/.test(m)&&s.phone));}catch(e){}return s;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
