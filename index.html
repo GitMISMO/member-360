@@ -8755,7 +8755,7 @@ let DESK_INV=[];
 function deskSubTodo(){return ORGS.filter(o=>isSub(o)&&o.life!=="Active"&&!(ov(o)||{}).mergedInto).map(o=>({name:o.name,cid:String(o.cid||""),level:"Corporate",price:0,sold:"",paid:"",start:"",end:"",special:"Subsidiary of "+subParent(o).name})).sort((a,b)=>a.name.localeCompare(b.name));}
 function deskPip(){return renewalGroup().filter(o=>["Invoiced","Payment in Process"].includes(stageOf(o))&&!isSub(o)).map(o=>({name:o.name,cid:String(o.cid||""),level:o.level||"",stage:stageOf(o),amount:listPrice(o.level||"")||0,owner:owner(o)||""})).sort((a,b)=>a.name.localeCompare(b.name));}
 function deskInvPaid(){const out={},byCid={},nm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");ORGS.forEach(o=>{if(o.cid)byCid[String(o.cid)]=o;});
-  (DESK_INV||[]).forEach(v=>{if(!v||!v.id||v.paidBy||v.archived)return;const o=(v.cid&&byCid[String(v.cid)])||ORGS.find(x=>nm(x.name)===nm(v.name));if(!o)return;
+  (DESK_INV||[]).forEach(v=>{if(!v||!v.id||v.paidBy||v.archived)return;const o=(v.cid&&byCid[String(v.cid)])||ORGS.find(x=>nm(x.name)===nm(v.name)&&!(cidReal(v.cid)&&cidReal(x.cid)));if(!o)return;
     const from=addDays(String(v.date||TODAY).slice(0,10),-3),want=(+v.amount||0)-1;let sum=0,hit="";
     fsItems(o).filter(i=>i&&i.d&&String(i.d).slice(0,10)>=from&&(+i.n||0)>0&&/member|iif/i.test(String(i.c||""))).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(i=>{sum+=+i.n||0;if(!hit&&sum>=want)hit=String(i.d).slice(0,10);});
     if(hit)out[v.id]={d:hit,n:Math.round(sum*100)/100,org:o.name};});return out;}
@@ -8911,7 +8911,7 @@ function profileCard(o,box){const ovp=box&&box.querySelector('.p360-panel[data-t
 {const _p3P=p360Update;p360Update=function(o,box){const r=_p3P.apply(this,arguments);try{profileCard(o,box);}catch(e){console.error("profile",e);}return r;};}
 /* a desk invoice for a company someone else pays for also clears on the payer's payments */
 {const _dIP=deskInvPaid;deskInvPaid=function(){const out=_dIP.apply(this,arguments);try{const nm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
-  (DESK_INV||[]).forEach(v=>{if(!v||!v.id||out[v.id]||v.paidBy||v.archived)return;const o=(v.cid&&ORGS.find(x=>String(x.cid)===String(v.cid)))||ORGS.find(x=>nm(x.name)===nm(v.name));const p=payerOf(o);if(!p)return;
+  (DESK_INV||[]).forEach(v=>{if(!v||!v.id||out[v.id]||v.paidBy||v.archived)return;const o=(v.cid&&ORGS.find(x=>String(x.cid)===String(v.cid)))||ORGS.find(x=>nm(x.name)===nm(v.name)&&!(cidReal(v.cid)&&cidReal(x.cid)));const p=payerOf(o);if(!p)return;
     const from=addDays(String(v.date||TODAY).slice(0,10),-3),want=(+v.amount||0)-1;let sum=0,hit="";
     fsItems(p).filter(i=>i&&i.d&&String(i.d).slice(0,10)>=from&&(+i.n||0)>0&&/member|iif/i.test(String(i.c||""))).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(i=>{sum+=+i.n||0;if(!hit&&sum>=want)hit=String(i.d).slice(0,10);});
     if(hit)out[v.id]={d:hit,n:Math.round(sum*100)/100,org:p.name+" for "+o.name};});}catch(e){console.error("payer invoice",e);}return out;};}
@@ -8977,7 +8977,7 @@ async function deskTermSync(){if(!db||canWrite===false||!ORGS.length)return;try{
   const r=await fetch("https://rgvdi67cg27o5kcmiytcqbqnrm0hmztx.lambda-url.us-east-1.on.aws/membership-desk/data/done",{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});if(!r.ok)return;
   const j=await r.json().catch(()=>null);const items=((j&&j.data)||{}).items||[];const nz=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
   for(const it of items){if(!it||it.undone||!(it.start||it.end))continue;
-    const o=(it.cid&&ORGS.find(x=>String(x.cid)===String(it.cid)))||ORGS.find(x=>nz(x.name)===nz(it.name));if(!o)continue;const v=ov(o)||{};
+    const o=(it.cid&&ORGS.find(x=>String(x.cid)===String(it.cid)))||ORGS.find(x=>nz(x.name)===nz(it.name)&&!(cidReal(it.cid)&&cidReal(x.cid)));if(!o)continue;const v=ov(o)||{};
     if(v.deskTerm&&v.deskTerm.entry===it.entry)continue;
     await saveOv(o.k,{deskTerm:{entry:it.entry||"",start:it.start||"",end:it.end||"",level:it.level||"",kind:it.kind||"",by:it.byName||"",at:it.at||""}});
     if(it.kind==="members"){const d=DEALS.find(x=>x.org===o.k&&x.type==="New Member"&&!x.archived&&x.ap!=="Updated in Aptify");
