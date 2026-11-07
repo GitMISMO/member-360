@@ -3150,7 +3150,7 @@ function prepaid(o){const a=ACT[o.k];return a&&a.prepaid?a.prepaid:null;}
 function iifPaid(o){if(!o.iif)return 0;const a=ACT[o.k];const fs=a&&a.iif?(a.iif[IY]||0):0;return Math.max(o.iif.y26.paid||0,fs);}
 function iifColl(o){if(!o.iif)return "";const p=iifPaid(o),inv=o.iif.y26.inv||0;if(o.iif.y26.cs==="Paid Full Amount"||(inv>0&&p>=inv))return "Paid Full Amount";if(p>0)return "Partial Payment Received";return "Not Paid";}
 function iifOut(o){return ov(o).iifOutreach||(o.iif&&o.iif.y26.st)||"Not Contacted";}
-function iifTier(x){return x>=55000?"Chair Champion":x>=20000?"Executive Champion":x>=10000?"Associate Champion":x>=1000?"Corporate":"";}
+function iifTier(x){return x>=55000?"Chair Champion":x>=20000?"Executive Champion":x>=10000?"Associate Champion":x>=iifMin()?"Corporate":"";}
 function sizeOf(v){return v<=1000?"s1":v<10000?"s2":v<20000?"s3":v<55000?"s4":"s5";}
 const SIZELAB={s1:"$1,000 or Less",s2:"$1,001 to $9,999",s3:"$10,000 to $19,999",s4:"$20,000 to $54,999",s5:"$55,000 or More"};
 function baseStage(o){return RY===DATA_RY&&o.stage?o.stage:"Not Renewed Yet";}
@@ -5182,8 +5182,8 @@ const LVCHG_RX=/\b(upgrad\w*|downgrad\w*|mov\w* (from|to|down|up)|chang\w* (from
 /* past membership years come from Aptify's membership terms (and, for lenders, IIF payments in the Financial System), never the Smartsheet tracker (Jonna, Oct 29, 2026) */
 const APT_LVRANK={Chair:5,Executive:4,Associate:3,Corporate:2,Sole:1};
 function aptYears(o){const out={},top=+TODAY.slice(0,4)+1;(o.aptAll||[]).forEach(t=>{const a=+String(t.s).slice(0,4),b=+String(t.e).slice(0,4);if(!a||!b)return;for(let y=a;y<=b&&y<=top;y++){const k=String(y);if(!out[k]||(APT_LVRANK[t.lv]||0)>(APT_LVRANK[out[k].lv]||0))out[k]={lv:t.lv,src:"Aptify",x:!!t.x};}});return out;}
-function memberYear(o,y){y=String(y);const a=aptYears(o)[y];if(a)return a;if(o.type==="Lender"){const p=lendPaid(o,y);if(p>=1000)return {lv:"",src:"IIF",paid:p};}return null;}
-function mhYears(o){const ys=new Set(Object.keys(aptYears(o)));const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif)Object.keys(a.iif).forEach(y=>{if(lendPaid(o,y)>=1000)ys.add(String(y));});return [...ys].sort().reverse().map(y=>({y:y,m:memberYear(o,y)})).filter(x=>x.m);}
+function memberYear(o,y){y=String(y);const a=aptYears(o)[y];if(a)return a;if(o.type==="Lender"){const p=lendPaid(o,y);if(p>=iifMin())return {lv:"",src:"IIF",paid:p};}return null;}
+function mhYears(o){const ys=new Set(Object.keys(aptYears(o)));const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif)Object.keys(a.iif).forEach(y=>{if(lendPaid(o,y)>=iifMin())ys.add(String(y));});return [...ys].sort().reverse().map(y=>({y:y,m:memberYear(o,y)})).filter(x=>x.m);}
 const MEMST_RX=/paid|invfee payer|^free|champion member/i;
 function wasMember(o){return o.life==="Active"||(o.voted||[]).length>0||mhYears(o).length>0;}
 function sinceInfo(o){
@@ -5192,7 +5192,7 @@ function sinceInfo(o){
   if(ov(o).joined)ev.push({y:ov(o).joined.slice(0,4),src:"Last Joined Date set by staff ("+fmt(ov(o).joined)+")"});
   const ay=Object.keys(aptYears(o)).sort();if(ay.length)ev.push({y:ay[0],src:"Aptify membership terms start in "+ay[0],apt:true});
   if(o.aptStart)ev.push({y:o.aptStart.slice(0,4),src:"Aptify membership term began "+fmt(o.aptStart),apt:true});
-  const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif){const py=Object.keys(a.iif).filter(y=>lendPaid(o,y)>=1000).sort();if(py.length)ev.push({y:py[0],src:"IIF paid in "+py[0]+" (Financial System)"});}
+  const a=ACT[o.k];if(o.type==="Lender"&&a&&a.iif){const py=Object.keys(a.iif).filter(y=>lendPaid(o,y)>=iifMin()).sort();if(py.length)ev.push({y:py[0],src:"IIF paid in "+py[0]+" (Financial System)"});}
   (o.voted||[]).forEach(y=>ev.push({y:String(y),src:"Voted in MISMO's "+y+" election (archived records)"}));
   if(!ev.length)return {y:"",confirmed:false,src:""};
   ev.sort((x,z)=>x.y.localeCompare(z.y));
@@ -5852,7 +5852,7 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
   const L=iifSetFor(Y);let inv=0,paid=0;const cc={"Paid Full Amount":0,"Partial Payment Received":0,"Not Paid":0,"Paid":0};const oc={};
   const sz={s1:0,s2:0,s3:0,s4:0,s5:0},szn={s1:0,s2:0,s3:0,s4:0,s5:0};
   L.forEach(o=>{const yd=iifY(o,Y);inv+=yd.inv;paid+=yd.paid;cc[yd.cs]=(cc[yd.cs]||0)+1;const v=inv0?yd.inv:yd.paid;sz[sizeOf(v)]+=v;szn[sizeOf(v)]++;});
-  const members=L.filter(o=>iifY(o,Y).paid>=1000).length;
+  const members=L.filter(o=>iifY(o,Y).paid>=iifMin()).length;
   const T=inv0?[["Lenders Invoiced",n(L.length),money(Math.round(inv))+" invoiced","var(--sky)",""],
     ["Collected",money(Math.round(paid)),Math.round(100*paid/Math.max(1,inv))+"% of invoiced","var(--good)",""],
     ["Paid in Full",n(cc["Paid Full Amount"]+(cc.Paid||0)),cc.Paid?n(cc.Paid)+" with no invoice on file":"lenders","var(--good)","Paid Full Amount"],
@@ -5866,7 +5866,7 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
   $("iif-sizeh").textContent=inv0?"Invoiced Dollars by Invoice Size":"Paid Dollars by Payment Size";
   const tb=$("iif-tiles");tb.textContent="";
   /* each number opens the lenders behind it in the list below */
-  const SELF={"Collected":o=>iifY(o,Y).paid>0,"Members Through IIF":o=>iifY(o,Y).paid>=1000,"Lenders Who Paid":o=>iifY(o,Y).paid>0};
+  const SELF={"Collected":o=>iifY(o,Y).paid>0,"Members Through IIF":o=>iifY(o,Y).paid>=iifMin(),"Lenders Who Paid":o=>iifY(o,Y).paid>0};
   const cur_=IIFSEL?IIFSEL.key:"cs:"+$("iif-cs").value;
   T.forEach(([l,v,s,c,f])=>{const key=SELF[l]?"sel:"+l:"cs:"+f;const on=cur_===key&&(f||SELF[l]);
     tb.appendChild(h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+c,"aria-pressed":String(!!on),onclick:()=>{
@@ -6132,7 +6132,7 @@ function regsLoaded(code){return !!(REGSTATE&&(REGSTATE.summits||[]).includes(co
 /* the level whose benefits a member gets. Lenders: TMC, Broker and ACUMA specials are Corporate; every other lender by the IIF paid,
    $1,000-9,999 Corporate, $10,000-19,999 Associate, $20,000-54,999 Executive, $55,000+ Chair. The IIF year is the event's year,
    or the year before when that year's IIF hasn't been paid yet (IIF is invoiced in February). */
-function iifTier(p){return p>=55000?"Chair":p>=20000?"Executive":p>=10000?"Associate":p>=1000?"Corporate":"";}
+function iifTier(p){return p>=55000?"Chair":p>=20000?"Executive":p>=10000?"Associate":p>=iifMin()?"Corporate":"";}
 function benLevel(o,forDate){const Y=String(RY-1);if(kindIn(o,Y)!=="Lender")return {lv:o.level||"",how:""};
   if(specialOf(o))return {lv:"Corporate",how:specialOf(o)+" special"};
   const y=(forDate||TODAY).slice(0,4),py=String(Number(y)-1);let p=lendPaid(o,y),yy=y;if(p<1000){const q=lendPaid(o,py);if(q>p){p=q;yy=py;}}
@@ -6299,7 +6299,7 @@ function stackBar(parts){const tot=parts.reduce((a,p)=>a+p.v,0)||1;return h("div
 function legendParts(parts,el){el.textContent="";parts.forEach(p=>el.appendChild(h("span",null,h("i",{style:"background:"+p.color}),p.label+" ",h("b",null,n(p.v)))));return el;}
 function lchip(cls,txt){return h("span",{class:"lchip "+cls},txt);}
 function laneCardBox(l,list){
-  const champ=list.filter(x=>["Chair","Executive","Associate"].includes(lvKey(x.o))).length,noOwn=list.filter(x=>!owner(x.o)).length;
+  const champ=list.filter(x=>champLevels().includes(lvKey(x.o))).length,noOwn=list.filter(x=>!owner(x.o)).length;
   const chips=h("div",{class:"meta"});
   if(l.id==="benefits"){const sm=list.filter(x=>x.gaps.some(g=>g.kind==="Summit")).length,bc=list.filter(x=>x.gaps.some(g=>g.kind==="Boot Camp")).length;if(sm)chips.appendChild(lchip("c-info",n(sm)+" Summit"));if(bc)chips.appendChild(lchip("c-soon",n(bc)+" Boot Camp"));}
   else if(champ)chips.appendChild(lchip("c-info",n(champ)+(champ===1?" Champion":" Champions")));
@@ -6857,11 +6857,11 @@ function openSquarePay(o){
 const DEAL_TYPES=["New Member","Renewal","Upgrade"],DEAL_TERMS=["Standard","Dues Deal"],DEAL_LEVELS=["Chair","Executive","Associate","Corporate","Corporate (TMC)","Corporate (Broker)","Sole"];
 const LIST_PRICE={Chair:55000,Executive:20000,Associate:10000,Corporate:5000,Sole:550};
 const AP_ST=["Needs AP Update","Sent to AP","Updated in Aptify"];
-function listPrice(l){return LIST_PRICE[(l||"").replace(/ \(.*\)$/,"")]||0;}
+function listPrice(l){const b=(l||"").replace(/ \(.*\)$/,"");const lv=((typeof SET!=="undefined"&&SET&&SET.levels)||[]).find(x=>x&&x.v===b);return (lv&&+lv.price)||LIST_PRICE[b]||0;}
 function termsOf(d){return d.terms||"Dues Deal";}
 function monthsIn(a,b){if(!a||!b||b<a)return 0;const [y1,m1]=a.split("-").map(Number),[y2,m2]=b.split("-").map(Number);return (y2-y1)*12+(m2-m1)+1;}
 /* the level-set rule: committed on or before the 15th starts that month, after the 15th starts the next month */
-function levelSetStart(d){const [y,m,dd]=d.split("-").map(Number);const dt=dd<=15?new Date(Date.UTC(y,m-1,1)):new Date(Date.UTC(y,m,1));return dt.toISOString().slice(0,10);}
+function levelSetStart(d){const [y,m,dd]=d.split("-").map(Number);const dt=dd<=startCutoff()?new Date(Date.UTC(y,m-1,1)):new Date(Date.UTC(y,m,1));return dt.toISOString().slice(0,10);}
 /* standard terms: a renewal covers the renewal year; a new membership runs to Dec 31 of its first year. A dues deal adds the following year.
    Start month, the same as MISMO Money (Jonna, Nov 5, 2026): an IIF lender's new membership starts the month it is paid;
    a non-lender's follows the 15th rule (paid 1st to 15th starts that month, 16th or later starts the next month). */
@@ -7332,14 +7332,14 @@ function openStat(key,title,sub,items,after,note){STSEL={key,title,sub,items,not
 function closeStat(){STSEL=null;$("st-listpanel").hidden=true;renderStats();}
 function renderStats(){
   const Y=STY(),cur=Y===String(RY-1),A=ORGS.filter(o=>memberIn(o,Y)),K={"Non-Lender":0,"Lender":0,"Free":0,"Subsidiary":0,"Type Not Recorded":0};A.forEach(o=>K[kindIn(o,Y)]++);
-  const isChamp=o=>["Chair","Executive","Associate"].includes(levelIn(o,Y)),champ=A.filter(isChamp).length,cu=A.filter(o=>o.cu).length;
+  const isChamp=o=>champLevels().includes(levelIn(o,Y)),champ=A.filter(isChamp).length,cu=A.filter(o=>o.cu).length;
   const sel=STSEL?STSEL.key:"";
   const tile=(key,l,v,sub,c,list,after)=>{const b=h("button",{type:"button",class:"tile"+(sel===key?" on":""),style:"--tc:"+c,"aria-pressed":String(sel===key)},h("span",{class:"lab"},l),h("span",{class:"val"},n(v)),h("span",{class:"sub"},sub));
     b.addEventListener("click",()=>sel===key?closeStat():openStat(key,l,sub,list,after));return b;};
   const tb=$("st-tiles");tb.textContent="";
   [["t-all",cur?"Current Members":"Members in "+Y,A.length,"Paid or free for "+Y,"var(--sky)",()=>A],
    ["t-nl","Non-Lender Members",K["Non-Lender"],"Paid membership dues","var(--c1)",()=>A.filter(o=>kindIn(o,Y)==="Non-Lender")],
-   ["t-ln","Lender Members",K.Lender,cur?"Through the IIF \u00b7 "+n(A.filter(o=>kindIn(o,Y)==="Lender"&&lendPaid(o,Y)>=1000).length)+" paid $1,000+":"Through the IIF","var(--c2)",()=>A.filter(o=>kindIn(o,Y)==="Lender")],
+   ["t-ln","Lender Members",K.Lender,cur?"Through the IIF \u00b7 "+n(A.filter(o=>kindIn(o,Y)==="Lender"&&lendPaid(o,Y)>=iifMin()).length)+" paid $1,000+":"Through the IIF","var(--c2)",()=>A.filter(o=>kindIn(o,Y)==="Lender")],
    ["t-free","Free Members",K.Free,"All complimentary, incl. lenders and multi-year","var(--c3)",()=>A.filter(o=>kindIn(o,Y)==="Free")], ["t-sub","Subsidiaries",K.Subsidiary||0,"Free Corporate through a parent company","var(--c5)",()=>A.filter(o=>kindIn(o,Y)==="Subsidiary")],
    ["t-ch","Champions",champ,"Chair, Executive and Associate","var(--c4)",()=>A.filter(isChamp)],
    ["t-cu","Credit Unions",cu,"Members that are credit unions","var(--c5)",()=>A.filter(o=>o.cu)]].forEach(t=>tb.appendChild(tile(t[0],t[1],t[2],t[3],t[4],t[5],"st-sppanel")));
@@ -7398,12 +7398,12 @@ function renderStats(){
       {k:"rc:nl-last",g:"look",l:"Non-Lender members whose last membership payment is for an earlier year",f:()=>NL.filter(o=>!memCovers(o,Y)&&lastMemFor(o)),n:noteNL},
       {k:"rc:nl-other",g:"look",l:"Non-Lender members with payments, but none for membership",f:()=>NL.filter(o=>!memCovers(o,Y)&&!lastMemFor(o)&&fsItems(o).length),n:noteNL},
       {k:"rc:nl-none",g:"look",l:"Non-Lender members with no payments under this name",h:"They may pay under another name. Match it in Settings under Payer Names to Match.",f:()=>NL.filter(o=>!memCovers(o,Y)&&!fsItems(o).length),n:noteNL},
-      {k:"rc:l-ok",g:"ok",l:"Lender members who paid $1,000 or more IIF in "+Y,f:()=>LN.filter(o=>lendPaid(o,Y)>=1000),n:noteL},
+      {k:"rc:l-ok",g:"ok",l:"Lender members who paid $1,000 or more IIF in "+Y,f:()=>LN.filter(o=>lendPaid(o,Y)>=iifMin()),n:noteL},
       {k:"rc:l-sp",g:"ok",l:"Lender members on a special rate ("+SPECIALS.join(", ")+")",f:()=>LN.filter(o=>lendPaid(o,Y)<1000&&specialOf(o)),n:noteL},
       {k:"rc:l-low",g:"look",l:"Lender members who paid under $1,000 IIF",f:()=>LN.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),n:noteL},
       {k:"rc:l-none",g:"look",l:"Lender members with no "+Y+" IIF payment found",f:()=>LN.filter(o=>!lendPaid(o,Y)&&!specialOf(o)),n:noteL},
       {k:"rc:x-mem",g:"bad",l:"Paid for a "+Y+" membership, but not marked a member",f:()=>ORGS.filter(o=>o.life!=="Active"&&fsItems(o).some(i=>i.c==="Membership"&&i.n>0&&i.s&&i.s.slice(0,4)===Y)),n:o=>"Paid "+money(fsItems(o).filter(i=>i.c==="Membership"&&i.s&&i.s.slice(0,4)===Y).reduce((a,i)=>a+i.n,0))+" · "+o.life},
-      {k:"rc:x-iif",g:"bad",l:"Paid $1,000 or more IIF in "+Y+", but not marked a member",f:()=>ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=1000),n:o=>money(lendPaid(o,Y))+" IIF · "+o.life}];
+      {k:"rc:x-iif",g:"bad",l:"Paid $1,000 or more IIF in "+Y+", but not marked a member",f:()=>ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=iifMin()),n:o=>money(lendPaid(o,Y))+" IIF · "+o.life}];
     const rb=$("st-recrows");rb.textContent="";let okN=0,lookN=0;
     G.forEach(g=>{const L=g.f();if(g.g==="ok")okN+=L.length;else lookN+=L.length;
       const row=h("button",{type:"button",class:"rcrow "+g.g+(sel===g.k?" on":""),"aria-pressed":String(sel===g.k),disabled:L.length?null:""},h("i",{class:"rcdot"}),h("span",{class:"rcl"},g.l,g.h?h("small",null,g.h):null),h("span",{class:"rcn"},n(L.length)));
@@ -7509,7 +7509,7 @@ function isChecks(){
     {key:"nl-iif",cat:"Member Counts",title:"Recorded as Non-Lender but Paid IIF",
       act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"These members are recorded as Non-Lender members but paid $1,000 or more IIF in "+Y+", so the IIF Cycle counts them as lenders and Membership Stats doesn't. Open the record and set Member Type to whichever is right.",
-      items:()=>O(NL.filter(o=>lendPaid(o,Y)>=1000),noteL)},
+      items:()=>O(NL.filter(o=>lendPaid(o,Y)>=iifMin()),noteL)},
     {key:"name-disagree",cat:"Name Matching",title:"Company Names the Pages Disagree On",
       why:"Each weekday morning the Member 360 Feeds update shares name matches from the Sponsorship Portal and the CMS into Member 360. These are the ones where two pages say different things (the same name tied to different companies), so the sync changed nothing. Decide which is right and fix it on the page that's wrong."+(NSYNC&&NSYNC.lastRun?" Last run "+fmt(NSYNC.lastRun.slice(0,10))+".":""),
       items:()=>((NSYNC&&NSYNC.conflicts)||[]).map(c=>({id:"c:"+c.name+"|"+c.says,name:c.name,note:c.why}))},
@@ -7541,7 +7541,7 @@ function isChecks(){
     {key:"x-iif",cat:"Payments",title:"Paid $1,000 or More IIF but Not Marked a Member",
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"These lenders paid enough IIF in "+Y+" to be members, but aren't marked as current members. This is part of why the IIF Cycle and Membership Stats show different lender counts.",
-      items:()=>O(ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=1000),noteL)},
+      items:()=>O(ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=iifMin()),noteL)},
     {key:"l-none",cat:"Payments",title:"Lender Members with No IIF Payment Found",
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as lender members, but no "+Y+" IIF payment is on file under their name. They may have paid under another name or on a duplicate record.",
@@ -8035,14 +8035,14 @@ function m3hAgo(at){const m=Math.max(0,Math.round((Date.now()-Date.parse(at))/60
 function m3hMoney(x){x=Math.round(x||0);if(x>=1e6)return "$"+(x/1e6).toFixed(x>=1e7?0:1)+"M";if(x>=1e4)return "$"+Math.round(x/1e3)+"K";return money(x);}
 function m3hData(){
   const Y=String(RY-1),A=ORGS.filter(o=>memberIn(o,Y)),K={"Lender":0,"Non-Lender":0,"Free":0,"Subsidiary":0};A.forEach(o=>{const k=kindIn(o,Y);if(k in K)K[k]++;});
-  const champ=A.filter(o=>["Chair","Executive","Associate"].includes(levelIn(o,Y))).length;
+  const champ=A.filter(o=>champLevels().includes(levelIn(o,Y))).length;
   const Dd=renewalGroup().filter(inDue),dc={};Dd.forEach(o=>{const s=stageOf(o);dc[s]=(dc[s]||0)+1;});
   const ren=dc.Renewed||0,pip=dc["Payment in Process"]||0,lost=dc.Lost||0,todo=Math.max(0,Dd.length-ren-pip-lost);
   try{dealFixAll();}catch(e){}
   const mo=TODAY.slice(0,7),yr=TODAY.slice(0,4),nm=DEALS.filter(d=>d.type==="New Member"&&!d.archived);
   const JN=memberJoins();const nmMo=JN.filter(j=>j.d.slice(0,7)===mo);
   const nmYr=JN.filter(j=>j.d.slice(0,4)===yr);
-  const Yi=IIFY(),L=iifSetFor(Yi);let inv=0,paid=0,iifMem=0;const ics={full:0,part:0,none:0};L.forEach(o=>{const y=iifY(o,Yi);inv+=y.inv||0;paid+=y.paid||0;if((y.paid||0)>=1000)iifMem++;if(y.cs==="Paid Full Amount"||y.cs==="Paid")ics.full++;else if(y.cs==="Partial Payment Received")ics.part++;else ics.none++;});
+  const Yi=IIFY(),L=iifSetFor(Yi);let inv=0,paid=0,iifMem=0;const ics={full:0,part:0,none:0};L.forEach(o=>{const y=iifY(o,Yi);inv+=y.inv||0;paid+=y.paid||0;if((y.paid||0)>=iifMin())iifMem++;if(y.cs==="Paid Full Amount"||y.cs==="Paid")ics.full++;else if(y.cs==="Partial Payment Received")ics.part++;else ics.none++;});
   let newIif=0;try{const P=IFN||{},Dn=P.done||{};newIif=(P.items||[]).filter(x=>!Dn[x.id]&&x.cid).length;}catch(e){}
   const pros=ORGS.filter(o=>!ov(o).mergedInto&&o.life==="Prospect"),ps={};pros.forEach(o=>{const s=ov(o).pstage||"";if(s)ps[s]=(ps[s]||0)+1;});
   let npw=0;try{npw=npNew(npWeekStart(0),"9999").length;}catch(e){}
@@ -8634,7 +8634,7 @@ function memberJoins(){
     if(o.type!=="Lender"){let lastE=null;T.forEach(t=>{if(lastE===null||day(t.s)-day(lastE)>365)ev.push({o,d:t.s,src:"Aptify",kind:"nl",lv:t.lv||o.level||""});if(!lastE||(t.e||t.s)>lastE)lastE=t.e||t.s;});}
     else{const it=(((ACT||{})[o.k]||{}).items||[]).filter(i=>i.c==="IIF"&&i.d).sort((a,b)=>a.d.localeCompare(b.d)),cyc={};
       it.forEach(i=>{(cyc[i.d.slice(0,4)]=cyc[i.d.slice(0,4)]||[]).push(i);});
-      const first=Object.keys(cyc).sort().map(y=>{let c=0,hit=null;cyc[y].forEach(i=>{c+=+i.n||0;if(!hit&&c>=1000)hit=i.d;});return hit;}).find(Boolean);
+      const first=Object.keys(cyc).sort().map(y=>{let c=0,hit=null;cyc[y].forEach(i=>{c+=+i.n||0;if(!hit&&c>=iifMin())hit=i.d;});return hit;}).find(Boolean);
       if(first&&!T.some(t=>t.s<first.slice(0,4)+"-01-01"))ev.push({o,d:first,src:"IIF",kind:"iif",lv:o.level||"Corporate"});}});
   Object.values(sqm).forEach(m=>{const d=((m.payments||[]).map(p=>p.on).filter(Boolean).sort())[0];if(!d)return;
     const o=byCid[String(m.companyId||"")]||ORGS.find(x=>x.name===m.company)||null;ev.push({o,name:m.company,d,src:"Square"+(m.special?" "+m.special:""),kind:"sq",lv:(m.special?m.special+" ":"")+(m.level||"Corporate")});});
@@ -8683,7 +8683,7 @@ const deskSlug=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace
 function deskTodos(){
   const members=DEALS.filter(d=>d.type==="New Member"&&!d.archived&&d.ap==="Needs AP Update").map(d=>{const o=BY[d.org]||{};let p=null;try{p=dealPaid(d);}catch(e){}
     return {name:d.orgName||o.name||"",cid:String(d.cid||o.cid||""),level:d.level||o.level||"",price:d.price||0,sold:d.sold||"",paid:(p&&p.d)||"",start:d.start||"",end:d.end||""};}).sort((a,b)=>String(a.sold).localeCompare(String(b.sold))||a.name.localeCompare(b.name));
-  const iif=ORGS.filter(o=>o.type==="Lender"&&o.life!=="Active"&&!ov(o).mergedInto&&lendPaid(o,IY)>=1000).map(o=>({name:o.name,cid:String(o.cid||""),level:"Corporate",price:Math.round(lendPaid(o,IY)),sold:"",paid:deskIifDay(o),start:IY+"-01-01",end:IY+"-12-31"})).sort((a,b)=>a.name.localeCompare(b.name));
+  const iif=ORGS.filter(o=>o.type==="Lender"&&o.life!=="Active"&&!ov(o).mergedInto&&lendPaid(o,IY)>=iifMin()).map(o=>({name:o.name,cid:String(o.cid||""),level:"Corporate",price:Math.round(lendPaid(o,IY)),sold:"",paid:deskIifDay(o),start:IY+"-01-01",end:IY+"-12-31"})).sort((a,b)=>a.name.localeCompare(b.name));
   const cut=addDays(TODAY,-120),J=memberJoins();
   const dm=J.filter(j=>j.kind==="nl"&&j.d>=cut&&j.srcs.includes("Aptify")).map(j=>[j.orgName,j.lv||"",j.d]),di=J.filter(j=>j.kind==="iif"&&j.d>=cut).map(j=>[j.orgName,j.lv||"Corporate",j.d]);
   const Y=String(new Date().getFullYear());let free=0;ORGS.forEach(o=>{try{if(memberIn(o,Y)&&kindIn(o,Y)==="Free")free++;}catch(e){}});
@@ -8710,7 +8710,7 @@ setTimeout(deskNav,0);
 
 /* ---------- Test fixes (Jonna, Nov 1, 2026) ---------- */
 /* the day an IIF lender's payments this cycle reached $1,000, so the desk can show when they paid */
-function deskIifDay(o){try{let c=0,hit="";(((ACT||{})[o.k]||{}).items||[]).filter(i=>i.c==="IIF"&&i.d&&String(i.d).slice(0,4)===String(IY)).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(i=>{c+=+i.n||0;if(!hit&&c>=1000)hit=String(i.d).slice(0,10);});return hit;}catch(e){return "";}}
+function deskIifDay(o){try{let c=0,hit="";(((ACT||{})[o.k]||{}).items||[]).filter(i=>i.c==="IIF"&&i.d&&String(i.d).slice(0,4)===String(IY)).sort((a,b)=>String(a.d).localeCompare(String(b.d))).forEach(i=>{c+=+i.n||0;if(!hit&&c>=iifMin())hit=String(i.d).slice(0,10);});return hit;}catch(e){return "";}}
 /* a contact the team edited or removed in Member 360 stays as they left it: Kelly's tracker doesn't add it back under its old email each week */
 function trkTouched(o){if(!o)return [];const c=ov(o).contacts||{};return Object.keys(c.edits||{}).concat(Object.keys(c.removed||{})).filter(k=>/^e:/.test(k)).map(k=>k.slice(2).toLowerCase());}
 /* touchpoints logged on a record that was later merged into another show on the record it was merged into: its history, last touch and plans */
@@ -9455,7 +9455,7 @@ function applyAptify(){
     if(o.life!=="Active"||seen.has(o.k)||o.mm||o.manual||o.auto)return;
     if((OV[o.k]||{}).life)return;
     let to="Former";
-    if(o.type==="Lender"){if(!actReady||specialOf(o)||lendPaid(o,IY)>=1000)return;to="IIF Invoiced";}
+    if(o.type==="Lender"){if(!actReady||specialOf(o)||lendPaid(o,IY)>=iifMin())return;to="IIF Invoiced";}
     if(!o._apt0)o._apt0={level:o.level,thru:o.thru,life:o.life,joined:o.joined,cu:o.cu,addr:o.addr};
     if(!("life" in o._apt0))o._apt0.life=o.life;
     o.life=to;R.dropped.push(o);});
@@ -9649,9 +9649,9 @@ function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLower
 function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
 function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
 /* emails and campaigns go out only from Amy and Jonna, and either can pick whose voice (Send As) it goes out in (Jonna, Oct 29, 2026) */
-const SEND_AS=["amoses","kbradshaw","jcritchley"],SEND_NO="Sending emails from Member 360 is set up for Amy, Kelly and Jonna.";
-function canSend(){const s=mySender();return canEmail()&&!!s&&SEND_AS.includes(s.key);}
-function sendAsList(){return SEND_AS.map(k=>({key:k,name:SENDERS[k],email:k+"@mismo.org"}));}
+const SEND_AS=["amoses","kbradshaw","jcritchley"],SEND_NO="Sending emails from Member 360 is set up only for the senders under Settings, Shared Rules.";
+function canSend(){const s=mySender();return canEmail()&&!!s&&sendKeys().includes(s.key);}
+function sendAsList(){return sendKeys().map(k=>({key:k,name:senderName(k),email:k+"@mismo.org"}));}
 function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 /* the template's merge fields -> the flow's tokens (each recipient's value is filled in by the flow) */
 const MTOK={"First Name":"fn","Last Name":"ln","Company":"co","Membership Level":"lvl","Member Type":"type","Membership Ends":"ends","Level Benefits":"ben"};
@@ -10061,7 +10061,7 @@ function remergeAct(){
   /* names MISMO Money couldn't place join the ones the old sync left for review */
   const base=(REVIEW0&&REVIEW0.items)||[],have=new Set(base.map(r=>r.name));
   const extra=Object.values(unm).filter(u=>!u.added&&!have.has(u.name)).map(u=>{const t={count:0,total:0,last:"",cats:new Set(),member:false};
-    u.its.forEach(i=>{t.count++;t.total+=i.n;if(i.d>t.last)t.last=i.d;t.cats.add(i.c);if(i.c==="Membership"||i.c==="Sponsorship"||(i.c==="IIF"&&i.n>=1000))t.member=true;});
+    u.its.forEach(i=>{t.count++;t.total+=i.n;if(i.d>t.last)t.last=i.d;t.cats.add(i.c);if(i.c==="Membership"||i.c==="Sponsorship"||(i.c==="IIF"&&i.n>=iifMin()))t.member=true;});
     return t.member?{name:u.name,count:t.count,total:Math.round(t.total*100)/100,last:t.last,cats:[...t.cats].sort(),suggest:u.suggest||"",src:"MISMO Money"}:null;}).filter(Boolean);
   extra.sort((a,b)=>b.total-a.total);
   try{sqApply();}catch(e){console.error("square",e);}
@@ -10553,6 +10553,45 @@ function playPreview(st,box){const se=$("tpl-s-"+st.id),be=$("tpl-b-"+st.id),s=p
     const row=d.querySelector(".btnrow");if(row){row.insertBefore(btn,row.children[1]||null);row.parentNode.appendChild(box);}else d.appendChild(box);
     let tm=0;[$("tpl-s-"+st.id),$("tpl-b-"+st.id)].forEach(x=>x&&x.addEventListener("input",()=>{if(!on)return;clearTimeout(tm);tm=setTimeout(()=>playPreview(st,box),400);}));});
   }catch(e){console.error("play preview",e);}return r;};}
+
+
+/* ---------- Shared Rules (Jonna, Nov 7, 2026) ----------
+   One place for the rules MISMO's apps and flows share: who can send email, the IIF amount that makes a lender a member,
+   the start-date cutoff day and the champion levels. They live in settings/main under "shared" (prices stay with the
+   levels there), are edited under Settings, Shared Rules, and the Member 360 email flow reads the same senders list.
+   Until something is saved, the values below are used, so nothing changes by itself. */
+const RULE_DEF={senders:[{key:"amoses",name:"Amy Moses"},{key:"kbradshaw",name:"Kelly Bradshaw"},{key:"jcritchley",name:"Jonna Critchley"}],iifMemberMin:1000,startCutoffDay:15,championLevels:["Associate","Executive","Chair"]};
+function rules(){const s=(typeof SET!=="undefined"&&SET&&SET.shared)||{};return Object.assign({},RULE_DEF,s);}
+function iifMin(){const v=+rules().iifMemberMin;return v>0?v:1000;}
+function startCutoff(){const v=+rules().startCutoffDay;return v>=1&&v<=28?v:15;}
+function champLevels(){const a=rules().championLevels;return Array.isArray(a)&&a.length?a:RULE_DEF.championLevels;}
+function sendKeys(){const a=rules().senders;return (Array.isArray(a)&&a.length?a:RULE_DEF.senders).map(x=>x.key);}
+function senderName(k){const x=(rules().senders||[]).find(y=>y.key===k);return (x&&x.name)||SENDERS[k]||k;}
+setInterval(()=>{try{const c=champLevels();if(typeof TL_CH!=="undefined"&&TL_CH.join()!==c.join())TL_CH.splice(0,TL_CH.length,...c);}catch(e){}},3000);
+{const _rs=renderSettings;renderSettings=function(){const r=_rs.apply(this,arguments);try{rulesCard();}catch(e){console.error("shared rules",e);}return r;};}
+function rulesCard(){const v=$("v-settings");if(!v)return;let box=$("rules-card");if(!box){box=h("section",{class:"sect",id:"rules-card",style:"background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:14px 0"});const head=v.querySelector(".vhead");if(head&&head.nextSibling)v.insertBefore(box,head.nextSibling);else v.appendChild(box);}
+  if(box.contains(document.activeElement))return;box.textContent="";const R=rules(),dis=!db||canWrite===false;
+  box.appendChild(h("h2",{style:"margin:0 0 4px;font-size:16px"},"Shared Rules"));
+  box.appendChild(h("div",{class:"hint",style:"margin:0 0 12px"},"One place for rules every MISMO app and flow uses. Member 360 and its email flow read these; change them here, not in the code. Level prices are set with the levels below."));
+  const grid=h("div",{style:"display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 18px"});
+  const sv=h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"Who Can Send Email"));
+  Object.keys(SENDERS).forEach(k=>{const c=h("input",{type:"checkbox",value:k,"data-rule":"sender",disabled:dis});c.checked=R.senders.some(x=>x.key===k);sv.appendChild(h("label",{style:"display:flex;gap:7px;align-items:center;font-size:13px;margin:3px 0"},c,SENDERS[k]));});
+  const iif=h("input",{type:"number",min:"1",step:"1",value:String(iifMin()),"data-rule":"iif",disabled:dis,style:"width:120px"});
+  const cut=h("input",{type:"number",min:"1",max:"28",step:"1",value:String(startCutoff()),"data-rule":"cut",disabled:dis,style:"width:80px"});
+  const cv=h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"Champion Levels"));
+  ["Chair","Executive","Associate","Corporate","Sole"].forEach(l=>{const c=h("input",{type:"checkbox",value:l,"data-rule":"champ",disabled:dis});c.checked=champLevels().includes(l);cv.appendChild(h("label",{style:"display:flex;gap:7px;align-items:center;font-size:13px;margin:3px 0"},c,l));});
+  grid.appendChild(sv);
+  grid.appendChild(h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"IIF Amount That Makes a Lender a Member"),h("div",{style:"display:flex;gap:6px;align-items:center"},h("span",null,"$"),iif),h("div",{class:"hint",style:"margin-top:4px"},"Paid in a calendar year"),
+    h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin:12px 0 4px"},"Start-Date Cutoff Day"),cut,h("div",{class:"hint",style:"margin-top:4px"},"Paid on or before this day starts that month; after it, the next month")));
+  grid.appendChild(cv);box.appendChild(grid);
+  const say=h("span",{class:"hint",style:"margin:0"});const who=R.updatedBy?"Last changed "+fmt(String(R.updatedAt||"").slice(0,10))+" by "+R.updatedBy:"Using the standard rules";
+  const save=h("button",{type:"button",class:"btn",disabled:dis},"Save Shared Rules");
+  save.addEventListener("click",async()=>{if(blocked())return;const ks=[...box.querySelectorAll('[data-rule="sender"]')].filter(c=>c.checked).map(c=>c.value);if(!ks.length){say.textContent="Keep at least one sender.";return;}
+    const ch=[...box.querySelectorAll('[data-rule="champ"]')].filter(c=>c.checked).map(c=>c.value);if(!ch.length){say.textContent="Pick at least one champion level.";return;}
+    const n=Math.round(+iif.value),d=Math.round(+cut.value);if(!(n>0)){say.textContent="Enter the IIF amount.";return;}if(!(d>=1&&d<=28)){say.textContent="The cutoff day is 1 to 28.";return;}
+    const shared={senders:ks.map(k=>({key:k,name:SENDERS[k]||k,email:k+"@mismo.org"})),iifMemberMin:n,startCutoffDay:d,championLevels:ch,updatedAt:new Date().toISOString(),updatedBy:(typeof myName==="function"&&myName())||ME||""};
+    save.disabled=true;say.textContent="Saving…";try{await db.doc("settings/main").update({shared});SET.shared=shared;say.textContent="Saved. Member 360 and the email flow use these now.";scheduleRefresh();}catch(e){say.textContent="";onWriteErr(e);}save.disabled=false;});
+  box.appendChild(h("div",{class:"btnrow",style:"margin:14px 0 0"},save,h("span",{class:"hint",style:"margin:0"},who),say));}
 
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
