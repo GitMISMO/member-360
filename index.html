@@ -10589,7 +10589,7 @@ function rulesCard(){const v=$("v-settings");if(!v)return;let box=$("rules-card"
   save.addEventListener("click",async()=>{if(blocked())return;const ks=[...box.querySelectorAll('[data-rule="sender"]')].filter(c=>c.checked).map(c=>c.value);if(!ks.length){say.textContent="Keep at least one sender.";return;}
     const ch=[...box.querySelectorAll('[data-rule="champ"]')].filter(c=>c.checked).map(c=>c.value);if(!ch.length){say.textContent="Pick at least one champion level.";return;}
     const n=Math.round(+iif.value),d=Math.round(+cut.value);if(!(n>0)){say.textContent="Enter the IIF amount.";return;}if(!(d>=1&&d<=28)){say.textContent="The cutoff day is 1 to 28.";return;}
-    const shared={senders:ks.map(k=>({key:k,name:SENDERS[k]||k,email:k+"@mismo.org"})),iifMemberMin:n,startCutoffDay:d,championLevels:ch,updatedAt:new Date().toISOString(),updatedBy:(typeof myName==="function"&&myName())||ME||""};
+    const shared={senderKeys:ks,senders:ks.map(k=>({key:k,name:SENDERS[k]||k,email:k+"@mismo.org"})),iifMemberMin:n,startCutoffDay:d,championLevels:ch,updatedAt:new Date().toISOString(),updatedBy:(typeof myName==="function"&&myName())||ME||""};
     save.disabled=true;say.textContent="Saving…";try{await db.doc("settings/main").update({shared});SET.shared=shared;say.textContent="Saved. Member 360 and the email flow use these now.";scheduleRefresh();}catch(e){say.textContent="";onWriteErr(e);}save.disabled=false;});
   box.appendChild(h("div",{class:"btnrow",style:"margin:14px 0 0"},save,h("span",{class:"hint",style:"margin:0"},who),say));}
 
