@@ -9,6 +9,10 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-07
 
+- Daily Health Check on GitHub (member-360-data): runs every morning even when nobody has Member 360 open; feeds, email flow, storage, restore points; emails Jonna when red; shown on System Health.
+- Restore points checked daily: every data file as it stood a day ago must read back cleanly. Steps to restore a file are in the Technical Guide.
+- The email flow accepts the daily check's report (step health-report).
+- Membership Desk: version stamp on Help, update notice, and page safety list.
 - Page Checks on every save (GitHub Actions): scripts must parse, no keys or tokens, test copy saving off and live on, safety list present.
 - Version stamp on Settings and System Health; a bar asks to reload when a newer version is live.
 - Page safety list (Content-Security-Policy): the page may only load code from and send data to the save relay, cdnjs, jsDelivr and Google Fonts.
