@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-07
 
+- Aptify upload: membership terms are saved in their own file (aptify/terms) from the next weekly upload, cutting the main Aptify file from 85% of the 1 MB save limit to about 30%.
 - Daily Health Check on GitHub (member-360-data): runs every morning even when nobody has Member 360 open; feeds, email flow, storage, restore points; emails Jonna when red; shown on System Health.
 - Restore points checked daily: every data file as it stood a day ago must read back cleanly. Steps to restore a file are in the Technical Guide.
 - The email flow accepts the daily check's report (step health-report).
