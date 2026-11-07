@@ -3002,7 +3002,7 @@ const STAGE_COLOR={"Not Renewed Yet":"var(--ink-3)","Contacted":"var(--c1)","Inv
 const LOSS=["Doesn't Wish to Renew","No Longer in Business","Merger/Purchased","Budget","Not Getting Enough Value","No Response","Other"];
 /* the sales pipeline (Jonna, Oct 26, 2026): the stages Strategic Growth used in the Smartsheet Sales Pipeline,
    now kept on each record so there is no separate sheet to maintain */
-const PSTAGES=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid","Hold","Closed Won","Closed Lost"];
+const PSTAGES=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","Payment in Process","8 - Paid","Hold","Closed Won","Closed Lost"];
 const PCLOSED={"8 - Paid":1,"Closed Won":1,"Closed Lost":1};
 const PIPE_F=[["lead","Lead Source","text"],["ctype","Company Type","text"],["forecast","Forecast Amount","money"],["prob","Probability","pct"],["first","First Point of Contact","date"],["last","Last Touchpoint","date"],["won","Won Date","date"],["bv","BV's Action","text"],["next","Next Step","area","The Relationship Owner owns the next step."]];
 const TYPES=["Note","Call","Email","Meeting","Event Conversation","Other"];
@@ -3737,12 +3737,12 @@ function p360Update(o,box){
     if(hd==="person"&&r.length){const c=h("div",{class:"p360-touch"});c.appendChild(p360Icon("person"));c.appendChild(h("div",null,h("b",null,"Personal touch. "),r.join(". ").replace(/\.\./g,".")+"."));tw.appendChild(c);}
     else if(hd==="hold"){const c=h("div",{class:"p360-touch"});c.appendChild(p360Icon("flag"));c.appendChild(h("div",null,h("b",null,"On hold. "),"No automated emails go to this member until the hold is lifted."));tw.appendChild(c);}}
   else if(isPro){const findSel=()=>[...box.querySelectorAll('[data-part="ctrls"] select')].find(s=>[...s.options].some(op=>/^1 - /.test(op.value))),sel=findSel();
-    const L0=sel?[...sel.options].map(op=>op.value).filter(x=>/^\d+ - /.test(x)):[],L=L0.length?L0:["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid"];
+    const L0=sel?[...sel.options].map(op=>op.value).filter(x=>/^\d+ - |^Payment in Process$/.test(x)):[],L=L0.length?L0:["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","Payment in Process","8 - Paid"];
     const cur=v.pstage||(sel?sel.value:""),at=L.indexOf(cur),won=/won/i.test(cur),lost=/lost/i.test(cur);
     const right=lost?"Closed lost":won?"Closed won":/hold/i.test(cur)?"On hold":"";
     sw.appendChild(h("div",{class:"p360-head"},h("h3",null,"Sales"),right?h("span",{class:"p360-sub"},right):null));
     if(L.length&&!lost){const g=h("div",{class:"p360-steps",style:"grid-template-columns:repeat("+L.length+",minmax(0,1fr))"});
-      const short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting");
+      const short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting").replace(/^Payment in Process$/,"Paying");
       L.forEach((x,i)=>{const b=h("button",{type:"button",class:"p360-step"+(won||i<=at?" on":"")+(i===at?" cur":""),"aria-label":"Set the sales stage to "+x,"aria-current":i===at?"step":"false",onclick:()=>{const s2=findSel();if(s2&&!s2.disabled&&s2.value!==x){s2.value=x;s2.dispatchEvent(new Event("change",{bubbles:true}));}}},h("i"),h("span",null,short(x)));
         if(!db||canWrite===false)b.disabled=true;g.appendChild(b);});sw.appendChild(g);}
     if(pipe.next)sw.appendChild(h("div",{class:"p360-line"},h("b",null,"Next step: "),pipe.next));}
@@ -8266,8 +8266,8 @@ function m3mDress(){const hl=$("mem-hl");if(!hl)return;let band=$("m3m-band");if
   const kk=Object.keys(kd).sort((a,b)=>a.localeCompare(b)),KC={"Lender":"#74bfeb","Non-Lender":"#5fd39a"};
   const kb=h("div",{class:"m3r-bar"}),kkey=h("div",{class:"m3r-key"});kk.forEach((k,i)=>{const s=h("i",{class:"m3m-kseg",style:"width:0%;background:"+(KC[k]||"#9fb3c8"),title:k+": "+kd[k]});kb.appendChild(s);setTimeout(()=>{s.style.width=(100*kd[k]/tot)+"%";},120+i*90);kkey.appendChild(h("span",{class:"m3r-k"},h("i",{style:"background:"+(KC[k]||"#9fb3c8")}),k,h("b",null,n(kd[k]))));});
   /* prospect pipeline by sales stage */
-  const ST=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","8 - Paid"];
-  const sc={},short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting");
+  const ST=["1 - Lead","2 - Contacted","3 - Scheduling Call","4 - Meeting Scheduled","5 - Proposal with Prospect","7 - Application Submitted","Payment in Process","8 - Paid"];
+  const sc={},short=x=>x.replace(/^\d+ - /,"").replace(/ with Prospect$/,"").replace(/ Submitted$/,"").replace(/^Scheduling Call$/,"Scheduling").replace(/^Meeting Scheduled$/,"Meeting").replace(/^Payment in Process$/,"Paying");
   let none=0;pro.forEach(o=>{const s=(ov(o)||{}).pstage||"";if(ST.indexOf(s)>=0)sc[s]=(sc[s]||0)+1;else if(!s||!/lost|won|hold/i.test(s))none++;});
   const rows=[["Not Started",none,""]].concat(ST.map(s=>[short(s),sc[s]||0,s])),pmx=Math.max(1,...rows.map(r=>r[1]));
   const fun=h("div",{class:"m3m-fun"});rows.forEach(([l,v,raw],i)=>{const r=h("button",{type:"button",class:"m3m-fr",title:raw?"Show prospects at "+l:"Prospects with no sales stage yet",onclick:()=>m3mStage(raw,l)},h("span",null,l),h("div",{class:"b"},h("i",{style:"width:0%"})),h("b",null,n(v)));fun.appendChild(r);setTimeout(()=>{r.querySelector("i").style.width=Math.max(v?3:0,Math.round(100*v/pmx))+"%";},100+i*60);});
@@ -10255,6 +10255,228 @@ async function deskInfoSync(){if(!db||canWrite===false||!ORGS.length)return;
 {let _ifnT=0;const _ifnR=()=>{clearTimeout(_ifnT);_ifnT=setTimeout(()=>{try{iifNewRender();}catch(e){}},300);};
  const _aA=applyAptify;applyAptify=function(){const r=_aA.apply(this,arguments);_ifnR();return r;};
  const _rA=remergeAct;remergeAct=function(){const r=_rA.apply(this,arguments);_ifnR();return r;};}
+
+/* ---------- Payment in Process for prospects too (Jonna, Nov 7, 2026) ----------
+   Kelly marks a prospect Payment in Process once they've committed and the invoice is out, the same way renewals already work.
+   Member 360 Home and the Membership Desk both list everything in Payment in Process, each marked New Member or Renewal,
+   and each comes off on its own once the payment reaches Aptify and the company shows as a member. */
+function pipAll(){const out=[],seen=new Set();
+  try{renewalGroup().forEach(o=>{if(isSub(o)||(ov(o)||{}).mergedInto)return;let s="";try{s=stageOf(o);}catch(e){}
+    if(s==="Invoiced"||s==="Payment in Process"){seen.add(o.k);out.push({o,kind:"renewal",stage:s,lender:false,amount:listPrice(o.level||"")||0});}});}catch(e){console.error("pip renewals",e);}
+  ORGS.forEach(o=>{const v=ov(o)||{};if(seen.has(o.k)||v.mergedInto||o.life==="Active"||v.pstage!=="Payment in Process")return;
+    const p=v.pipe||{},lv=String(o.level||"").replace(/\s*\(.*$/,"");let amt=+String(p.forecast||"").replace(/[^0-9.]/g,"")||0;if(!amt){try{amt=listPrice(lv)||0;}catch(e){}}
+    out.push({o,kind:"new",stage:"Payment in Process",lender:o.type==="Lender",amount:amt});});
+  return out.sort((a,b)=>a.o.name.localeCompare(b.o.name));}
+{const _dp=deskPip;deskPip=function(){const r=_dp.apply(this,arguments).map(x=>Object.assign({kind:"renewal",lender:false},x));
+  const have=new Set(r.map(x=>String(x.cid||"")+"|"+x.name));
+  pipAll().filter(x=>x.kind==="new").forEach(x=>{const o=x.o;if(have.has(String(o.cid||"")+"|"+o.name))return;
+    r.push({name:o.name,cid:String(o.cid||""),level:String(o.level||"").replace(/\s*\(.*$/,""),stage:x.stage,amount:x.amount,owner:owner(o)||"",kind:"new",lender:x.lender});});
+  return r.sort((a,b)=>a.name.localeCompare(b.name));};}
+{const _rh=renderHome;renderHome=function(){const r=_rh.apply(this,arguments);try{pipHome();}catch(e){console.error("pip home",e);}return r;};}
+function pipHome(){const root=$("m3h");if(!root||!ORGS.length)return;const old=$("pip-home");if(old)old.remove();
+  const L=pipAll(),N=L.filter(x=>x.kind==="new"),R=L.filter(x=>x.kind==="renewal"),sum=a=>a.reduce((s,x)=>s+(+x.amount||0),0);
+  const wrap=h("div",{id:"pip-home"});
+  wrap.appendChild(h("div",{class:"m3h-h2row"},h("h2",{class:"m3h-h2"},"Payment in Process"),h("span",{class:"m3h-asof"},"Committed with the invoice out, waiting on payment · also on the Membership Desk")));
+  if(!L.length){wrap.appendChild(h("div",{class:"pip-none"},"Nothing is waiting on payment. When a prospect commits and the invoice goes out, set its Sales Stage to Payment in Process; for a renewal, set its stage to Payment in Process. It shows here and on the Membership Desk, marked New Member or Renewal."));}
+  else{const g=h("div",{class:"pip-g"});
+    const col=(title,list,cls,empty)=>{const c=h("div",{class:"pip-c "+cls});c.appendChild(h("div",{class:"pip-ch"},h("span",{class:"pip-t"},title),h("b",null,String(list.length)),h("span",{class:"pip-amt"},list.length?money(sum(list)):"")));
+      if(!list.length)c.appendChild(h("div",{class:"pip-e"},empty));
+      list.forEach(x=>{const o=x.o;const b=h("button",{type:"button",class:"pip-r"},h("span",{class:"pip-n"},o.name),h("span",{class:"pip-m"},[x.kind==="new"?(x.lender?"Lender":"Non-Lender"):"Non-Lender",String(o.level||"").replace(/\s*\(.*$/,""),x.stage==="Invoiced"?"Invoiced":"",owner(o)||""].filter(Boolean).join(" · ")),h("span",{class:"pip-v"},x.amount?money(x.amount):""));
+        b.addEventListener("click",()=>openOrg(o.k));c.appendChild(b);});return c;};
+    const cN=col("New Members",N,"nw","None yet. Set a prospect's Sales Stage to Payment in Process when its invoice goes out."),cR=col("Renewals",R,"rn","No renewals invoiced or in Payment in Process.");
+    if(!N.length||!R.length){g.classList.add("one");(N.length?cR:cN).classList.add("empty");(N.length?cN:cR).classList.add("wide");g.appendChild(N.length?cR:cN);g.appendChild(N.length?cN:cR);}else{g.appendChild(cN);g.appendChild(cR);}wrap.appendChild(g);}
+  const grid=root.querySelector(".m3h-grid");if(grid&&grid.nextSibling)root.insertBefore(wrap,grid.nextSibling);else root.appendChild(wrap);
+  if(!$("pip-home-css")){const st=document.createElement("style");st.id="pip-home-css";st.textContent=
+    "#pip-home{margin:22px 0 4px}#pip-home .pip-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}"
+    +"#pip-home .pip-c{background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--k,#74bfeb);border-radius:10px;padding:12px 14px;min-width:0}"
+    +"#pip-home .pip-c.nw{--k:#5fd39a}#pip-home .pip-c.rn{--k:#74bfeb}"
+    +"#pip-home .pip-ch{display:flex;align-items:baseline;gap:8px;margin:0 0 6px}#pip-home .pip-t{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--ink-2)}"
+    +"#pip-home .pip-ch b{font-size:13px;background:var(--surface-2,rgba(127,150,170,.15));border-radius:4px;padding:0 7px}#pip-home .pip-amt{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}"
+    +"#pip-home .pip-r{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:'n v' 'm v';gap:1px 10px;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line,rgba(127,150,170,.25));padding:7px 2px;font:inherit;color:var(--ink);cursor:pointer}"
+    +"#pip-home .pip-r:hover{background:var(--accent-soft,rgba(116,191,235,.12))}#pip-home .pip-n{grid-area:n;font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"
+    +"#pip-home .pip-m{grid-area:m;font-size:12px;color:var(--ink-3)}#pip-home .pip-v{grid-area:v;align-self:center;font-weight:600;font-variant-numeric:tabular-nums;font-size:13px}"
+    +"#pip-home .pip-e,#pip-home .pip-none{font-size:13px;color:var(--ink-3);padding:6px 2px}#pip-home .pip-none{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}"
+    +"#pip-home .pip-g.one{grid-template-columns:1fr;gap:10px}#pip-home .pip-c.wide{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));column-gap:24px}#pip-home .pip-c.wide .pip-ch{grid-column:1/-1}"
+    +"#pip-home .pip-c.empty{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:9px 14px}#pip-home .pip-c.empty .pip-ch{margin:0}#pip-home .pip-c.empty .pip-e{padding:0}";
+    document.head.appendChild(st);}}
+
+/* ---------- Targeted Lists (Jonna, Nov 7, 2026) ----------
+   Kelly builds a list from any mix of filters (who, Lender or Non-Lender, level, special, sector, new this year, lost,
+   renewal or sales stage, owner, state and more), picks which contacts to include (MPC, MAC, MBC, MMC and others),
+   then copies the emails or downloads them for Excel. Lists are saved for the team, and their years are relative
+   ("this year"), so a list saved now still works next year and can be opened, changed slightly and saved again. */
+const TL={f:null,id:"",saved:{},timer:0,rows:[],orgs:[],none:[]};
+const TL_CH=["Associate","Executive","Chair"];
+const TL_ROLES=[["Primary","Primary (MPC)"],["Alternate","Alternate (MAC)"],["Billing","Billing (MBC)"],["Marketing","Marketing (MMC)"],["Authorized Signer","Authorized Signer"],["VIP","VIPs"],["Senior Advisor","Senior Advisors"],["IIF Primary","IIF Primary"],["IIF Billing","IIF Billing"],["IIF Secondary","IIF Secondary"],["__exec","Executives (CEO, President, COO, CLO)"],["__all","Everyone on File"]];
+const TL_EXEC=["CEO","President","COO","Chief Lending Officer"];
+const TL_PRESETS=[
+  ["Current Members",{who:["member"]}],["Current Champions",{who:["member"],level:TL_CH}],["Lender Members",{who:["member"],kind:["Lender"]}],
+  ["Lender Champions",{who:["member"],kind:["Lender"],level:TL_CH}],["Non-Lender Members",{who:["member"],kind:["Non-Lender"]}],["Non-Lender Champions",{who:["member"],kind:["Non-Lender"],level:TL_CH}],
+  ["Chair Members",{who:["member"],level:["Chair"]}],["Executive Members",{who:["member"],level:["Executive"]}],["Corporate Members",{who:["member"],level:["Corporate"]}],
+  ["Individual (Sole) Members",{who:["member"],level:["Sole"]}],["Free and Subsidiary",{who:["member"],kind:["Free","Subsidiary"]}],
+  ["New Members This Year",{joined:"this"}],["New Champions This Year",{joined:"this",level:TL_CH}],["Lost This Year",{who:["lost"]}],["Open Prospects",{who:["prospect"]}]];
+function tlYear(t){const y=+TODAY.slice(0,4);return String(t==="last"?y-1:t==="next"?y+1:y);}
+function tlBlank(){return {who:[],yr:"this",kind:[],level:[],special:[],cu:"",sector:[],market:[],joined:"",rstage:[],pstage:[],owner:[],state:"",q:"",roles:["Primary"],fallback:true,noInternal:true};}
+function tlCap(s){s=String(s||"").replace(/\s*\(.*$/,"").trim();return s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():"";}
+function tlSector(o){try{return sectorLab(sectorOf(o))||"No Sector";}catch(e){return "No Sector";}}
+function tlState(o){const m=String(o.addr||"").match(/,\s*([A-Za-z]{2})\b\s*$/);return m?m[1].toUpperCase():"";}
+function tlStage(o){try{return renewable(o)?(stageOf(o)||""):"";}catch(e){return "";}}
+function tlMember(o,Y){try{return !!memberIn(o,Y);}catch(e){return false;}}
+function tlKind(o,Y){if(tlMember(o,Y)){try{return kindIn(o,Y)||o.type||"";}catch(e){}}return o.type||"";}
+function tlLevel(o,Y){if(tlMember(o,Y)){try{const l=levelIn(o,Y);if(l)return tlCap(l);}catch(e){}}return tlCap(o.level);}
+function tlSpecial(o){try{return String(specialOf(o)||"");}catch(e){return "";}}
+function tlJoinedSet(tok){const y=tlYear(tok),s=new Set();try{memberJoins().forEach(ev=>{if(ev&&ev.o&&String(ev.d||"").slice(0,4)===y)s.add(ev.o.k);});}catch(e){}return s;}
+function tlMatch(f){const Y=tlYear(f.yr||"this"),J=f.joined?tlJoinedSet(f.joined):null,q=srchNorm(f.q||""),states=String(f.state||"").toUpperCase().split(/[^A-Z]+/).filter(Boolean);
+  return ORGS.filter(o=>{const v=ov(o)||{};if(v.mergedInto)return false;
+    if(f.who.length&&!f.who.some(w=>w==="member"?tlMember(o,Y):w==="prospect"?o.life==="Prospect":w==="iif"?o.life==="IIF Invoiced":w==="former"?o.life==="Former":w==="lost"?(o.life==="Lost"||tlStage(o)==="Lost"):false))return false;
+    if(J&&!J.has(o.k))return false;
+    if(f.kind.length&&!f.kind.includes(tlKind(o,Y)))return false;
+    if(f.level.length&&!f.level.includes(tlLevel(o,Y)))return false;
+    if(f.special.length){const sp=tlSpecial(o).toLowerCase();if(!f.special.some(x=>x==="__any"?!!sp:sp.includes(x.toLowerCase())))return false;}
+    if(f.cu==="yes"&&!o.cu)return false;if(f.cu==="no"&&o.cu)return false;
+    if(f.sector.length&&!f.sector.includes(tlSector(o)))return false;
+    if(f.market.length&&!f.market.includes(o.market||"Not Set"))return false;
+    if(f.rstage.length&&!f.rstage.includes(tlStage(o)))return false;
+    if(f.pstage.length&&!f.pstage.includes(v.pstage||"__none"))return false;
+    if(f.owner.length&&!f.owner.includes(owner(o)||"__un"))return false;
+    if(states.length&&!states.includes(tlState(o)))return false;
+    if(q&&!(srchNorm(o.name).includes(q)||String(o.cid||"")===f.q.trim()))return false;
+    return true;});}
+function tlPeople(o,f){const ok=p=>p.email&&!(f.noInternal&&/@(mismo|mba)\.org$/i.test(p.email));const P=(o.people||[]).filter(ok);
+  const all=f.roles.includes("__all"),ex=f.roles.includes("__exec");
+  let L=all?P:P.filter(p=>(p.roles||[]).some(r=>f.roles.includes(r)||(ex&&TL_EXEC.includes(r))));
+  if(!L.length&&f.fallback&&P.length){const pr=P.find(p=>(p.roles||[]).includes("Primary"));L=[pr||P[0]];L._fb=true;}
+  return L;}
+function tlRun(){const f=TL.f,orgs=tlMatch(f).sort((a,b)=>a.name.localeCompare(b.name)),rows=[],seen=new Set(),none=[];
+  orgs.forEach(o=>{const L=tlPeople(o,f);if(!L.length){none.push(o);return;}
+    L.forEach(p=>{const e=p.email.trim().toLowerCase();if(seen.has(e))return;seen.add(e);
+      const rs=(p.roles||[]).filter(r=>f.roles.includes("__all")||f.roles.includes(r)||(f.roles.includes("__exec")&&TL_EXEC.includes(r)));
+      rows.push({o,p,role:L._fb?"First contact (no "+tlRoleNames(f)+")":rs.join(", ")});});});
+  TL.orgs=orgs;TL.rows=rows;TL.none=none;}
+function tlRoleNames(f){return f.roles.map(r=>(TL_ROLES.find(x=>x[0]===r)||[r,r])[1].replace(/ \(.*$/,"")).join(" or ");}
+function tlOptions(){const Y=tlYear((TL.f||{}).yr||"this"),uniq=a=>[...new Set(a.filter(Boolean))].sort();
+  const owners=uniq(ORGS.map(o=>owner(o)));const sectors=uniq(ORGS.map(tlSector));const markets=uniq(ORGS.map(o=>o.market||""));
+  return {owners,sectors,markets};}
+function tlSummary(f){const p=[];const yl={this:"this year",last:"last year",next:"next year"};
+  if(f.who.length)p.push(f.who.map(w=>({member:"members "+yl[f.yr||"this"],prospect:"prospects",iif:"IIF invoiced",former:"former members",lost:"lost"})[w]).join(" or "));
+  if(f.joined)p.push("joined "+yl[f.joined]);if(f.kind.length)p.push(f.kind.join(" or "));if(f.level.length)p.push(f.level.join(", "));
+  if(f.special.length)p.push(f.special.map(x=>x==="__any"?"any special":x).join(" or "));if(f.cu)p.push(f.cu==="yes"?"credit unions":"no credit unions");
+  if(f.sector.length)p.push(f.sector.join(", "));if(f.market.length)p.push(f.market.join(" or "));if(f.rstage.length)p.push("renewal: "+f.rstage.join(", "));
+  if(f.pstage.length)p.push("sales: "+f.pstage.map(x=>x==="__none"?"no stage":x).join(", "));if(f.owner.length)p.push("owner: "+f.owner.map(x=>x==="__un"?"unassigned":x).join(", "));
+  if(f.state)p.push("states "+f.state.toUpperCase());if(f.q)p.push('name has "'+f.q+'"');
+  return (p.join(" · ")||"everyone in Member 360")+" → "+tlRoleNames(f);}
+function tlInit(){if($("v-lists"))return;const main=document.querySelector("main");if(!main)return;
+  const after=document.querySelector('.hq nav button[data-hq="members"]');
+  if(after){const b=document.createElement("button");b.type="button";b.dataset.hq="lists";b.title="Targeted Lists";
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg><span>Targeted Lists</span><em class="pip" id="pip-lists"></em>';
+    after.parentNode.insertBefore(b,after.nextSibling);b.addEventListener("click",()=>{if(location.hash!=="#lists")history.replaceState(null,"","#lists");});}
+  const sec=document.createElement("section");sec.className="view";sec.id="v-lists";sec.hidden=true;
+  sec.innerHTML='<div class="vhead"><div><h1>Targeted Lists</h1><div class="vsub">Build a list from any mix of filters, choose which contacts to include, then copy the emails or download them for Excel. Save a list to come back to it each year; its years move forward on their own.</div></div></div>'
+    +'<div class="tl-saved" id="tl-saved"></div>'
+    +'<div class="tl-wrap"><div class="tl-f" id="tl-f"></div><div class="tl-out"><div class="tl-sum" id="tl-sum"></div><div class="tl-acts" id="tl-acts"></div><div class="tl-tbl" id="tl-tbl"></div></div></div>';
+  main.appendChild(sec);
+  const st=document.createElement("style");st.textContent=
+   '#v-lists .tl-saved{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:14px 0}'
+  +'#v-lists .tl-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}#v-lists .tl-row+.tl-row{margin-top:8px}'
+  +'#v-lists .tl-lab{font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--ink-3);margin-right:4px;min-width:96px}'
+  +'#v-lists .tl-chip{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);border-radius:4px;padding:5px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}'
+  +'#v-lists .tl-chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}#v-lists .tl-chip.mine{border-style:solid;border-color:var(--c1,#2477b8)}'
+  +'#v-lists .tl-name{flex:1 1 220px;min-width:180px;font:inherit;font-size:13px;border:1px solid var(--border-strong);border-radius:5px;padding:6px 9px;background:var(--surface);color:var(--ink)}'
+  +'#v-lists .tl-wrap{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:16px;align-items:start}@media(max-width:980px){#v-lists .tl-wrap{grid-template-columns:1fr}}'
+  +'#v-lists .tl-f{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 14px 12px;position:sticky;top:calc(var(--hq-h,64px) + 12px);max-height:calc(100vh - var(--hq-h,64px) - 24px);overflow:auto}'
+  +'#v-lists .tl-g{padding:10px 0;border-bottom:1px solid var(--line)}#v-lists .tl-g:last-child{border-bottom:0}'
+  +'#v-lists .tl-gh{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:0 0 7px}'
+  +'#v-lists .tl-gh button{border:0;background:none;color:var(--c1,#2477b8);font:inherit;font-size:11px;text-transform:none;letter-spacing:0;cursor:pointer;padding:0}'
+  +'#v-lists .tl-cs{display:flex;flex-wrap:wrap;gap:5px}#v-lists .tl-f select,#v-lists .tl-f input[type=text]{width:100%;font:inherit;font-size:13px;border:1px solid var(--border-strong);border-radius:5px;padding:6px 8px;background:var(--surface);color:var(--ink)}'
+  +'#v-lists .tl-chk{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--ink-2);margin-top:6px}'
+  +'#v-lists .tl-sum{display:grid;grid-template-columns:repeat(3,minmax(110px,170px)) minmax(220px,1fr);gap:10px}@media(max-width:760px){#v-lists .tl-sum{grid-template-columns:repeat(3,1fr)}#v-lists .tl-desc{grid-column:1/-1}}'
+  +'#v-lists .tl-k{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px}#v-lists .tl-k b{display:block;font-size:24px;font-variant-numeric:tabular-nums}#v-lists .tl-k span{font-size:12px;color:var(--ink-3)}'
+  +'#v-lists .tl-desc{display:flex;align-items:center;font-size:12.5px;color:var(--ink-2);background:var(--surface);border:1px dashed var(--border-strong);border-radius:8px;padding:8px 11px}'
+  +'#v-lists .tl-acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}'
+  +'#v-lists .tl-tbl{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:auto;max-height:70vh}'
+  +'#v-lists table{width:100%;border-collapse:collapse;font-size:12.5px}#v-lists th{position:sticky;top:0;background:var(--surface-2,var(--surface));text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);padding:8px 10px;border-bottom:1px solid var(--border)}'
+  +'#v-lists td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}#v-lists td a{color:var(--ink);font-weight:600;text-decoration:none}#v-lists td a:hover{text-decoration:underline}#v-lists td.m{color:var(--ink-3);white-space:nowrap}'
+  +'#v-lists .tl-more{padding:10px 12px;font-size:12.5px;color:var(--ink-3)}';
+  document.head.appendChild(st);
+  sec.addEventListener("click",tlClick);sec.addEventListener("input",tlInput);sec.addEventListener("change",tlInput);
+  if(location.hash==="#lists")setTimeout(()=>show("lists"),500);
+  window.addEventListener("hashchange",()=>{if(location.hash==="#lists")show("lists");});
+  const go=()=>{if(typeof db!=="undefined"&&db){db.collection("lists").onSnapshot(s=>{const m={};s.docs.forEach(d=>{const x=d.data()||{};if(!x.archived)m[d.id]=x;});TL.saved=m;tlPaintSaved();},e=>console.error("lists",e));}else setTimeout(go,1500);};go();}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",tlInit);else tlInit();
+show=(function(orig){return function(tab){orig(tab);if(tab==="lists"){tlInit();if(!TL.f)TL.f=tlBlank();tlPaintSaved();tlPaintF();tlRender();}};})(show);
+function tlEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function tlPaintSaved(){const box=$("tl-saved");if(!box||!TL.f)return;const ids=Object.keys(TL.saved).sort((a,b)=>String(TL.saved[a].name).localeCompare(String(TL.saved[b].name)));
+  const cur=TL.id&&TL.saved[TL.id];const dis=!db||canWrite===false;
+  box.innerHTML='<div class="tl-row"><span class="tl-lab">Saved Lists</span>'+(ids.length?ids.map(id=>'<button type="button" class="tl-chip mine" data-tlopen="'+tlEsc(id)+'" aria-pressed="'+(id===TL.id)+'" title="'+tlEsc(tlSummary(Object.assign(tlBlank(),TL.saved[id].f||{})))+'">'+tlEsc(TL.saved[id].name||"Untitled")+'</button>').join(""):'<span style="font-size:12.5px;color:var(--ink-3)">None saved yet. Build a list below, name it and save it.</span>')+'</div>'
+    +'<div class="tl-row"><span class="tl-lab">Start From</span>'+TL_PRESETS.map((p,i)=>'<button type="button" class="tl-chip" data-tlpre="'+i+'">'+tlEsc(p[0])+'</button>').join("")+'<button type="button" class="tl-chip" data-tlclear="1">Clear All</button></div>'
+    +'<div class="tl-row"><span class="tl-lab">This List</span><input class="tl-name" id="tl-name" placeholder="Name this list, e.g. Champions for the Summit invite" value="'+tlEsc(cur?cur.name:(TL.name||""))+'">'
+    +'<button type="button" class="btn" data-tlsave="1"'+(dis?" disabled":"")+'>'+(cur?"Save Changes":"Save This List")+'</button>'
+    +(cur?'<button type="button" class="btn ghost" data-tlsaveas="1"'+(dis?" disabled":"")+'>Save as a New List</button><button type="button" class="btn ghost" data-tlarch="1"'+(dis?" disabled":"")+'>Remove</button>':"")
+    +(cur?'<span style="font-size:12px;color:var(--ink-3)">Saved by '+tlEsc(cur.updatedBy||cur.by||"")+(cur.updatedAt||cur.at?" · "+tlEsc(fmt(String(cur.updatedAt||cur.at).slice(0,10))):"")+'</span>':"")+'</div>';}
+function tlPaintF(){const box=$("tl-f");if(!box)return;const f=TL.f,O=tlOptions(),y=+TODAY.slice(0,4);
+  const chips=(k,opts)=>'<div class="tl-cs">'+opts.map(o=>'<button type="button" class="tl-chip" data-tlk="'+k+'" data-tlv="'+tlEsc(o[0])+'" aria-pressed="'+f[k].includes(o[0])+'">'+tlEsc(o[1])+'</button>').join("")+'</div>';
+  const g=(t,inner,k)=>'<div class="tl-g"><div class="tl-gh"><span>'+t+'</span>'+(k&&(Array.isArray(f[k])?f[k].length:f[k])?'<button type="button" data-tlreset="'+k+'">Any</button>':"")+'</div>'+inner+'</div>';
+  const sel=(k,opts)=>'<select data-tls="'+k+'">'+opts.map(o=>'<option value="'+tlEsc(o[0])+'"'+(f[k]===o[0]?" selected":"")+'>'+tlEsc(o[1])+'</option>').join("")+'</select>';
+  box.innerHTML=
+    g("Contacts to Include",chips("roles",TL_ROLES)+'<label class="tl-chk"><input type="checkbox" data-tlb="fallback"'+(f.fallback?" checked":"")+'> When a company has none of these, use its first contact</label><label class="tl-chk"><input type="checkbox" data-tlb="noInternal"'+(f.noInternal?" checked":"")+'> Leave out MISMO and MBA addresses</label>')
+   +g("Who",chips("who",[["member","Members"],["prospect","Prospects"],["iif","IIF Invoiced"],["former","Former Members"],["lost","Lost"]])+'<div style="margin-top:7px">'+sel("yr",[["this","Members in "+y+" (this year)"],["last","Members in "+(y-1)+" (last year)"],["next","Members in "+(y+1)+" (next year)"]])+'</div>',"who")
+   +g("New Members",sel("joined",[["","Any"],["this","Joined this year ("+y+")"],["last","Joined last year ("+(y-1)+")"]]),"joined")
+   +g("Lender or Non-Lender",chips("kind",[["Lender","Lender"],["Non-Lender","Non-Lender"],["Free","Free"],["Subsidiary","Subsidiary"]]),"kind")
+   +g("Level",chips("level",[["Chair","Chair"],["Executive","Executive"],["Associate","Associate"],["Corporate","Corporate"],["Sole","Sole"]])+'<div class="tl-cs" style="margin-top:6px"><button type="button" class="tl-chip" data-tlchamp="1">Champions (Associate, Executive, Chair)</button></div>',"level")
+   +g("Special Rate",chips("special",[["TMC","TMC"],["Broker","Broker"],["ACUMA","ACUMA"],["__any","Any Special"]]),"special")
+   +g("Credit Unions",sel("cu",[["","Any"],["yes","Credit unions only"],["no","Leave out credit unions"]]),"cu")
+   +g("Industry Sector",chips("sector",O.sectors.map(s=>[s,s])),"sector")
+   +g("Commercial or Residential",chips("market",O.markets.map(s=>[s,s]).concat([["Not Set","Not Set"]])),"market")
+   +g("Renewal Stage ("+RY+")",chips("rstage",STAGES.map(s=>[s,s])),"rstage")
+   +g("Sales Stage",chips("pstage",PSTAGES.map(s=>[s,s]).concat([["__none","No Stage"]])),"pstage")
+   +g("Relationship Owner",chips("owner",O.owners.map(s=>[s,s]).concat([["__un","Unassigned"]])),"owner")
+   +g("State",'<input type="text" data-tlt="state" placeholder="e.g. TX, CA, NY" value="'+tlEsc(f.state)+'">',"state")
+   +g("Company Name",'<input type="text" data-tlt="q" placeholder="Name has… or a Company ID" value="'+tlEsc(f.q)+'">',"q");}
+function tlRender(){if(!$("tl-sum")||!TL.f)return;if(!ORGS.length){$("tl-sum").innerHTML='<div class="tl-desc">Loading members…</div>';setTimeout(tlRender,800);return;}
+  tlRun();const R=TL.rows,f=TL.f;
+  $("tl-sum").innerHTML='<div class="tl-k"><b>'+TL.orgs.length.toLocaleString()+'</b><span>companies</span></div><div class="tl-k"><b>'+R.length.toLocaleString()+'</b><span>email addresses</span></div><div class="tl-k"><b>'+TL.none.length.toLocaleString()+'</b><span>companies with no email for these contacts</span></div><div class="tl-desc">'+tlEsc(tlSummary(f))+'</div>';
+  $("tl-acts").innerHTML='<button type="button" class="btn" data-tlcopy="1"'+(R.length?"":" disabled")+'>Copy '+R.length.toLocaleString()+' Emails</button><button type="button" class="btn ghost" data-tlxl="1"'+(TL.orgs.length?"":" disabled")+'>Download Excel</button>'
+    +(TL.none.length?'<button type="button" class="btn ghost" data-tlnone="1">'+(TL.showNone?"Show the Email List":"Show the "+TL.none.length+" With No Email")+'</button>':"");
+  const max=400;let html;
+  if(TL.showNone&&TL.none.length){html='<table><thead><tr><th>Company</th><th>Status</th><th>Level</th><th>Contacts on File</th></tr></thead><tbody>'+TL.none.slice(0,max).map(o=>'<tr><td><a href="#co/'+tlEsc(o.k)+'" data-tlo="'+tlEsc(o.k)+'">'+tlEsc(o.name)+'</a></td><td class="m">'+tlEsc(o.life)+'</td><td class="m">'+tlEsc(tlCap(o.level))+'</td><td class="m">'+tlEsc((o.people||[]).filter(p=>p.email).length?"Only other roles":"No emails")+'</td></tr>').join("")+'</tbody></table>';}
+  else html=R.length?'<table><thead><tr><th>Company</th><th>Contact</th><th>Email</th><th>Role</th><th>Level</th><th>Type</th></tr></thead><tbody>'+R.slice(0,max).map(r=>{const Y=tlYear(f.yr||"this");return '<tr><td><a href="#co/'+tlEsc(r.o.k)+'" data-tlo="'+tlEsc(r.o.k)+'">'+tlEsc(r.o.name)+'</a></td><td>'+tlEsc(r.p.name||"")+(r.p.title?'<div class="m" style="color:var(--ink-3);font-size:11.5px">'+tlEsc(r.p.title)+'</div>':"")+'</td><td>'+tlEsc(r.p.email)+'</td><td class="m">'+tlEsc(r.role)+'</td><td class="m">'+tlEsc(tlLevel(r.o,Y))+'</td><td class="m">'+tlEsc(tlKind(r.o,Y))+'</td></tr>';}).join("")+'</tbody></table>'
+    :'<div class="tl-more">No one matches these filters yet. Loosen a filter or choose more contacts to include.</div>';
+  if(!TL.showNone&&R.length>max)html+='<div class="tl-more">Showing the first '+max+' of '+R.length.toLocaleString()+'. Copy or download to get them all.</div>';
+  $("tl-tbl").innerHTML=html;}
+function tlSoon(){clearTimeout(TL.timer);TL.timer=setTimeout(tlRender,200);}
+function tlInput(e){const t=e.target;if(t.id==="tl-name"){TL.name=t.value;return;}
+  if(t.dataset.tls){TL.f[t.dataset.tls]=t.value;tlPaintF();tlSoon();return;}
+  if(t.dataset.tlt){TL.f[t.dataset.tlt]=t.value;tlSoon();return;}
+  if(t.dataset.tlb&&e.type==="change"){TL.f[t.dataset.tlb]=t.checked;tlSoon();}}
+async function tlClick(e){const t=e.target.closest("button,a");if(!t)return;const d=t.dataset,f=TL.f;
+  if(d.tlo){e.preventDefault();openOrg(d.tlo);return;}
+  if(d.tlk){const a=f[d.tlk],i=a.indexOf(d.tlv);if(i>=0)a.splice(i,1);else a.push(d.tlv);if(d.tlk==="roles"&&!a.length)a.push("Primary");t.setAttribute("aria-pressed",String(i<0));tlPaintF();tlSoon();return;}
+  if(d.tlreset){f[d.tlreset]=Array.isArray(f[d.tlreset])?[]:"";tlPaintF();tlSoon();return;}
+  if(d.tlchamp){f.level=TL_CH.slice();tlPaintF();tlSoon();return;}
+  if(d.tlpre){const p=TL_PRESETS[+d.tlpre];TL.f=Object.assign(tlBlank(),JSON.parse(JSON.stringify(p[1])),{roles:f.roles.slice(),fallback:f.fallback,noInternal:f.noInternal});TL.id="";TL.name=p[0];TL.showNone=false;tlPaintSaved();tlPaintF();tlRender();return;}
+  if(d.tlclear){TL.f=tlBlank();TL.id="";TL.name="";TL.showNone=false;tlPaintSaved();tlPaintF();tlRender();return;}
+  if(d.tlopen){const x=TL.saved[d.tlopen];if(!x)return;TL.f=Object.assign(tlBlank(),JSON.parse(JSON.stringify(x.f||{})));TL.id=d.tlopen;TL.name=x.name||"";TL.showNone=false;tlPaintSaved();tlPaintF();tlRender();return;}
+  if(d.tlnone){TL.showNone=!TL.showNone;tlRender();return;}
+  if(d.tlcopy){const em=TL.rows.map(r=>r.p.email.trim());copyText(em.join("; "));toast("Copied "+em.length+" emails, ready to paste into Bcc.");return;}
+  if(d.tlxl){tlExcel();return;}
+  if(d.tlsave||d.tlsaveas){const nm=String(($("tl-name")||{}).value||"").trim();if(!nm){toast("Name the list first.",true);($("tl-name")||{}).focus&&$("tl-name").focus();return;}
+    const now=new Date().toISOString(),me=(typeof myName==="function"&&myName())||ME||"";const isNew=!!d.tlsaveas||!TL.id;
+    const id=isNew?"tl"+Date.now().toString(36)+Math.random().toString(36).slice(2,5):TL.id;const prev=TL.saved[id]||{};
+    const doc={name:nm,f:JSON.parse(JSON.stringify(TL.f)),by:prev.by||me,at:prev.at||now,updatedBy:me,updatedAt:now,archived:false};
+    t.disabled=true;try{await db.doc("lists/"+id).set(doc);TL.saved[id]=doc;TL.id=id;TL.name=nm;toast(isNew?"Saved "+nm+".":"Saved the changes to "+nm+".");tlPaintSaved();}
+    catch(err){t.disabled=false;try{onWriteErr(err);}catch(x){toast("That didn't save. Try again in a moment.",true);}}return;}
+  if(d.tlarch){const x=TL.saved[TL.id];if(!x||!confirm("Remove "+x.name+" from Saved Lists? It's archived, not deleted, and Jonna can bring it back."))return;
+    try{await db.doc("lists/"+TL.id).set(Object.assign({},x,{archived:true,archivedBy:(typeof myName==="function"&&myName())||ME||"",archivedAt:new Date().toISOString()}));delete TL.saved[TL.id];TL.id="";tlPaintSaved();toast("Removed. It's archived, not deleted.");}
+    catch(err){try{onWriteErr(err);}catch(x2){toast("That didn't save. Try again in a moment.",true);}}return;}}
+function tlExcel(){const f=TL.f,Y=tlYear(f.yr||"this"),nm=String(($("tl-name")||{}).value||TL.name||"Targeted List").trim()||"Targeted List";
+  loadXlsx().then(X=>{const head=["Company","Aptify Company ID","Contact","Title","Email","Phone","Role","Status","Level","Type","Industry Sector","State","Relationship Owner"];
+    const rows=TL.rows.map(r=>[r.o.name,r.o.cid||"",r.p.name||"",r.p.title||"",r.p.email,r.p.phone||"",r.role,r.o.life,tlLevel(r.o,Y),tlKind(r.o,Y),tlSector(r.o),tlState(r.o),owner(r.o)||""]);
+    const wb=X.utils.book_new();const mk=(H,D)=>{const ws=X.utils.aoa_to_sheet([H].concat(D));ws["!cols"]=H.map((c,i)=>({wch:Math.min(46,Math.max(String(c).length,...D.slice(0,300).map(r=>String(r[i]==null?"":r[i]).length))+2)}));return ws;};
+    X.utils.book_append_sheet(wb,mk(head,rows),"Emails");
+    if(TL.none.length)X.utils.book_append_sheet(wb,mk(["Company","Aptify Company ID","Status","Level","Type"],TL.none.map(o=>[o.name,o.cid||"",o.life,tlLevel(o,Y),tlKind(o,Y)])),"No Email");
+    X.utils.book_append_sheet(wb,mk(["Filters"],[[tlSummary(f)],["Made "+fmt(TODAY)+" in Member 360"]]),"Filters");
+    X.writeFile(wb,nm.replace(/[\\/:*?"<>|]/g," ").trim()+" "+TODAY+".xlsx");}).catch(e=>toast("The Excel file could not be made: "+(e.message||e),true));}
+
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
