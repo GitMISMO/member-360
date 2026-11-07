@@ -9618,7 +9618,7 @@ function renderApt(){
       const doc={uploadedAt:now,uploadedBy:ME||"",uploadedByName:myName()||"",files:Object.assign({},old.files||{},r.files),
         kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null,
         certified:r.certified?{asOf:now.slice(0,10),people:r.certified}:(old.certified||null)};
-      await db.doc("aptify/main").set(doc);try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}
+      {/* the Aptify terms are saved in their own file, aptify/terms, so the weekly upload stays well under the relay's 1 MB limit as history grows (Jonna, Nov 7, 2026) */const __t=doc.terms;if(__t)await db.doc("aptify/terms").set({terms:__t,uploadedAt:doc.uploadedAt||""});await db.doc("aptify/main").set(Object.assign({},doc,__t?{terms:null,termsIn:"aptify/terms"}:{}));};try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}
       try{if(r.ordermap&&Object.keys(r.ordermap).length){const M=Object.assign({},(ORDMAP&&ORDMAP.map)||{},r.ordermap);await db.doc("aptify/ordermap").set({map:M,updatedAt:now});ORDMAP={map:M,updatedAt:now};if(MMF)remergeAct();}}catch(e){console.error("order map",e);}APT=doc;applyAptify();ISGEN++;scheduleRefresh();
       toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":"",r.certified?n(r.certified.length)+" certified people":""].filter(Boolean).join(", ")+".");inp.value="";renderApt();
     }catch(e){msg.textContent=e&&e.message?e.message:"The files couldn't be read.";go.disabled=false;}});
@@ -10151,7 +10151,7 @@ async function boot(){
   db.collection("issues").onSnapshot(q=>{ISSUES=q.docs.map(d=>Object.assign({id:d.id},d.data()));scheduleRefresh();},err);
   db.doc("aptify/ordermap").onSnapshot(sn=>{ORDMAP=sn.exists?sn.data():null;try{if(MMF)remergeAct();}catch(e){}scheduleRefresh();},err);
   db.doc("aptify/iifnew").onSnapshot(sn=>{IFN=sn.exists?sn.data():null;try{iifNewRender();}catch(e){}},err);
-  db.doc("aptify/main").onSnapshot(sn=>{APT=sn.exists?sn.data():null;applyAptify();paintDataDates();ISGEN++;const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderApt();scheduleRefresh();},err);
+  let APTT=null;db.doc("aptify/terms").onSnapshot(sn=>{APTT=sn.exists?((sn.data()||{}).terms||null):null;if(APT&&APT.termsIn){APT.terms=APTT;applyAptify();paintDataDates();scheduleRefresh();}},err);db.doc("aptify/main").onSnapshot(sn=>{APT=sn.exists?sn.data():null;if(APT&&APT.termsIn)APT.terms=APTT;applyAptify();paintDataDates();ISGEN++;const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="settings")renderApt();scheduleRefresh();},err);
   db.collection("outbox").onSnapshot(q=>{const m={};q.docs.forEach(d=>m[d.id]=d.data());OUTBOX=m;scheduleRefresh();},err);
   if(window.__m360Sent)window.__m360Sent.onData(d=>{const m={};((d&&d.list)||[]).forEach(x=>{if(x&&x.id)m[x.id]=x;});MAILED=m;scheduleRefresh();});
   db.collection("deals").onSnapshot(q=>{/* archived commitments (duplicates) stay saved but are left out everywhere */DEALS=q.docs.map(d=>Object.assign({id:d.id},d.data())).filter(d=>!d.archived);scheduleRefresh();},err);
