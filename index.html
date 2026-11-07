@@ -10593,6 +10593,21 @@ function rulesCard(){const v=$("v-settings");if(!v)return;let box=$("rules-card"
     save.disabled=true;say.textContent="Saving…";try{await db.doc("settings/main").update({shared});SET.shared=shared;say.textContent="Saved. Member 360 and the email flow use these now.";scheduleRefresh();}catch(e){say.textContent="";onWriteErr(e);}save.disabled=false;});
   box.appendChild(h("div",{class:"btnrow",style:"margin:14px 0 0"},save,h("span",{class:"hint",style:"margin:0"},who),say));}
 
+/* ---------- Merged records keep their history; placeholder Company IDs count as no ID (Jonna, Nov 7, 2026) ----------
+   A record merged into another shows its notes on the one it went into, marked with its old name, and Put back takes
+   them away again. A Company ID that is not a number ("Not in Aptify", "not in aptify yet") is treated as no ID, so those
+   records no longer look like duplicates of each other and show as missing their ID; the text is kept as cidNote. */
+function cidReal(c){c=String(c==null?"":c).trim();return /^\d+$/.test(c)?c:"";}
+{const _am=applyMerges;applyMerges=function(){
+  ORGS.concat(Object.keys(MERGEDRECS).map(k=>MERGEDRECS[k]).filter(Boolean)).forEach(o=>{
+    if(o.notes&&o.notes.some(n=>n&&n._from))o.notes=o.notes.filter(n=>!(n&&n._from));
+    const c=String(o.cid||"").trim();if(c&&!cidReal(c)){o.cidNote=c;o.cid="";o.noId=true;}else if(c&&o.cidNote){delete o.cidNote;o.noId=false;}});
+  const r=_am.apply(this,arguments);
+  Object.keys(MERGED).forEach(k=>{const lo=MERGEDRECS[k],w=BY[MERGED[k]];if(!lo||!w||w===lo)return;
+    const key=n=>String(n.d||"")+"|"+String(n.t||"").trim().toLowerCase(),have=new Set((w.notes||[]).map(key));
+    const add=(lo.notes||[]).filter(n=>n&&!n._from&&!have.has(key(n))).map(n=>Object.assign({},n,{_from:k,t:String(n.t||"")+" (from the merged record "+lo.name+")"}));
+    if(add.length)w.notes=add.concat(w.notes||[]).sort((a,b)=>String(b.d||"").localeCompare(String(a.d||"")));});
+  return r;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
