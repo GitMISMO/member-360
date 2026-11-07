@@ -5838,14 +5838,14 @@ function sqItems(o){return fsItems(o).filter(i=>i.sq);}
 function sqSpecial(o){const L=sqItems(o).filter(i=>i.sp).sort((a,b)=>String(b.d).localeCompare(String(a.d)));return L.length?L[0].sp:"";}
 function sqWaiting(){const out=[];ORGS.forEach(o=>{if(ov(o).mergedInto)return;const L=sqItems(o).sort((a,b)=>String(b.d).localeCompare(String(a.d)));if(!L.length)return;const i=L[0];
   if(!i.d||i.d<addDays(TODAY,-180))return;const yr=String(i.s||i.d).slice(0,4);
-  if(o.aptTerm&&o.aptTerm.e>=yr+"-12-31"&&o.aptTerm.s<=addDays(i.d,45))return;out.push({o,i});});
+  if(i.o)return;out.push({o,i});});
   return out.sort((a,b)=>String(b.i.d).localeCompare(String(a.i.d)));}
 function sqRender(box){const L=sqWaiting();if(!L.length)return;
   box.appendChild(h("h2",null,"Paid by Square: Set Up in Aptify"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Special payments taken through Square that the membership team has set up. Each drops off once the weekly Aptify upload shows their membership."));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Special payments taken through Square. The membership team ships the company's IIF quotation in Aptify for the amount paid, and each one drops off once that Aptify payment comes through."));
   L.forEach(({o,i})=>{const sp=i.sp||specialOf(o);
     box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(i.d)),
-      h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),sp?h("span",{class:"act-s"},sp):null,h("span",{class:"act-s warn"},"Not in Aptify yet")),
+      h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),sp?h("span",{class:"act-s"},sp):null,h("span",{class:"act-s warn"},"Payment not in Aptify yet")),
         h("div",{class:"act-d"},"Paid "+money(i.n)+" by Square on "+fmt(i.d)+(i.o?" · Aptify payment in, order "+i.o:" · waiting for the Aptify payment"))),h("div",{class:"act-a"})));});}
 function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}
   renderIIFYear();document.querySelectorAll(".iyy").forEach(e=>e.textContent=IIFY());const Y=IIFY(),inv0=Y!==String(Number(IY)-2);
@@ -10251,6 +10251,10 @@ async function deskInfoSync(){if(!db||canWrite===false||!ORGS.length)return;
   if(di.address&&di.address.street&&!(s.address&&s.address.street))s.address=Object.assign({},s.address||{},di.address);
   if(di.phone&&!s.phone)s.phone=di.phone;
   s.missing=(s.missing||[]).filter(m=>!(/street/.test(m)&&s.address&&s.address.street)&&!(/phone/.test(m)&&s.phone));}catch(e){}return s;};}
+/* Paid by Square redraws once Aptify and MISMO Money data arrive, so it never shows a stale list (Jonna, Nov 6, 2026) */
+{let _ifnT=0;const _ifnR=()=>{clearTimeout(_ifnT);_ifnT=setTimeout(()=>{try{iifNewRender();}catch(e){}},300);};
+ const _aA=applyAptify;applyAptify=function(){const r=_aA.apply(this,arguments);_ifnR();return r;};
+ const _rA=remergeAct;remergeAct=function(){const r=_rA.apply(this,arguments);_ifnR();return r;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
