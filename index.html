@@ -10581,7 +10581,7 @@ function rulesCard(){const v=$("v-settings");if(!v)return;let box=$("rules-card"
   const cv=h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"Champion Levels"));
   ["Chair","Executive","Associate","Corporate","Sole"].forEach(l=>{const c=h("input",{type:"checkbox",value:l,"data-rule":"champ",disabled:dis});c.checked=champLevels().includes(l);cv.appendChild(h("label",{style:"display:flex;gap:7px;align-items:center;font-size:13px;margin:3px 0"},c,l));});
   grid.appendChild(sv);
-  grid.appendChild(h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"IIF Amount That Makes a Lender a Member"),h("div",{style:"display:flex;gap:6px;align-items:center"},h("span",null,"$"),iif),h("div",{class:"hint",style:"margin-top:4px"},"Paid in a calendar year"),
+  grid.appendChild(h("div",null,h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin-bottom:4px"},"IIF Amount That Makes a Lender a Member (When There's No Deal)"),h("div",{style:"display:flex;gap:6px;align-items:center"},h("span",null,"$"),iif),h("div",{class:"hint",style:"margin-top:4px"},"Paid in a calendar year. Dues deals, Square specials and memberships Aptify shows count at any amount."),
     h("label",{style:"display:block;font-weight:600;font-size:12.5px;margin:12px 0 4px"},"Start-Date Cutoff Day"),cut,h("div",{class:"hint",style:"margin-top:4px"},"Paid on or before this day starts that month; after it, the next month")));
   grid.appendChild(cv);box.appendChild(grid);
   const say=h("span",{class:"hint",style:"margin:0"});const who=R.updatedBy?"Last changed "+fmt(String(R.updatedAt||"").slice(0,10))+" by "+R.updatedBy:"Using the standard rules";
