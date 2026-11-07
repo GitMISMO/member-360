@@ -10802,6 +10802,14 @@ function verPaint(){const s=$("v-settings");if(s){let x=$("ver-line");if(!x){x=h
 {const _hp2=hlPaint;hlPaint=function(){const r=_hp2.apply(this,arguments);try{verPaint();}catch(e){}return r;};}
 (async()=>{try{const v=await verRead();VER.fp=v.fp;VER.at=v.at;verPaint();}catch(e){console.error("version",e);}
   setInterval(async()=>{if(document.visibilityState==="hidden"||!VER.fp||VER.newer)return;try{const v=await verRead();if(v.fp!==VER.fp){VER.newer=true;verPaint();}}catch(e){}},15*60000);})();
+/* ---------- The daily GitHub check on System Health (Jonna, Nov 7, 2026) ----------
+   GitHub runs a check every morning even when nobody has Member 360 open (feeds, email, storage, restore points) and
+   keeps the result in healthcheck/main. It emails Jonna itself, so here it only shows yellow, never alerts twice. */
+HL.gh=null;
+{const go=()=>{if(typeof db!=="undefined"&&db){db.collection("healthcheck").onSnapshot(s=>{s.docs.forEach(d=>{if(d.id==="main")HL.gh=d.data()||null;});try{hlPaint();}catch(e){}},e=>console.error("healthcheck",e));}else setTimeout(go,2000);};go();}
+{const _hx=hlExtra;hlExtra=async function(rows){await _hx.apply(this,arguments);const g=HL.gh,a=g?hlAge(g.ranAt):Infinity,red=g?(g.rows||[]).filter(r=>r.level==="bad"):[],rp=g?(g.rows||[]).find(r=>r.key==="restore"):null;
+  rows.push({grp:"saves",key:"daily-check",name:"Daily Check on GitHub",what:"Runs every morning even when nobody has Member 360 open"+(rp?" · Restore points: "+rp.note:""),when:g?g.ranAt:"",every:"Daily",
+    level:!g||a>2||red.length?"warn":"ok",note:!g?"Hasn't run yet":a>2?"Hasn't run in "+Math.floor(a)+" days":red.length?red.map(r=>r.name).join(", "):"All clear"});};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
