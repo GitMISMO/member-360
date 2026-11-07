@@ -3150,7 +3150,7 @@ function prepaid(o){const a=ACT[o.k];return a&&a.prepaid?a.prepaid:null;}
 function iifPaid(o){if(!o.iif)return 0;const a=ACT[o.k];const fs=a&&a.iif?(a.iif[IY]||0):0;return Math.max(o.iif.y26.paid||0,fs);}
 function iifColl(o){if(!o.iif)return "";const p=iifPaid(o),inv=o.iif.y26.inv||0;if(o.iif.y26.cs==="Paid Full Amount"||(inv>0&&p>=inv))return "Paid Full Amount";if(p>0)return "Partial Payment Received";return "Not Paid";}
 function iifOut(o){return ov(o).iifOutreach||(o.iif&&o.iif.y26.st)||"Not Contacted";}
-function iifTier(x){return x>=55000?"Chair Champion":x>=20000?"Executive Champion":x>=10000?"Associate Champion":x>=iifMin()?"Corporate":"";}
+
 function sizeOf(v){return v<=1000?"s1":v<10000?"s2":v<20000?"s3":v<55000?"s4":"s5";}
 const SIZELAB={s1:"$1,000 or Less",s2:"$1,001 to $9,999",s3:"$10,000 to $19,999",s4:"$20,000 to $54,999",s5:"$55,000 or More"};
 function baseStage(o){return RY===DATA_RY&&o.stage?o.stage:"Not Renewed Yet";}
@@ -6135,7 +6135,7 @@ function regsLoaded(code){return !!(REGSTATE&&(REGSTATE.summits||[]).includes(co
 function iifTier(p){return p>=55000?"Chair":p>=20000?"Executive":p>=10000?"Associate":p>=iifMin()?"Corporate":"";}
 function benLevel(o,forDate){const Y=String(RY-1);if(kindIn(o,Y)!=="Lender")return {lv:o.level||"",how:""};
   if(specialOf(o))return {lv:"Corporate",how:specialOf(o)+" special"};
-  const y=(forDate||TODAY).slice(0,4),py=String(Number(y)-1);let p=lendPaid(o,y),yy=y;if(p<1000){const q=lendPaid(o,py);if(q>p){p=q;yy=py;}}
+  const y=(forDate||TODAY).slice(0,4),py=String(Number(y)-1);let p=lendPaid(o,y),yy=y;if(p<iifMin()){const q=lendPaid(o,py);if(q>p){p=q;yy=py;}}
   const t=iifTier(p);return {lv:t,how:t?money(Math.round(p))+" IIF paid for "+yy:"Under $1,000 IIF paid"};}
 function benefitGaps(o){if(o.life!=="Active")return [];const out=[];
   const S=nextEvent("Summit"),lvS=S?benLevel(o,S.date).lv:"";if(outreachOpen(S)&&BEN_SUMMIT[lvS]){const lv=lvS;const code=sumCode(S.date),u=compsUsed(o,code),a=BEN_SUMMIT[lv];if(u<a)out.push({kind:"Summit",e:S,a,u,left:a-u,code});}
@@ -6156,7 +6156,7 @@ function laneOf(o){
   if(touchedSince(o,recent))return null;
   if(o.life==="Prospect"){const ps=ov(o).pstage||"";if(PCLOSED[ps]||ps==="Hold")return null;const lt=lastTouch(o);
     return {lane:"prospect",score:(PORDER[ps]||0)*100+(lt>=String(RY-2)?20:0),why:(ps?ps+" · ":"")+(lt?"Last touch "+monthYr(lt):"No touches yet")};}
-  if(o.iif&&o.life!=="Active"){const p=iifPaid(o);if(p>0&&p<1000)return {lane:"iif",score:900+p/10,why:"Paid "+money(Math.round(p))+" in IIF · "+money(Math.round(1000-p))+" more makes them a member"};return null;}
+  if(o.iif&&o.life!=="Active"){const p=iifPaid(o);if(p>0&&p<iifMin())return {lane:"iif",score:900+p/10,why:"Paid "+money(Math.round(p))+" in IIF · "+money(Math.round(1000-p))+" more makes them a member"};return null;}
   if((o.life==="Former"||o.life==="Lost")&&o.thru&&o.thru>=addDays(TODAY,-730)&&!/business|merger/i.test(o.lossReason||""))
     return {lane:"winback",score:Number(o.thru.replace(/-/g,""))/1e4,why:"Membership ended "+monthYr(o.thru)+(o.lossReason?" · "+o.lossReason:"")};
   return null;
@@ -7399,8 +7399,8 @@ function renderStats(){
       {k:"rc:nl-other",g:"look",l:"Non-Lender members with payments, but none for membership",f:()=>NL.filter(o=>!memCovers(o,Y)&&!lastMemFor(o)&&fsItems(o).length),n:noteNL},
       {k:"rc:nl-none",g:"look",l:"Non-Lender members with no payments under this name",h:"They may pay under another name. Match it in Settings under Payer Names to Match.",f:()=>NL.filter(o=>!memCovers(o,Y)&&!fsItems(o).length),n:noteNL},
       {k:"rc:l-ok",g:"ok",l:"Lender members who paid $1,000 or more IIF in "+Y,f:()=>LN.filter(o=>lendPaid(o,Y)>=iifMin()),n:noteL},
-      {k:"rc:l-sp",g:"ok",l:"Lender members on a special rate ("+SPECIALS.join(", ")+")",f:()=>LN.filter(o=>lendPaid(o,Y)<1000&&specialOf(o)),n:noteL},
-      {k:"rc:l-low",g:"look",l:"Lender members who paid under $1,000 IIF",f:()=>LN.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),n:noteL},
+      {k:"rc:l-sp",g:"ok",l:"Lender members on a special rate ("+SPECIALS.join(", ")+")",f:()=>LN.filter(o=>lendPaid(o,Y)<iifMin()&&specialOf(o)),n:noteL},
+      {k:"rc:l-low",g:"look",l:"Lender members who paid under $1,000 IIF",f:()=>LN.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<iifMin()&&!specialOf(o)),n:noteL},
       {k:"rc:l-none",g:"look",l:"Lender members with no "+Y+" IIF payment found",f:()=>LN.filter(o=>!lendPaid(o,Y)&&!specialOf(o)),n:noteL},
       {k:"rc:x-mem",g:"bad",l:"Paid for a "+Y+" membership, but not marked a member",f:()=>ORGS.filter(o=>o.life!=="Active"&&fsItems(o).some(i=>i.c==="Membership"&&i.n>0&&i.s&&i.s.slice(0,4)===Y)),n:o=>"Paid "+money(fsItems(o).filter(i=>i.c==="Membership"&&i.s&&i.s.slice(0,4)===Y).reduce((a,i)=>a+i.n,0))+" · "+o.life},
       {k:"rc:x-iif",g:"bad",l:"Paid $1,000 or more IIF in "+Y+", but not marked a member",f:()=>ORGS.filter(o=>o.life!=="Active"&&lendPaid(o,Y)>=iifMin()),n:o=>money(lendPaid(o,Y))+" IIF · "+o.life}];
@@ -7505,7 +7505,7 @@ function isChecks(){
     {key:"cu-low",cat:"Member Counts",title:"Credit Union Members That Paid under $1,000 IIF",
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as credit union members, but their "+Y+" IIF is under the $1,000 that makes a lender a member. If they aren't a member, open the record and set Membership Status to Prospect.",
-      items:()=>O(A.filter(o=>o.cu&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
+      items:()=>O(A.filter(o=>o.cu&&lendPaid(o,Y)<iifMin()&&!specialOf(o)),noteL)},
     {key:"nl-iif",cat:"Member Counts",title:"Recorded as Non-Lender but Paid IIF",
       act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"These members are recorded as Non-Lender members but paid $1,000 or more IIF in "+Y+", so the IIF Cycle counts them as lenders and Membership Stats doesn't. Open the record and set Member Type to whichever is right.",
@@ -7549,7 +7549,7 @@ function isChecks(){
     {key:"l-low",cat:"Payments",title:"Lender Members That Paid under $1,000 IIF",
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"Marked as lender members, but their "+Y+" IIF is under $1,000 and they aren't on a membership special. If they aren't a member, open the record and set Membership Status to Prospect.",
-      items:()=>O(Lm.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<1000&&!specialOf(o)),noteL)},
+      items:()=>O(Lm.filter(o=>lendPaid(o,Y)>0&&lendPaid(o,Y)<iifMin()&&!specialOf(o)),noteL)},
     {key:"nl-none",cat:"Payments",title:"Non-Lender Members with No Payments under Their Name",
       act:{label:"Set Membership Status",field:"life",opts:[["Prospect","Prospect \u2014 not a member"],["Active","Active \u2014 a current member"],["Former","Former"],["Lost","Lost"]]},
       why:"No payment of any kind is on file under these names, and Aptify has no active MISMO term covering "+Y+" for them. They probably pay under another name: match it under Payer Names to Match.",
@@ -10658,7 +10658,7 @@ async function hlCheck(){if(HL.busy)return HL.rows;HL.busy=true;try{
   const errs=HL.errs.filter(x=>hlAge(x.at)<=7);
   rows.push({grp:"saves",key:"saves-failed",name:"Failed Saves, Last 7 Days",what:"Changes someone made that did not save",when:errs.length?errs[0].at:"",every:"",
     level:errs.length?"warn":"ok",note:errs.length?errs.length+" failed save"+(errs.length===1?"":"s"):"None"});
-  HL.rows=rows;HL.at=new Date().toISOString();await hlRecord(rows);return rows;}finally{HL.busy=false;}}
+  HL.rows=rows;HL.at=new Date().toISOString();if(typeof hlExtra==="function")await hlExtra(rows);await hlRecord(rows);return rows;}finally{HL.busy=false;}}
 /* keep the result and send the alert: only problems that are red, at most one email a day, the same problem not again for 3 days */
 async function hlRecord(rows){if(typeof db==="undefined"||!db||canWrite===false)return;
   const bad=rows.filter(r=>r.level==="bad"),hm=HL.hm||{},keys=bad.map(r=>r.key).sort().join(",");
@@ -10734,6 +10734,58 @@ show=(function(orig){return function(tab){orig(tab);if(tab==="health"){hlInit();
     db.collection("health").onSnapshot(s=>{const errs=[];s.docs.forEach(d=>{const x=d.data()||{};if(d.id==="main")HL.hm=x;else if(x.msg)errs.push(x);});HL.errs=errs.sort((a,b)=>String(b.at).localeCompare(String(a.at)));hlPaint();},e=>console.error("health",e));
     hlInit();setTimeout(()=>{hlCheck().then(hlPaint).catch(e=>console.error("health",e));},60000);setInterval(()=>{hlCheck().then(hlPaint).catch(e=>console.error("health",e));},30*60000);}
   else setTimeout(go,2000);};go();}
+/* ---------- Rule Checks and Storage on System Health (Jonna, Nov 7, 2026) ----------
+   Rule Checks run made-up examples through the same code the team uses (start dates, the IIF amount, champion tiers,
+   Aptify memberships, Company IDs, sales stages, senders) and check the data for duplicate Company IDs and broken merges.
+   A failing check turns red and alerts like any other problem; the test copy runs them before a change goes live.
+   Storage shows how close the biggest data files are to the relay's save limit (checked from Jonna's browser, every 6 hours). */
+function hlRuleChecks(){const R=[];
+  const ck=(name,fn,want)=>{let got,err="";try{got=fn();}catch(e){err=e.message||String(e);}const ok=!err&&JSON.stringify(got)===JSON.stringify(want);R.push({name,ok,got:err?"error: "+err:JSON.stringify(got),want:JSON.stringify(want)});};
+  const p2=n=>String(n).padStart(2,"0"),cut=startCutoff(),min=iifMin();
+  ck("Paid on the cutoff day ("+cut+"): starts that month",()=>levelSetStart("2026-03-"+p2(cut)),"2026-03-01");
+  ck("Paid the day after the cutoff: starts next month",()=>levelSetStart("2026-03-"+p2(cut+1)),"2026-04-01");
+  ck("Paid after the cutoff in December: starts January",()=>levelSetStart("2026-12-"+p2(cut+1)),"2027-01-01");
+  ck("IIF paid just under $"+min.toLocaleString()+": not a member",()=>iifTier(min-1),"");
+  ck("IIF paid $"+min.toLocaleString()+": Corporate member",()=>iifTier(min),"Corporate");
+  ck("IIF paid $10,000: Associate (Champion)",()=>iifTier(10000),min>10000?"":"Associate");
+  ck("IIF paid $20,000: Executive (Champion)",()=>iifTier(20000),"Executive");
+  ck("IIF paid $55,000: Chair (Champion)",()=>iifTier(55000),"Chair");
+  /* lender membership from IIF payments and from Aptify (made-up records, removed straight after) */
+  const k1="__check_l1",k2="__check_l2",had1=Object.prototype.hasOwnProperty.call(ACT,k1),had2=Object.prototype.hasOwnProperty.call(ACT,k2);
+  try{ACT[k1]={iif:{"2020":min-1}};ck("Lender paying under the IIF amount (no deal): not a member",()=>memberYear({k:k1,type:"Lender",aptAll:[]},"2020"),null);
+    ACT[k1]={iif:{"2020":min}};ck("Lender paying the IIF amount: member through IIF",()=>{const m=memberYear({k:k1,type:"Lender",aptAll:[]},"2020");return m&&m.src;},"IIF");
+    ACT[k2]={iif:{"2020":250}};ck("Lender Aptify shows as a member: counts at any amount",()=>{const m=memberYear({k:k2,type:"Lender",aptAll:[{s:"2020-01-01",e:"2020-12-31",lv:"Corporate"}]},"2020");return m&&m.src;},"Aptify");
+  }finally{if(!had1)delete ACT[k1];if(!had2)delete ACT[k2];}
+  ck("Non-lender with no Aptify membership: not a member",()=>memberYear({k:"__check_n1",type:"Non-Lender",aptAll:[]},"2020"),null);
+  ck("Aptify term Jan to Dec 2020 covers 2020",()=>{const a=aptYears({aptAll:[{s:"2020-01-01",e:"2020-12-31",lv:"Corporate"}]});return Object.keys(a).join(",")+" "+(a["2020"]||{}).lv;},"2020 Corporate");
+  ck("A real Aptify Company ID is kept",()=>cidReal(" 9749444 "),"9749444");
+  ck("A placeholder like Not in Aptify counts as no Company ID",()=>cidReal("Not in Aptify"),"");
+  ck("Payment in Process sits right before 8 - Paid",()=>PSTAGES.indexOf("Payment in Process")===PSTAGES.findIndex(x=>/^8 /.test(x))-1,true);
+  ck("Champion levels match Shared Rules",()=>champLevels().slice().sort().join(","),(rules().championLevels||RULE_DEF.championLevels).slice().sort().join(","));
+  ck("Every sender in Shared Rules has a mailbox name",()=>sendKeys().filter(k=>!SENDERS[k]),[]);
+  ck("Level prices come from Settings",()=>((SET&&SET.levels)||[]).filter(l=>l&&l.v&&+l.price>0&&listPrice(l.v)!==+l.price).map(l=>l.v),[]);
+  /* the data itself */
+  ck("No two records share an Aptify Company ID",()=>{const m={},d=[];ORGS.forEach(o=>{const c=cidReal(o.cid);if(!c)return;if(m[c]&&d.indexOf(c)<0)d.push(c);m[c]=1;});return d.slice(0,10);},[]);
+  ck("Every merged record points to a record that exists",()=>Object.keys(OV).filter(k=>OV[k]&&OV[k].mergedInto&&!BY[OV[k].mergedInto]).slice(0,10),[]);
+  return R;}
+const HL_FILES=["outbox","mailin","trkpatch","touchpoints","activity","orgs","issues","deals","lists","listsends","health","settings","templates","engage","plans","sends"];
+async function hlStorage(){const st=HL.store||{};if(st.at&&hlAge(st.at)*24<6)return st;const out=[];
+  for(const n of HL_FILES){try{const r=await fetch(M360_R+"/data/"+n,{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});if(!r.ok)continue;const t=await r.text();out.push({n,len:t.length});}catch(e){}}
+  out.sort((a,b)=>b.len-a.len);HL.store={at:new Date().toISOString(),files:out};return HL.store;}
+async function hlExtra(rows){
+  try{const R=hlRuleChecks(),bad=R.filter(x=>!x.ok);HL.checks=R;
+    rows.push({grp:"rules",key:"rule-checks",name:"Rule Checks",what:R.length+" made-up examples and data checks run through the same code the team uses",when:new Date().toISOString(),every:"Every check",
+      level:bad.length?"bad":"ok",note:bad.length?bad.length+" failing: "+bad.map(x=>x.name).join("; "):"All "+R.length+" pass"});}catch(e){console.error("rule checks",e);}
+  try{if(hlIsAdmin()){const s=await hlStorage();const top=(s.files||[])[0];if(top){const pct=Math.round(top.len/940000*100);
+    rows.push({grp:"saves",key:"storage",name:"Storage",what:"Biggest data file against the relay's 1 MB save limit",when:s.at,every:"Every 6 hours",
+      level:pct>=90?"bad":pct>=75?"warn":"ok",note:top.n+" is "+pct+"% full"});}}}catch(e){console.error("storage",e);}}
+{const _hp=hlPaint;hlPaint=function(){_hp.apply(this,arguments);const sec=$("v-health");if(!sec||sec.hidden)return;
+  let box=$("hl-rules");if(!box){box=h("div",{class:"hl-card",id:"hl-rules",style:"margin-top:14px"});sec.appendChild(box);
+    const st=document.createElement("style");st.textContent="#v-health .hl-cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 18px;margin-top:4px}#v-health .hl-c{display:grid;grid-template-columns:12px minmax(0,1fr);gap:8px;padding:6px 0;border-top:1px solid var(--line);font-size:12.5px}#v-health .hl-c .x{font-size:11.5px;color:var(--bad);margin-top:2px}";document.head.appendChild(st);}
+  const R=HL.checks||[],nb=R.filter(x=>!x.ok).length,S=(HL.store&&HL.store.files)||[];
+  box.innerHTML='<h2>Rule Checks <span class="hint" style="font-weight:400;margin:0 0 0 6px">'+(R.length?(nb?nb+" of "+R.length+" failing":"All "+R.length+" pass"):"Run Check Now to see them")+'</span></h2>'
+    +'<div class="hl-cg">'+R.map(x=>'<div class="hl-c"><div class="hl-d '+(x.ok?"ok":"bad")+'"></div><div>'+tlEsc(x.name)+(x.ok?"":'<div class="x">Expected '+tlEsc(x.want)+", got "+tlEsc(x.got)+'</div>')+'</div></div>').join("")+'</div>'
+    +(S.length?'<div class="hl-foot">Data file sizes against the 1 MB save limit: '+S.slice(0,8).map(f=>tlEsc(f.n)+" "+Math.round(f.len/940000*100)+"%").join(" · ")+'</div>':"");};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
