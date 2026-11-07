@@ -10608,6 +10608,132 @@ function cidReal(c){c=String(c==null?"":c).trim();return /^\d+$/.test(c)?c:"";}
     const add=(lo.notes||[]).filter(n=>n&&!n._from&&!have.has(key(n))).map(n=>Object.assign({},n,{_from:k,t:String(n.t||"")+" (from the merged record "+lo.name+")"}));
     if(add.length)w.notes=add.concat(w.notes||[]).sort((a,b)=>String(b.d||"").localeCompare(String(a.d||"")));});
   return r;};}
+/* ---------- System Health (Jonna, Nov 7, 2026) ----------
+   One page, for Jonna only, that shows whether everything feeding and leaving Member 360 is working: when each feed last
+   updated, whether the email flow is sending, failed emails, and saves that failed. Every open copy of Member 360 checks
+   every 30 minutes and keeps the result in health/main. When something turns red, an email goes to Jonna (at most one a
+   day, and the same problem is not repeated for three days). Saves that fail are logged to health/e… so they show here. */
+const HL={errSeen:{},docs:{},hm:null,errs:[],rows:null,at:"",busy:false,inErr:false};
+const HL_TO={email:"jcritchley@mismo.org",name:"Jonna Critchley"};
+function hlAge(iso){const t=Date.parse(iso||"");return isNaN(t)?Infinity:(Date.now()-t)/864e5;}
+function hlWhen(iso){const t=Date.parse(iso||"");if(isNaN(t))return "Never";const d=new Date(t),a=(Date.now()-t)/6e4;
+  const day=d.toLocaleDateString("en-US",{month:"short",day:"numeric"}),tm=d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  const ago=a<2?"just now":a<60?Math.round(a)+" min ago":a<1440?Math.round(a/60)+" hr ago":Math.round(a/1440)+" day"+(Math.round(a/1440)===1?"":"s")+" ago";return day+", "+tm+" · "+ago;}
+function hlIsAdmin(){try{return !!(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin());}catch(e){return false;}}
+async function hlGet(path){const base=path.indexOf("membership-desk/")===0?DESK_R+path.slice(16):M360_R+"/data/"+path.slice(11);
+  const r=await fetch(base,{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();return (j&&(j.data||j.content))||{};}
+/* the feeds: how often each should update, in days, before it shows late (yellow) and then stale (red) */
+const HL_FEEDS=[
+  {key:"aptify",name:"Aptify Upload",what:"Your weekly Aptify pull: members, orders, levels, terms",every:"Weekly",late:8,bad:14,at:()=>typeof APT!=="undefined"&&APT?APT.uploadedAt:""},
+  {key:"money",name:"MISMO Money Payments",what:"Payments MISMO Money matches to companies",every:"Daily",late:3,bad:6,at:()=>typeof MMF!=="undefined"&&MMF?MMF.writtenAt:""},
+  {key:"square",name:"Square Specials",what:"Square payments and set-ups from MISMO Money",every:"Daily",late:3,bad:6,doc:"membership-desk/square",f:"writtenAt"},
+  {key:"desk",name:"Membership Desk To-Dos",what:"What the membership team sees on their desk",every:"Daily",late:3,bad:6,doc:"membership-desk/todos",f:"writtenAt"},
+  {key:"tracker",name:"Kelly's Tracker Upload",what:"Notes, contacts and new companies from her sheet",every:"Weekly",late:10,bad:21,at:()=>{try{return ((TRK.P&&TRK.P.meta)||TRK.meta||{}).at||"";}catch(e){return "";}}},
+  {key:"mmnew",name:"MISMO Matters New Members",what:"New members handed to MISMO Media",every:"When members join",info:true,doc:"member-360/mm-newmembers",f:"savedAt"},
+  {key:"champ",name:"Website Champion Logos",what:"The public feed the website reads",every:"When champions change",info:true,doc:"member-360/champions",f:"savedAt"},
+  {key:"apps",name:"Membership Applications",what:"Applications from the website form",every:"When one comes in",info:true,doc:"member-360/applications",f:"savedAt"},
+  {key:"mailin",name:"360@ Mailbox",what:"Emails forwarded or copied to 360@mismo.org",every:"When one comes in",info:true,doc:"member-360/mailin",f:"savedAt"}];
+function hlLevel(f,iso){if(!iso)return f.info?"info":"bad";const a=hlAge(iso);if(f.info)return "info";return a>f.bad?"bad":a>f.late?"warn":"ok";}
+async function hlCheck(){if(HL.busy)return HL.rows;HL.busy=true;try{
+  const rows=[];
+  for(const f of HL_FEEDS){let iso="";try{if(f.doc){const d=await hlGet(f.doc);iso=d[f.f]||d.savedAt||"";}else iso=f.at()||"";}catch(e){iso="";}
+    const lv=f.doc||iso?hlLevel(f,iso):"warn";
+    rows.push({grp:"feeds",key:"feed-"+f.key,name:f.name,what:f.what,when:iso,every:f.every,level:lv,
+      note:lv==="bad"?(iso?"Hasn't updated in "+Math.floor(hlAge(iso))+" days":"Couldn't be read"):lv==="warn"?(iso?"Running late":"Not loaded yet"):lv==="ok"?"On time":""});}
+  /* email: anything queued and not picked up, failures, and the Wednesday IIF email */
+  const OB=typeof OUTBOX!=="undefined"?OUTBOX||{}:{},MD=typeof MAILED!=="undefined"?MAILED||{}:{};
+  const stuck=Object.keys(OB).filter(id=>!MD[id]&&OB[id]&&OB[id].status==="queued"&&hlAge(OB[id].queuedAt)*1440>20);
+  let lastRun="";Object.values(MD).forEach(x=>{if(x&&x.at&&x.at>lastRun)lastRun=x.at;});
+  rows.push({grp:"email",key:"email-flow",name:"Email Flow",what:"Power Automate picking up emails Member 360 queues",when:lastRun,every:"Every few minutes",
+    level:stuck.length?"bad":"ok",note:stuck.length?stuck.length+" email batch"+(stuck.length===1?"":"es")+" waiting more than 20 minutes":"Nothing waiting"});
+  const fails=Object.keys(MD).filter(id=>{const x=MD[id];return x&&(x.status!=="sent"||(x.failed||[]).length)&&hlAge(x.at)<=7;});
+  const real=fails.filter(id=>!(OB[id]&&OB[id].test));
+  rows.push({grp:"email",key:"email-failed",name:"Failed Emails, Last 7 Days",what:"Batches Power Automate could not send, or sent with some addresses failing",when:fails.length?fails.map(id=>MD[id].at).sort().pop():"",every:"",
+    level:real.length?"bad":fails.length?"warn":"ok",note:fails.length?(real.length+" real, "+(fails.length-real.length)+" test"):"None",ids:fails});
+  let iif="";Object.keys(OB).forEach(id=>{const b=OB[id];if(b&&b.step==="iif-report"&&MD[id]&&MD[id].status==="sent"&&MD[id].at>iif)iif=MD[id].at;});
+  const ia=hlAge(iif);
+  rows.push({grp:"email",key:"email-iif",name:"Wednesday New IIF Members Email",what:"Kelly's weekly email, you on Cc",when:iif,every:"Weekly, Wednesday",
+    level:!iif?"warn":ia>15?"bad":ia>8?"warn":"ok",note:!iif?"No send on record yet":ia>8?"Missed a week":"Sent on schedule"});
+  /* saves that failed, from every copy of Member 360 */
+  const errs=HL.errs.filter(x=>hlAge(x.at)<=7);
+  rows.push({grp:"saves",key:"saves-failed",name:"Failed Saves, Last 7 Days",what:"Changes someone made that did not save",when:errs.length?errs[0].at:"",every:"",
+    level:errs.length?"warn":"ok",note:errs.length?errs.length+" failed save"+(errs.length===1?"":"s"):"None"});
+  HL.rows=rows;HL.at=new Date().toISOString();await hlRecord(rows);return rows;}finally{HL.busy=false;}}
+/* keep the result and send the alert: only problems that are red, at most one email a day, the same problem not again for 3 days */
+async function hlRecord(rows){if(typeof db==="undefined"||!db||canWrite===false)return;
+  const bad=rows.filter(r=>r.level==="bad"),hm=HL.hm||{},keys=bad.map(r=>r.key).sort().join(",");
+  const alerted=Object.assign({},hm.alerted||{});let alertAt=hm.alertAt||"";
+  const fresh=bad.filter(r=>hlAge(alerted[r.key])>3);
+  if(fresh.length&&hlAge(alertAt)>=0.8&&typeof canSend==="function"&&canSend()){
+    try{await hlAlert(fresh,bad);const now=new Date().toISOString();fresh.forEach(r=>{alerted[r.key]=now;});alertAt=now;}catch(e){console.error("health alert",e);}}
+  if(hlAge(hm.checkedAt)*1440<30&&(hm.badKeys||"")===keys&&alertAt===(hm.alertAt||""))return;
+  const doc={checkedAt:new Date().toISOString(),checkedBy:(typeof myName==="function"&&myName())||ME||"",badKeys:keys,
+    problems:rows.filter(r=>r.level==="bad"||r.level==="warn").map(r=>({key:r.key,name:r.name,level:r.level,note:r.note,when:r.when||""})),alerted,alertAt};
+  try{HL.inErr=true;await db.doc("health/main").set(doc);HL.hm=doc;}catch(e){console.error("health save",e);}finally{HL.inErr=false;}}
+async function hlAlert(fresh,bad){const link="https://resources.mismo.org/member-360/#health";
+  const html=internalEmail({tool:"Member 360",title:"Something Needs a Look",sub:bad.length+" problem"+(bad.length===1?"":"s")+" on System Health",
+    intro:"Hi Jonna,<br>Member 360's health check found "+(bad.length===1?"a problem":"problems")+" that need"+(bad.length===1?"s":"")+" attention.",
+    sections:[["What's Wrong",bad.map(r=>[r.name,r.note+(r.when?" (last: "+hlWhen(r.when).split(" · ")[0]+")":"")])]],
+    cta:[link,"Open System Health"],foot:"Sent by Member 360's health check. You get at most one of these a day, and the same problem isn't repeated for three days."});
+  const id="hl"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  await db.doc("outbox/"+id).set({step:"health",stepName:"System Health Alert",thru:"",test:false,from:HL_TO.email,fromKey:"jcritchley",fromName:SENDERS.jcritchley||HL_TO.name,html,benefits:{},
+    recipients:[{to:HL_TO.email,name:HL_TO.name,org:"",subject:"Member 360 needs a look: "+fresh.map(r=>r.name).join(", "),fn:"Jonna",ln:"Critchley",co:"",lvl:"",type:"",ends:"",bk:"none"}],
+    status:"queued",queuedAt:new Date().toISOString(),queuedBy:ME||""});}
+/* failed saves are logged so they show here (the same message once an hour per browser) */
+function hlLogErr(e){if(HL.inErr||typeof db==="undefined"||!db)return;const msg=String((e&&(e.message||e.code))||e||"Unknown error").slice(0,300);
+  if(Date.now()-(HL.errSeen[msg]||0)<36e5)return;HL.errSeen[msg]=Date.now();
+  const id="e"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);HL.inErr=true;
+  Promise.resolve().then(()=>db.doc("health/"+id).set({at:new Date().toISOString(),by:(typeof myName==="function"&&myName())||ME||"",msg,where:location.hash||"#home"})).catch(()=>{}).finally(()=>{HL.inErr=false;});}
+{const _we=onWriteErr;onWriteErr=function(e){try{hlLogErr(e);}catch(x){}return _we.apply(this,arguments);};}
+/* the page */
+function hlInit(){if($("v-health")||!hlIsAdmin())return;const main=document.querySelector("main");if(!main)return;
+  const after=document.querySelector('.hq nav button[data-hq="issues"]');
+  if(after){const b=document.createElement("button");b.type="button";b.dataset.hq="health";b.title="System Health";
+    b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>System Health</span><em class="pip" id="pip-health"></em>';
+    after.parentNode.insertBefore(b,after.nextSibling);b.addEventListener("click",()=>{if(location.hash!=="#health")history.replaceState(null,"","#health");});}
+  const sec=document.createElement("section");sec.className="view";sec.id="v-health";sec.hidden=true;
+  sec.innerHTML='<div class="vhead"><div><h1>System Health</h1><div class="vsub">Whether everything feeding and leaving Member 360 is working. Every open copy of Member 360 checks every 30 minutes; when something turns red you get an email.</div></div><div class="btnrow" style="margin:0"><button type="button" class="btn" id="hl-now">Check Now</button></div></div>'
+    +'<div class="hl-sum" id="hl-sum"></div><div class="hl-grid"><div class="hl-card" id="hl-feeds"></div><div class="hl-col"><div class="hl-card" id="hl-email"></div><div class="hl-card" id="hl-saves"></div><div class="hl-card" id="hl-alerts"></div></div></div>';
+  main.appendChild(sec);
+  const st=document.createElement("style");st.textContent=
+   '#v-health .hl-sum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}#v-health .hl-k{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px}'
+  +'#v-health .hl-k b{display:block;font-size:22px;font-weight:700;line-height:1.1}#v-health .hl-k span{font-size:12px;color:var(--ink-3)}#v-health .hl-k.bad b{color:var(--bad)}#v-health .hl-k.warn b{color:var(--warn)}#v-health .hl-k.ok b{color:var(--good)}'
+  +'#v-health .hl-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}#v-health .hl-col{display:grid;gap:14px}@media(max-width:980px){#v-health .hl-grid{grid-template-columns:1fr}#v-health .hl-sum{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+  +'#v-health .hl-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}#v-health .hl-card h2{margin:0 0 6px;font-size:16px}'
+  +'#v-health .hl-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:4px 10px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}#v-health .hl-r:first-of-type{border-top:0}'
+  +'#v-health .hl-d{width:10px;height:10px;border-radius:50%;margin-top:4px;background:var(--ink-3)}#v-health .hl-d.ok{background:var(--good)}#v-health .hl-d.warn{background:var(--warn)}#v-health .hl-d.bad{background:var(--bad)}#v-health .hl-d.info{background:var(--border-strong)}'
+  +'#v-health .hl-n{font-weight:600;font-size:13.5px}#v-health .hl-w{font-size:12px;color:var(--ink-3);margin-top:1px}#v-health .hl-t{font-size:12px;color:var(--ink-2);margin-top:3px}'
+  +'#v-health .hl-s{font-size:12px;font-weight:700;text-align:right;white-space:nowrap}#v-health .hl-s.ok{color:var(--good)}#v-health .hl-s.warn{color:var(--warn)}#v-health .hl-s.bad{color:var(--bad)}#v-health .hl-s.info{color:var(--ink-3);font-weight:600}'
+  +'#v-health .hl-list{grid-column:2/-1;font-size:12px;color:var(--ink-2);margin:4px 0 0;padding:6px 9px;background:var(--sunk,var(--surface-2));border-radius:6px;max-height:180px;overflow:auto}#v-health .hl-list div+div{margin-top:4px}'
+  +'#v-health .hl-foot{font-size:12px;color:var(--ink-3);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}';
+  document.head.appendChild(st);
+  $("hl-now").addEventListener("click",async()=>{const b=$("hl-now");b.disabled=true;b.textContent="Checking…";try{await hlCheck();}catch(e){console.error("health",e);}b.disabled=false;b.textContent="Check Now";hlPaint();});
+  if(location.hash==="#health")setTimeout(()=>show("health"),500);
+  window.addEventListener("hashchange",()=>{if(location.hash==="#health")show("health");});}
+function hlPaint(){const sec=$("v-health");const rows=HL.rows||[];const pip=$("pip-health");const nb=rows.filter(r=>r.level==="bad").length,nw=rows.filter(r=>r.level==="warn").length;
+  if(pip){pip.textContent=nb?String(nb):"";pip.hidden=!nb;}if(!sec||sec.hidden)return;
+  const no=rows.filter(r=>r.level==="ok").length,hm=HL.hm||{};
+  $("hl-sum").innerHTML=[[nb,"Need attention","bad"],[nw,"Running late","warn"],[no,"On time","ok"],[hm.alertAt?hlWhen(hm.alertAt).split(" · ")[1]:"None","Last alert to you",""]]
+    .map(k=>'<div class="hl-k '+(k[2]&&k[0]?k[2]:k[2]==="ok"?"ok":"")+'"><b>'+tlEsc(String(k[0]))+'</b><span>'+k[1]+'</span></div>').join("");
+  const lab={ok:"On time",warn:"Late",bad:"Needs a look",info:"Last update"};
+  const row=r=>{let x='<div class="hl-r"><div class="hl-d '+r.level+'"></div><div><div class="hl-n">'+tlEsc(r.name)+'</div><div class="hl-w">'+tlEsc(r.what)+(r.every?" · "+tlEsc(r.every):"")+'</div><div class="hl-t">'+(r.when?"Last: "+tlEsc(hlWhen(r.when)):"Last: none on record")+'</div></div><div class="hl-s '+r.level+'">'+tlEsc(r.level==="info"?lab.info:r.note||lab[r.level])+'</div>';
+    if(r.key==="email-failed"&&(r.ids||[]).length){const MD=MAILED||{},OB=OUTBOX||{};x+='<div class="hl-list">'+r.ids.map(id=>{const m=MD[id]||{},b=OB[id]||{};return '<div><b>'+tlEsc(hlWhen(m.at).split(" · ")[0])+'</b> · '+tlEsc(b.stepName||b.step||"Email")+(b.test&&!/test/i.test(b.stepName||"")?" (test)":"")+' · '+tlEsc(String(m.error||((m.failed||[]).length?(m.failed.length+" address"+(m.failed.length===1?"":"es")+" failed"):"failed")).slice(0,160))+'</div>';}).join("")+'</div>';}
+    if(r.key==="saves-failed"){const e=HL.errs.filter(z=>hlAge(z.at)<=7);if(e.length)x+='<div class="hl-list">'+e.slice(0,20).map(z=>'<div><b>'+tlEsc(hlWhen(z.at).split(" · ")[0])+'</b> · '+tlEsc(z.by||"")+' · '+tlEsc(z.msg)+'</div>').join("")+'</div>';}
+    return x+'</div>';};
+  const card=(id,title,g,foot)=>{$(id).innerHTML='<h2>'+title+'</h2>'+rows.filter(r=>r.grp===g).map(row).join("")+(foot?'<div class="hl-foot">'+foot+'</div>':"");};
+  card("hl-feeds","Data Feeds","feeds","Checked "+(HL.at?hlWhen(HL.at):"not yet")+". Gray dots are feeds that only change when something happens, so they never show late.");
+  card("hl-email","Email","email","");
+  card("hl-saves","Saves","saves","");
+  const al=Object.keys(hm.alerted||{}).filter(k=>hm.alerted[k]===hm.alertAt).map(k=>{const r=rows.find(z=>z.key===k);return r?r.name:k;});
+  $("hl-alerts").innerHTML='<h2>Checks and Alerts</h2>'
+    +'<div class="hl-r"><div class="hl-d '+(hlAge(hm.checkedAt)*24<2?"ok":"warn")+'"></div><div><div class="hl-n">Last Shared Check</div><div class="hl-w">Saved by whoever had Member 360 open</div><div class="hl-t">'+(hm.checkedAt?tlEsc(hlWhen(hm.checkedAt))+(hm.checkedBy?" · "+tlEsc(String(hm.checkedBy).split(" <")[0]):""):"None yet")+'</div></div><div class="hl-s info"></div></div>'
+    +'<div class="hl-r"><div class="hl-d '+(hm.alertAt?"bad":"info")+'"></div><div><div class="hl-n">Last Alert Email</div><div class="hl-w">'+(al.length?"About: "+tlEsc(al.join(", ")):"Nothing has needed one")+'</div><div class="hl-t">'+(hm.alertAt?tlEsc(hlWhen(hm.alertAt)):"None sent")+'</div></div><div class="hl-s info"></div></div>'
+    +'<div class="hl-foot">Alerts go to '+tlEsc(HL_TO.email)+' from the Member 360 email flow when anything turns red: at most one a day, and the same problem is not repeated for three days. If the email flow itself stops, Power Automate emails you about the failed runs.</div>';}
+show=(function(orig){return function(tab){orig(tab);if(tab==="health"){hlInit();if(!HL.rows)hlCheck().then(hlPaint).catch(e=>console.error("health",e));hlPaint();}};})(show);
+{const go=()=>{if(typeof db!=="undefined"&&db&&typeof ORGS!=="undefined"&&ORGS.length){
+    db.collection("health").onSnapshot(s=>{const errs=[];s.docs.forEach(d=>{const x=d.data()||{};if(d.id==="main")HL.hm=x;else if(x.msg)errs.push(x);});HL.errs=errs.sort((a,b)=>String(b.at).localeCompare(String(a.at)));hlPaint();},e=>console.error("health",e));
+    hlInit();setTimeout(()=>{hlCheck().then(hlPaint).catch(e=>console.error("health",e));},60000);setInterval(()=>{hlCheck().then(hlPaint).catch(e=>console.error("health",e));},30*60000);}
+  else setTimeout(go,2000);};go();}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
