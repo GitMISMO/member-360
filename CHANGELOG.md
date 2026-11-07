@@ -9,6 +9,9 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-07
 
+- Technical guide and runbook: https://claude.ai/artifact/UJDU19Nwhz2TzQwKqvkjrV
+- Rule Checks on System Health: 21 made-up examples and data checks run through the real code; a failure turns red and alerts. Storage shows data files against the 1 MB save limit.
+- The IIF amount from Shared Rules is now used in benefit levels, stats and checks too (no more fixed $1,000 in the code); an unused duplicate of the champion-tier code removed.
 - Test copies of Member 360 and the Membership Desk.
 - System Health page (Jonna only): feed freshness, email flow, failed emails, failed saves; email alert to Jonna when anything turns red (at most one a day).
 - Failed saves from any copy of Member 360 are logged to System Health.
