@@ -9,6 +9,9 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-07
 
+- Page Checks on every save (GitHub Actions): scripts must parse, no keys or tokens, test copy saving off and live on, safety list present.
+- Version stamp on Settings and System Health; a bar asks to reload when a newer version is live.
+- Page safety list (Content-Security-Policy): the page may only load code from and send data to the save relay, cdnjs, jsDelivr and Google Fonts.
 - Technical guide and runbook: https://claude.ai/artifact/UJDU19Nwhz2TzQwKqvkjrV
 - Rule Checks on System Health: 21 made-up examples and data checks run through the real code; a failure turns red and alerts. Storage shows data files against the 1 MB save limit.
 - The IIF amount from Shared Rules is now used in benefit levels, stats and checks too (no more fixed $1,000 in the code); an unused duplicate of the champion-tier code removed.
