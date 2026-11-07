@@ -9649,7 +9649,7 @@ function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLower
 function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
 function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
 /* emails and campaigns go out only from Amy and Jonna, and either can pick whose voice (Send As) it goes out in (Jonna, Oct 29, 2026) */
-const SEND_AS=["amoses","jcritchley"],SEND_NO="Sending emails from Member 360 is set up for Amy and Jonna.";
+const SEND_AS=["amoses","kbradshaw","jcritchley"],SEND_NO="Sending emails from Member 360 is set up for Amy, Kelly and Jonna.";
 function canSend(){const s=mySender();return canEmail()&&!!s&&SEND_AS.includes(s.key);}
 function sendAsList(){return SEND_AS.map(k=>({key:k,name:SENDERS[k],email:k+"@mismo.org"}));}
 function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -10476,6 +10476,61 @@ function tlExcel(){const f=TL.f,Y=tlYear(f.yr||"this"),nm=String(($("tl-name")||
     if(TL.none.length)X.utils.book_append_sheet(wb,mk(["Company","Aptify Company ID","Status","Level","Type"],TL.none.map(o=>[o.name,o.cid||"",o.life,tlLevel(o,Y),tlKind(o,Y)])),"No Email");
     X.utils.book_append_sheet(wb,mk(["Filters"],[[tlSummary(f)],["Made "+fmt(TODAY)+" in Member 360"]]),"Filters");
     X.writeFile(wb,nm.replace(/[\\/:*?"<>|]/g," ").trim()+" "+TODAY+".xlsx");}).catch(e=>toast("The Excel file could not be made: "+(e.message||e),true));}
+
+
+/* ---------- Kelly emails her Targeted Lists (Jonna, Nov 7, 2026) ----------
+   Kelly sends from Member 360 like Amy, from her own mailbox. The Targeted List Email lives in Playbooks for her to word
+   her own way; Email This List on Targeted Lists sends it to exactly the contacts on the list. Every send is kept under
+   Sent from Targeted Lists: when, who sent it, from whom, which list, the subject and everyone it went to. */
+STEPS_X.push({id:"tl",name:"Targeted List Email",manual:true,all:false,off:0,to:["Primary"],when:"Sent by hand to a list built on Targeted Lists",what:"A general email for a Targeted List. Write the subject and message here, then send it from Targeted Lists with Email This List."});
+const TL_TPL={subject:"[Write your subject line]",body:"Hi {{First Name}},\n\n[Write your message here. Merge fields like {{Company}} and {{Membership Level}} fill in for each person.]\n\nThank you,\n\n{{Sender Signature}}"};
+{const _to=tplOf;tplOf=function(st){if(st&&st.id==="tl"&&!(TPL.tl&&(TPL.tl.subject||TPL.tl.body)))return {subject:TL_TPL.subject,body:TL_TPL.body};return _to.apply(this,arguments);};}
+{const _rp=renderPlays;renderPlays=function(){if(!TPL.tl)TPL.tl={subject:TL_TPL.subject,body:TL_TPL.body};return _rp.apply(this,arguments);};}
+{const _rc=recipients;recipients=function(o,st){if(st&&st.id==="tl"&&TL.pick)return (TL.pick.get(o.k)||[]).slice();return _rc.apply(this,arguments);};}
+TL.sent={};TL.histAll=false;TL.histOpen="";
+{const go=()=>{if(typeof db!=="undefined"&&db){db.collection("listsends").onSnapshot(s=>{const m={};s.docs.forEach(d=>{m[d.id]=d.data()||{};});TL.sent=m;tlHist();},e=>console.error("listsends",e));}else setTimeout(go,1500);};go();}
+{const _tr=tlRender;tlRender=function(){const r=_tr.apply(this,arguments);try{const a=$("tl-acts");if(a&&TL.rows.length&&canSend()&&!a.querySelector("[data-tlsend]")){const b=h("button",{type:"button",class:"btn","data-tlsend":"1"},"Email This List ("+TL.rows.length.toLocaleString()+")");b.addEventListener("click",tlSend);a.insertBefore(b,a.firstChild);}}catch(e){console.error("tl send",e);}try{tlHist();}catch(e){console.error("tl hist",e);}return r;};}
+function tlSend(){if(!canSend()){toast(SEND_NO,true);return;}if(!TL.rows.length)return;
+  const pick=new Map();TL.rows.forEach(r=>{if(!pick.has(r.o.k))pick.set(r.o.k,[]);pick.get(r.o.k).push(r.p);});TL.pick=pick;
+  const nm=String(($("tl-name")||{}).value||TL.name||"").trim();
+  TL.sending={at:new Date().toISOString(),listId:TL.id||"",listName:nm||"Unsaved list",summary:tlSummary(TL.f)};TL.sendSeen=new Set(Object.keys(OUTBOX||{}));
+  openSend({stId:"tl",thru:"",orgs:[...pick.keys()].map(k=>BY[k]).filter(Boolean)});tlWatch();}
+function tlWatch(){clearInterval(TL.watch);const until=Date.now()+30*60000;
+  TL.watch=setInterval(async()=>{const S=TL.sending;if(!S||Date.now()>until){clearInterval(TL.watch);return;}
+    const ids=Object.keys(OUTBOX||{}).filter(id=>!TL.sendSeen.has(id)&&OUTBOX[id]&&OUTBOX[id].step==="tl");
+    for(const id of ids){TL.sendSeen.add(id);const b=OUTBOX[id];if(b.test)continue;const R=b.recipients||[];
+      const doc={batch:id,at:b.queuedAt||new Date().toISOString(),by:String(b.queuedBy||"").split(" <")[0]||((typeof myName==="function"&&myName())||ME||""),from:b.from||"",fromName:b.fromName||"",
+        subject:(R[0]||{}).subject||"",listId:S.listId,listName:S.listName,summary:S.summary,n:R.length,recipients:R.map(r=>({to:r.to||"",name:r.name||"",co:r.co||"",org:r.org||""}))};
+      try{await db.doc("listsends/"+id).set(doc);TL.sent[id]=doc;TL.sending=null;clearInterval(TL.watch);tlHist();}catch(e){console.error("list send log",e);}}},4000);}
+function tlHistRows(){const m={};Object.keys(TL.sent||{}).forEach(id=>{m[id]=Object.assign({id},TL.sent[id]);});
+  Object.keys(OUTBOX||{}).forEach(id=>{const b=OUTBOX[id];if(!b||b.step!=="tl"||b.test||m[id])return;const R=b.recipients||[];
+    m[id]={id,at:b.queuedAt||"",by:String(b.queuedBy||"").split(" <")[0],from:b.from||"",fromName:b.fromName||"",subject:(R[0]||{}).subject||"",listName:"",n:R.length,recipients:R.map(r=>({to:r.to||"",name:r.name||"",co:r.co||"",org:r.org||""}))};});
+  return Object.values(m).sort((a,b)=>String(b.at).localeCompare(String(a.at)));}
+function tlWhen(s){const d=new Date(s);if(isNaN(d))return "";return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})+", "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});}
+function tlSendState(id){const x=(MAILED||{})[id];if(!x)return ["Sending","s-q"];if(x.status==="sent")return ["Sent"+(x.sent?" to "+x.sent:"")+((x.failed||[]).length?", "+x.failed.length+" failed":""),"s-ok"];return ["Failed"+(x.error?": "+String(x.error).slice(0,80):""),"s-bad"];}
+function tlHist(){const sec=$("v-lists");if(!sec)return;let box=$("tl-hist");if(!box){box=h("div",{class:"tl-hist",id:"tl-hist"});sec.appendChild(box);box.addEventListener("click",tlHistClick);
+    const st=document.createElement("style");st.textContent="#v-lists .tl-hist{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin:16px 0}#v-lists .tl-hh{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}#v-lists .tl-hh h2{margin:0;font-size:16px}#v-lists .tl-hh span{font-size:12.5px;color:var(--ink-3)}"
+     +"#v-lists .tl-s{display:grid;grid-template-columns:150px minmax(0,1.2fr) minmax(0,1.4fr) 110px auto;gap:4px 14px;align-items:center;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px}#v-lists .tl-s b{font-weight:600}#v-lists .tl-s .m{color:var(--ink-3);font-size:12px}"
+     +"#v-lists .tl-s .st{font-weight:600;font-size:12px}#v-lists .tl-s .s-ok{color:var(--good)}#v-lists .tl-s .s-bad{color:var(--bad)}#v-lists .tl-s .s-q{color:var(--warn)}#v-lists .tl-s button{border:1px solid var(--border);background:var(--surface);color:var(--ink-2);border-radius:4px;padding:4px 9px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}"
+     +"#v-lists .tl-who{grid-column:1/-1;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:6px;margin:4px 0 2px}#v-lists .tl-who table td,#v-lists .tl-who table th{padding:5px 9px}@media(max-width:820px){#v-lists .tl-s{grid-template-columns:1fr 1fr}}";
+    document.head.appendChild(st);}
+  const L=tlHistRows(),show=TL.histAll?L:L.slice(0,8);
+  let html='<div class="tl-hh"><h2>Sent from Targeted Lists</h2><span>'+(L.length?L.length+" email"+(L.length===1?"":"s")+" sent · newest first":"Nothing sent yet. Emails sent with Email This List are kept here with who got them.")+'</span></div>';
+  show.forEach(x=>{const s=tlSendState(x.id);html+='<div class="tl-s"><div><b>'+tlEsc(tlWhen(x.at))+'</b><div class="m">'+tlEsc(x.by||x.fromName||"")+(x.fromName&&x.by&&x.fromName!==x.by?" as "+tlEsc(x.fromName):"")+'</div></div>'
+    +'<div><b>'+tlEsc(x.subject||"(no subject)")+'</b><div class="m">From '+tlEsc(x.from||"")+'</div></div>'
+    +'<div><b>'+tlEsc(x.listName||"List not recorded")+'</b><div class="m">'+tlEsc(x.summary||"")+'</div></div>'
+    +'<div><b>'+(x.n||0).toLocaleString()+' people</b><div class="st '+s[1]+'">'+tlEsc(s[0])+'</div></div>'
+    +'<div><button type="button" data-tlwho="'+tlEsc(x.id)+'">'+(TL.histOpen===x.id?"Hide":"See Who")+'</button> <button type="button" data-tlwxl="'+tlEsc(x.id)+'">Excel</button></div>'
+    +(TL.histOpen===x.id?'<div class="tl-who"><table><thead><tr><th>Name</th><th>Email</th><th>Company</th></tr></thead><tbody>'+(x.recipients||[]).map(r=>'<tr><td>'+tlEsc(r.name)+'</td><td>'+tlEsc(r.to)+'</td><td>'+(r.org&&BY[r.org]?'<a href="#co/'+tlEsc(r.org)+'" data-tlo="'+tlEsc(r.org)+'">'+tlEsc(r.co||BY[r.org].name)+'</a>':tlEsc(r.co))+'</td></tr>').join("")+'</tbody></table></div>':"")+'</div>';});
+  if(L.length>8)html+='<div style="margin-top:8px"><button type="button" class="btn ghost" data-tlhall="1">'+(TL.histAll?"Show the Latest 8":"Show All "+L.length)+'</button></div>';
+  box.innerHTML=html;}
+function tlHistClick(e){const t=e.target.closest("button,a");if(!t)return;const d=t.dataset;
+  if(d.tlo){e.preventDefault();openOrg(d.tlo);return;}
+  if(d.tlwho){TL.histOpen=TL.histOpen===d.tlwho?"":d.tlwho;tlHist();return;}
+  if(d.tlhall){TL.histAll=!TL.histAll;tlHist();return;}
+  if(d.tlwxl){const x=tlHistRows().find(y=>y.id===d.tlwxl);if(!x)return;loadXlsx().then(X=>{const H=["Name","Email","Company"],D=(x.recipients||[]).map(r=>[r.name,r.to,r.co]);
+    const ws=X.utils.aoa_to_sheet([["Sent",tlWhen(x.at)],["Sent by",(x.by||"")+(x.fromName?" (from "+x.fromName+")":"")],["Subject",x.subject||""],["List",x.listName||""],["Filters",x.summary||""],[]].concat([H],D));ws["!cols"]=[{wch:30},{wch:38},{wch:44}];
+    const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Sent To");X.writeFile(wb,("Sent "+String(x.at).slice(0,10)+" "+(x.listName||"Targeted List")).replace(/[\\/:*?"<>|]/g," ").trim()+".xlsx");}).catch(err=>toast("The Excel file could not be made: "+(err.message||err),true));}}
 
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
