@@ -1,14 +1,18 @@
-# Page Checks (Jonna, Nov 7, 2026)
-# Runs on every save of a page. Fails (and GitHub emails the person who saved) when:
+# Page Checks (Jonna, Nov 7, 2026; the checks moved to tools/page_checks.js on Nov 8, 2026 so Publish a Version runs
+# exactly the same ones). Runs on every save of a page. Fails (and GitHub emails the person who saved) when:
 #   - a script on the page doesn't parse, so the page would break
 #   - something that looks like a key or token slipped into a page
 #   - the test copy could save, or the live page couldn't
 #   - the page safety list (Content-Security-Policy) is missing
+#   - index.html was uploaded by hand instead of made live with Publish a Version
+#   - the test copy is more than the live page plus its three test-only parts (tools/test_copy.py), so it couldn't publish
 name: Page Checks
 on:
   push:
     paths:
       - "**.html"
+      - "tools/**"
+      - "releases/index.json"
       - ".github/workflows/page-checks.yml"
   workflow_dispatch:
 jobs:
@@ -19,35 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Pages parse, no secrets, saving set right, safety list present
-        run: |
-          node - <<'EOF'
-          const fs = require("fs"), vm = require("vm");
-          function checkPage(f, t, parse) {
-            const errs = [];
-            const secret = [/ghp_[A-Za-z0-9]{30,}/, /github_pat_[A-Za-z0-9_]{40,}/, /AKIA[0-9A-Z]{16}/, /sk-ant-[A-Za-z0-9_-]{20,}/, /xox[bpas]-[A-Za-z0-9-]{10,}/, /-----BEGIN [A-Z ]*PRIVATE KEY-----/];
-            for (const re of secret) { const m = t.match(re); if (m) errs.push("Looks like a key or token: " + m[0].slice(0, 8) + "..."); }
-            const re = /<script(\s[^>]*)?>([\s\S]*?)<\/script>/gi; let m, n = 0;
-            while ((m = re.exec(t))) {
-              const attrs = m[1] || "";
-              if (/\bsrc=/.test(attrs)) continue;
-              if (/type=["']?(application\/(ld\+)?json|text\/template|module)/i.test(attrs)) continue;
-              n++;
-              try { parse(m[2], f + " script " + n); } catch (e) { errs.push("Script " + n + " does not parse: " + e.message); }
-            }
-            if (f === "test/index.html" && !/var PREVIEW = true/.test(t)) errs.push("The test copy must have saving switched off (PREVIEW = true).");
-            if (f === "index.html" && !/var PREVIEW = false/.test(t)) errs.push("The live page has saving switched off (PREVIEW is not false).");
-            if (!/Content-Security-Policy/.test(t.slice(0, 4000))) errs.push("The page safety list (Content-Security-Policy) is missing.");
-            return { n, errs };
-          }
-          const parse = (code, name) => { new vm.Script(code, { filename: name }); };
-          let bad = 0;
-          for (const f of ["index.html", "test/index.html"]) {
-            if (!fs.existsSync(f)) continue;
-            const r = checkPage(f, fs.readFileSync(f, "utf8"), parse);
-            console.log(f + ": " + r.n + " scripts checked");
-            for (const e of r.errs) { console.log("::error file=" + f + "::" + e); bad++; }
-          }
-          if (bad) { console.log(bad + " problem(s) found."); process.exit(1); }
-          console.log("All checks passed.");
-          EOF
+      - name: Pages parse, no secrets, saving set right, safety list present, live page is a published version
+        run: node tools/page_checks.js
+      - name: The test copy can be published
+        run: python3 tools/test_copy.py check

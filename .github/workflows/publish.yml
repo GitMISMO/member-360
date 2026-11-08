@@ -1,0 +1,66 @@
+name: Publish a Version
+
+# Makes Member 360's test copy live, or rolls back to an earlier version (Jonna, Nov 8, 2026). Nobody uploads
+# index.html by hand any more: every change goes to test/index.html first, gets tried at
+# https://resources.mismo.org/member-360/test/, and goes live here only if Page Checks pass.
+#
+#   Actions > Publish a Version > Run workflow
+#     - leave "test copy" to make the test copy live
+#     - or type an earlier version (from releases/index.json, for example 20261108-1530) to roll back to it
+#
+# Each version made live is kept in releases/ (never deleted) and listed in releases/index.json.
+# Details: DEVELOPING.md, "How a Change Goes Live".
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Leave as "test copy" to make the test copy live. To roll back, type an earlier version from releases/index.json (for example 20261108-1530).'
+        required: true
+        default: "test copy"
+      note:
+        description: "What changed, in a few words (optional; kept with the version)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check, then publish or roll back
+        env:
+          V: ${{ inputs.version }}
+          NOTE: ${{ inputs.note }}
+          BY: ${{ github.actor }}
+        run: |
+          set -euo pipefail
+          if [ -z "$V" ] || [ "$V" = "test copy" ]; then
+            python3 tools/publish.py publish --by "$BY" --note "$NOTE"
+          else
+            python3 tools/publish.py rollback --version "$V" --by "$BY"
+          fi
+          git config user.name "Member 360 Publisher"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html test/index.html releases
+          if git diff --cached --quiet; then echo "Nothing changed."; exit 0; fi
+          git commit -q -F build/commit-message.txt
+          git push
+
+      - name: Ask GitHub Pages to rebuild
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" >/dev/null || echo "Pages will rebuild on its own."
