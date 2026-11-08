@@ -9613,14 +9613,7 @@ function renderApt(){
   box.appendChild(h("div",{class:"btnrow",style:"margin-top:0"},go,msg));
   go.addEventListener("click",async()=>{if(blocked())return;const fs=[...(inp.files||[])];if(!fs.length){msg.textContent="Choose the two files first.";return;}
     go.disabled=true;msg.textContent="Reading the files…";
-    try{const r=await aptRead(fs);
-      const old=APT||{},now=new Date().toISOString();
-      const doc={uploadedAt:now,uploadedBy:ME||"",uploadedByName:myName()||"",files:Object.assign({},old.files||{},r.files),
-        kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null,
-        certified:r.certified?{asOf:now.slice(0,10),people:r.certified}:(old.certified||null)};
-      {/* the Aptify terms are saved in their own file, aptify/terms, so the weekly upload stays well under the relay's 1 MB limit as history grows (Jonna, Nov 7, 2026) */const __t=doc.terms;if(__t)await db.doc("aptify/terms").set({terms:__t,uploadedAt:doc.uploadedAt||""});await db.doc("aptify/main").set(Object.assign({},doc,__t?{terms:null,termsIn:"aptify/terms"}:{}));};try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}
-      try{if(r.ordermap&&Object.keys(r.ordermap).length){const M=Object.assign({},(ORDMAP&&ORDMAP.map)||{},r.ordermap);await db.doc("aptify/ordermap").set({map:M,updatedAt:now});ORDMAP={map:M,updatedAt:now};if(MMF)remergeAct();}}catch(e){console.error("order map",e);}APT=doc;applyAptify();ISGEN++;scheduleRefresh();
-      toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":"",r.certified?n(r.certified.length)+" certified people":""].filter(Boolean).join(", ")+".");inp.value="";renderApt();
+    try{await aptImport(fs);inp.value="";renderApt();
     }catch(e){msg.textContent=e&&e.message?e.message:"The files couldn't be read.";go.disabled=false;}});
 }
 
@@ -10833,6 +10826,42 @@ async function dirSync(){if(DIR.busy||typeof db==="undefined"||!db||canWrite===f
 {const go=()=>{if(typeof db!=="undefined"&&db){db.doc("directory/main").onSnapshot(sn=>{DIR.doc=sn.exists?sn.data():null;DIR.loaded=true;},e=>console.error("directory",e));
     setTimeout(dirSync,90000);setInterval(dirSync,30*60000);}else setTimeout(go,2000);};go();}
 {const _sr=scheduleRefresh;scheduleRefresh=function(){const r=_sr.apply(this,arguments);clearTimeout(DIR.tm);DIR.tm=setTimeout(dirSync,20000);return r;};}
+/* ---------- The weekly Aptify email (Jonna, Nov 7, 2026) ----------
+   Reporting Services (reports.mba.org > Reports > Mismo > Member360_AptifyPull) emails one workbook a week with the
+   three sheets Settings > Aptify reads: Membership Terms, Companies and Orders. The Power Automate flow
+   "Member 360 - Aptify Weekly Pull" saves it to member-360-data/data/aptify-pull/, a GitHub job checks it and records
+   it in aptifypull/main, and the first person with Member 360 open who can save loads it here exactly as an upload in
+   Settings > Aptify would. A manual upload still works; whichever is newer is what Member 360 uses. */
+async function aptSplit(fs){const X=await loadXlsx(),out=[];
+  for(const f of fs){let wb=null;try{wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});}catch(e){out.push(f);continue;}
+    if(!wb||wb.SheetNames.length<2){out.push(f);continue;}
+    wb.SheetNames.forEach(nm=>{const w=X.utils.book_new();X.utils.book_append_sheet(w,wb.Sheets[nm],nm.slice(0,31));
+      out.push(new File([X.write(w,{type:"array",bookType:"xlsx",cellDates:true})],nm+".xlsx"));});}
+  return out;}
+async function aptImport(fs,via){const r=await aptRead(await aptSplit(fs));
+      const old=APT||{},now=new Date().toISOString();
+      const doc={via:via||"upload",uploadedAt:now,uploadedBy:ME||"",uploadedByName:myName()||"",files:Object.assign({},old.files||{},r.files),
+        kept:r.terms?r.kept:old.kept,skipped:r.terms?r.skipped:old.skipped,terms:r.terms||old.terms||null,sole:r.sole||old.sole||[],companies:r.companies||old.companies||{},orders:r.orders||old.orders||null,
+        certified:r.certified?{asOf:now.slice(0,10),people:r.certified}:(old.certified||null)};
+      {/* the Aptify terms are saved in their own file, aptify/terms, so the weekly upload stays well under the relay's 1 MB limit as history grows (Jonna, Nov 7, 2026) */const __t=doc.terms;if(__t)await db.doc("aptify/terms").set({terms:__t,uploadedAt:doc.uploadedAt||""});await db.doc("aptify/main").set(Object.assign({},doc,__t?{terms:null,termsIn:"aptify/terms"}:{}));};try{await iifNewOnUpload(old,r,now);}catch(e){console.error("new members",e);}
+      try{if(r.ordermap&&Object.keys(r.ordermap).length){const M=Object.assign({},(ORDMAP&&ORDMAP.map)||{},r.ordermap);await db.doc("aptify/ordermap").set({map:M,updatedAt:now});ORDMAP={map:M,updatedAt:now};if(MMF)remergeAct();}}catch(e){console.error("order map",e);}APT=doc;applyAptify();ISGEN++;scheduleRefresh();
+      toast("Aptify files loaded: "+[r.terms?n(r.kept)+" active terms":"",r.files.companies?n(r.files.companies.rows)+" companies":"",r.orders?n(r.files.orders.rows)+" orders":"",r.certified?n(r.certified.length)+" certified people":""].filter(Boolean).join(", ")+".");
+  return r;}
+const APW={doc:null,busy:false,tried:{},err:""};
+function aptPullDue(){const d=APW.doc;if(!d||!d.ok||!d.path||!d.receivedAt)return false;const up=(typeof APT!=="undefined"&&APT&&APT.uploadedAt)||"";return String(d.receivedAt)>String(up);}
+async function aptAuto(){if(APW.busy||!aptPullDue()||canWrite===false||typeof db==="undefined"||!db)return;
+  if(typeof APT==="undefined"||!APT||(APT.termsIn&&!APT.terms))return;const d=APW.doc;if(APW.tried[d.path])return;
+  APW.busy=true;APW.tried[d.path]=1;
+  try{const b=await m3file(d.path);if(!b)throw new Error("couldn't read "+d.path);const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+    await aptImport([new File([u],d.name||"aptify-pull.xlsx")],"weekly email "+(d.name||""));APW.err="";}
+  catch(e){console.error("Aptify weekly email",e);APW.err=String(e&&e.message||e);}finally{APW.busy=false;}}
+{const go=()=>{if(typeof db!=="undefined"&&db){db.doc("aptifypull/main").onSnapshot(sn=>{APW.doc=sn.exists?sn.data():null;setTimeout(aptAuto,15000);},e=>console.error("aptifypull",e));
+    setInterval(aptAuto,10*60000);}else setTimeout(go,2000);};go();}
+if(typeof hlExtra==="function"){const _hx=hlExtra;hlExtra=async function(rows){await _hx.apply(this,arguments);const d=APW.doc,up=(typeof APT!=="undefined"&&APT&&APT.uploadedAt)||"",a=d?hlAge(d.receivedAt):Infinity,due=aptPullDue();
+  rows.push({grp:"feeds",key:"aptify-email",name:"Aptify Weekly Email",what:"Reporting Services emails the Aptify pull every week and Member 360 loads it by itself",when:d?d.receivedAt:"",every:"Weekly",
+    level:!d?"warn":!d.ok?"bad":a>9?"warn":due&&(APW.err||a>1)?"warn":"ok",
+    note:!d?"No email has come in yet":!d.ok?"Not loaded: "+(d.problem||"the workbook didn't look right"):a>9?"No email in "+Math.floor(a)+" days":due?(APW.err?"Couldn't load: "+APW.err:"Waiting to load"):"Loaded "+String(up).slice(0,10)});};}
+
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
