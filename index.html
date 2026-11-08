@@ -10810,6 +10810,29 @@ HL.gh=null;
 {const _hx=hlExtra;hlExtra=async function(rows){await _hx.apply(this,arguments);const g=HL.gh,a=g?hlAge(g.ranAt):Infinity,red=g?(g.rows||[]).filter(r=>r.level==="bad"):[],rp=g?(g.rows||[]).find(r=>r.key==="restore"):null;
   rows.push({grp:"saves",key:"daily-check",name:"Daily Check on GitHub",what:"Runs every morning even when nobody has Member 360 open"+(rp?" · Restore points: "+rp.note:""),when:g?g.ranAt:"",every:"Daily",
     level:!g||a>2||red.length?"warn":"ok",note:!g?"Hasn't run yet":a>2?"Hasn't run in "+Math.floor(a)+" days":red.length?red.map(r=>r.name).join(", "):"All clear"});};}
+/* ---------- MISMO Members directory feed (Jonna, Nov 7, 2026) ----------
+   Every current member, for the public MISMO Members directory on the website: name, level, Lender or Industry, state,
+   city and website only (no emails, contacts, dues or deal data). Saved to directory/main whenever membership changes;
+   the member-360-data job "Member Directory Members" publishes it to resources.mismo.org/member-directory/members.json.
+   The shape is agreed in the Connections Map: {updated, count, members:[{n, t, c, s, a, u}]}. Add fields; never rename. */
+const DIR={doc:null,loaded:false,tm:0,busy:false};
+function dirT(lv){lv=String(lv||"");if(/^Chair/i.test(lv))return "chair";if(/^Exec/i.test(lv))return "exec";if(/^Assoc/i.test(lv))return "assoc";if(/^Sole/i.test(lv))return "individual";return "member";}
+function dirLoc(o){const c=((typeof APT!=="undefined"&&APT&&APT.companies)||{})[String(o.cid||"")];
+  if(c&&(c.city||c.st))return {a:String(c.city||"").trim(),s:String(c.st||"").trim().toUpperCase().slice(0,2)};
+  const m=String(o.addr||"").match(/([A-Za-z .'-]+),\s*([A-Za-z]{2})\b[^,]*$/);return m?{a:m[1].trim(),s:m[2].toUpperCase()}:{a:"",s:""};}
+function dirBuild(){const Y=String(RY-1),seen=new Set();
+  return ORGS.filter(o=>o&&o.life==="Active"&&o.name).map(o=>{const lv=levelIn(o,Y)||o.level||"",k=kindIn(o,Y),loc=dirLoc(o);
+    return {n:String(o.name).trim(),t:dirT(lv),c:(k==="Lender"||o.type==="Lender")?"lender":"industry",s:loc.s,a:loc.a,u:siteOf(o)};})
+    .filter(x=>{const key=x.n.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.n.localeCompare(b.n));}
+async function dirSync(){if(DIR.busy||typeof db==="undefined"||!db||canWrite===false||!DIR.loaded)return;
+  if(!ORGS.length||ORGS.length<1000||typeof APT==="undefined"||!APT)return;
+  const m=dirBuild();if(m.length<300)return;
+  const prev=(DIR.doc&&DIR.doc.members)||[];if(JSON.stringify(prev)===JSON.stringify(m))return;
+  if(prev.length&&m.length<prev.length*0.8){console.warn("Members directory: the list shrank by more than a fifth, so it was not saved");return;}
+  DIR.busy=true;try{const doc={updated:new Date().toISOString(),count:m.length,members:m};await db.doc("directory/main").set(doc);DIR.doc=doc;}catch(e){console.error("members directory",e);}finally{DIR.busy=false;}}
+{const go=()=>{if(typeof db!=="undefined"&&db){db.doc("directory/main").onSnapshot(sn=>{DIR.doc=sn.exists?sn.data():null;DIR.loaded=true;},e=>console.error("directory",e));
+    setTimeout(dirSync,90000);setInterval(dirSync,30*60000);}else setTimeout(go,2000);};go();}
+{const _sr=scheduleRefresh;scheduleRefresh=function(){const r=_sr.apply(this,arguments);clearTimeout(DIR.tm);DIR.tm=setTimeout(dirSync,20000);return r;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>
