@@ -7,6 +7,14 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (Membership Desk: https://resources.mismo.org/membership-desk/test/). The test copy reads the real data but saves nothing and sends no email.
 - Once it works there, the same change is applied to the live page, after checking the live copy hasn't changed since (other Claude sessions also save to these repositories).
 
+## 2026-11-08
+
+- The weekly Aptify pull is automatic: Reporting Services (report Member360_AptifyPull) emails one workbook every Monday at 6 AM to Jonna and 360@mba.org; the flow Member 360 - Aptify Weekly Pull saves it to member-360-data/data/aptify-pull/, the GitHub job Aptify Weekly Pull checks it (aptifypull/main), and Member 360 loads it by itself. First run Nov 8 (3,494 terms, 970 companies, 9,359 orders, contacts).
+- The workbook now also carries new members' contacts (orders shipped in the last 45 days), so the InvFee Member Contacts export no longer has to be uploaded by hand.
+- Settings > Aptify takes one workbook with several sheets as well as separate files. System Health has an Aptify Weekly Email row.
+- Membership Desk: the MISMO Cases sheet in the same workbook loads the Desk's case numbers by itself when an administrator opens the Desk (first run Nov 8, 830 cases). Dropping a file still works.
+- New monthly report MISMO_Monthly_Orders_With_Batch (reports.mba.org, Mismo folder): MISMO orders for the last two full months with each order's orders batch, emailed to Jonna on the 15th.
+
 ## 2026-11-07
 
 - Aptify upload: membership terms are saved in their own file (aptify/terms) from the next weekly upload, cutting the main Aptify file from 85% of the 1 MB save limit to about 30%.
