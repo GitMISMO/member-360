@@ -7498,6 +7498,9 @@ function isChecks(){
       act:{label:"Set Joined Date",field:"joined",date:true},
       why:"Current members with no joined date on record. Member Since and any count \"as of\" a past date are estimates for these. Add the Last Joined Date under Membership History and Levels on each record, or ask for the Aptify export with original join dates.",
       items:()=>O(A.filter(o=>!joinedOf(o)),lifeTag)},
+    {key:"no-website",cat:"Missing Information",title:"Members with No Website",
+      why:"Current member companies with no website on record, so the MISMO Members directory on the website shows no link for them (individual Sole members are left out). New members give one on the application; for others, open the record and add it under Company Details (Jonna, Nov 8, 2026).",
+      items:()=>O(A.filter(o=>!siteOf(o)&&!/^Sole/i.test(String(levelIn(o,Y)||o.level||""))),lifeTag)},
     {key:"cu-unflagged",cat:"Member Counts",title:"Credit Unions Not Marked as Credit Unions",
       act:{label:"Mark as a Credit Union",field:"cu",value:true},
       why:"Current members whose name says they're a credit union, but the Credit Union flag isn't set, so they're missing from the Credit Unions count on Membership Stats. Open the record and set Credit Union to Yes.",
@@ -10683,7 +10686,7 @@ function hlInit(){if($("v-health")||!hlIsAdmin())return;const main=document.quer
   const after=document.querySelector('.hq nav button[data-hq="issues"]');
   if(after){const b=document.createElement("button");b.type="button";b.dataset.hq="health";b.title="System Health";
     b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>System Health</span><em class="pip" id="pip-health"></em>';
-    after.parentNode.insertBefore(b,after.nextSibling);b.addEventListener("click",()=>{if(location.hash!=="#health")history.replaceState(null,"","#health");});}
+    after.parentNode.insertBefore(b,after.nextSibling);b.addEventListener("click",()=>{show("health");if(location.hash!=="#health")history.replaceState(null,"","#health");});}
   const sec=document.createElement("section");sec.className="view";sec.id="v-health";sec.hidden=true;
   sec.innerHTML='<div class="vhead"><div><h1>System Health</h1><div class="vsub">Whether everything feeding and leaving Member 360 is working. Every open copy of Member 360 checks every 30 minutes; when something turns red you get an email.</div></div><div class="btnrow" style="margin:0"><button type="button" class="btn" id="hl-now">Check Now</button></div></div>'
     +'<div class="hl-sum" id="hl-sum"></div><div class="hl-grid"><div class="hl-card" id="hl-feeds"></div><div class="hl-col"><div class="hl-card" id="hl-email"></div><div class="hl-card" id="hl-saves"></div><div class="hl-card" id="hl-alerts"></div></div></div>';
