@@ -9,6 +9,8 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-08
 
+- System Health opens from the menu every time (it sometimes only changed the page address).
+- Issues Log: new automatic issue, Members with No Website (current member companies; individual Sole members left out), 109 at launch.
 - The weekly Aptify pull is automatic: Reporting Services (report Member360_AptifyPull) emails one workbook every Monday at 6 AM to Jonna and 360@mba.org; the flow Member 360 - Aptify Weekly Pull saves it to member-360-data/data/aptify-pull/, the GitHub job Aptify Weekly Pull checks it (aptifypull/main), and Member 360 loads it by itself. First run Nov 8 (3,494 terms, 970 companies, 9,359 orders, contacts).
 - The workbook now also carries new members' contacts (orders shipped in the last 45 days), so the InvFee Member Contacts export no longer has to be uploaded by hand.
 - Settings > Aptify takes one workbook with several sheets as well as separate files. System Health has an Aptify Weekly Email row.
