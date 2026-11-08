@@ -4,11 +4,13 @@ One line per change people would notice. Newest first.
 
 ## How changes go live
 
-- Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (Membership Desk: https://resources.mismo.org/membership-desk/test/). The test copy reads the real data but saves nothing and sends no email.
-- Once it works there, the same change is applied to the live page, after checking the live copy hasn't changed since (other Claude sessions also save to these repositories).
+- Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
+- Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
 ## 2026-11-08
 
+- Developer guide: DEVELOPING.md covers what Member 360 does and who uses it, where everything lives, how a change goes live, every scheduled job, every connection (matching the Connections Map), Jonna's rules and decisions, and what System Health watches. README points to it; Help stays the guide for the people who use the page.
+- Publish a Version: changes go to the test copy, and Actions > Publish a Version makes them live only after Page Checks pass, saving every version in releases/ with one-run rollback. Page Checks now also fails if index.html is uploaded by hand or if the test copy couldn't be published.
 - System Health opens from the menu every time (it sometimes only changed the page address).
 - Issues Log: new automatic issue, Members with No Website (current member companies; individual Sole members left out), 109 at launch.
 - The weekly Aptify pull is automatic: Reporting Services (report Member360_AptifyPull) emails one workbook every Monday at 6 AM to Jonna and 360@mba.org; the flow Member 360 - Aptify Weekly Pull saves it to member-360-data/data/aptify-pull/, the GitHub job Aptify Weekly Pull checks it (aptifypull/main), and Member 360 loads it by itself. First run Nov 8 (3,494 terms, 970 companies, 9,359 orders, contacts).
