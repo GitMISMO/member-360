@@ -1,5 +1,5 @@
 {
- "live": "20261109-0325",
+ "live": "20261109-1739",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -42,6 +42,13 @@
    "savedAt": "2026-11-09T03:25:17Z",
    "by": "jycritchley",
    "how": "published from the test copy: Forwarded Emails tile opens a right-pane list; read the email from Activity"
+  },
+  {
+   "version": "20261109-1739",
+   "sha256": "2c08b03c9d145108a23ad5d5158676787f82e3ab9380d0124c8ebfd98c39218e",
+   "savedAt": "2026-11-09T17:39:30Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Partly paid renewals: Balance Still Due keeps them Invoiced"
   }
  ],
  "history": [
@@ -79,6 +86,13 @@
    "action": "publish",
    "version": "20261109-0325",
    "replaced": "20261109-0316"
+  },
+  {
+   "at": "2026-11-09T17:39:30Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-1739",
+   "replaced": "20261109-0325"
   }
  ]
 }
