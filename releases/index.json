@@ -1,5 +1,5 @@
 {
- "live": "20261109-0304",
+ "live": "20261109-0311",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -21,6 +21,13 @@
    "savedAt": "2026-11-09T03:04:47Z",
    "by": "jycritchley",
    "how": "published from the test copy: Forwarded emails log for anyone who can save; Home Forwarded Emails tile"
+  },
+  {
+   "version": "20261109-0311",
+   "sha256": "cf595d5c30becdac7afb310fb22d1f060bc55394dd49f30fd57d38b9367e8ad3",
+   "savedAt": "2026-11-09T03:11:14Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Set aside the weekly Aptify workbook emails in the 360 mailbox"
   }
  ],
  "history": [
@@ -37,6 +44,13 @@
    "action": "publish",
    "version": "20261109-0304",
    "replaced": "20261109-0003"
+  },
+  {
+   "at": "2026-11-09T03:11:14Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-0311",
+   "replaced": "20261109-0304"
   }
  ]
 }
