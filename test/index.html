@@ -4929,6 +4929,16 @@ function fillCtrls(o,c){
     c.appendChild(fld(RY+" Stage",st,baseStage(o)==="Renewed"&&!sov(o,"stage")?"Marked paid for "+RY+" in the membership records.":null));
     if(stageOf(o)==="Lost"){const ls=select([{v:"",l:"Choose a Reason"}].concat(LOSS),sov(o,"lossReason")||"",{disabled:dis});
       ls.addEventListener("change",()=>saveOv(o.k,seasonPatch(o,{lossReason:ls.value})));c.appendChild(fld("Loss Reason",ls));}
+    /* paid only in part (Jonna, Nov 9, 2026): the Aptify order the balance is on and the amount still due; the renewal stays
+       Invoiced until MISMO Money shows that order paid, then counts as Renewed on its own */
+    {const b0=ov(o).balDue,bd=b0&&String(b0.yr)===String(RY)?b0:{};
+     const bo=h("input",{type:"text",inputmode:"numeric",placeholder:"Aptify order",value:bd.order||"",disabled:dis,"aria-label":"Aptify order with the balance",style:"width:9em"});
+     const ba=h("input",{type:"text",inputmode:"decimal",placeholder:"Amount due",value:bd.amount!=null?String(bd.amount):"",disabled:dis,"aria-label":"Amount still due",style:"width:8em"});
+     const save=()=>{const ord=bo.value.trim(),amt=parseFloat(String(ba.value).replace(/[$,]/g,""));if(ord&&!(isFinite(amt)&&amt>0))return;
+       const p=ord?{balDue:{yr:RY,order:ord,amount:Math.round(amt*100)/100,by:ME||"",at:new Date().toISOString()}}:{balDue:null};
+       saveOv(o.k,seasonPatch(o,p));toast(ord?"Balance recorded. "+RY+" stays Invoiced until order "+ord+" is paid.":"Balance cleared.");};
+     bo.addEventListener("change",save);ba.addEventListener("change",save);
+     c.appendChild(fld("Balance Still Due",h("div",{style:"display:flex;gap:8px;flex-wrap:wrap"},bo,ba),"Paid only in part? Enter the Aptify order the balance is on and the amount. It counts as Renewed once MISMO Money shows that order paid."));}
   }else if(o.type!=="Lender"||o.life==="Prospect"){
     const ps=select([{v:"",l:o.life==="Prospect"?"Not Started":"None"}].concat(PSTAGES),v.pstage||"",{disabled:dis});
     ps.addEventListener("change",()=>{saveOv(o.k,{pstage:ps.value});if(ps.value==="Closed Won")autoCommit(o,"New Member");else autoUncommit(o,"New Member");});
