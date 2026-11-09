@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-08
 
+- Reading copy for the president's Claude project: every morning the Member 360 Reading Copy job in member-360-data writes reading-copy/, plain CSV files with a README covering members, renewals, engagement and people, using this page's own code. It checks the files against Home and Membership Stats before saving and writes nothing if they differ. If a change renames a function it uses or changes what Home or Membership Stats say, run that job by hand after publishing. See DEVELOPING.md, Scheduled Jobs.
 - Developer guide: DEVELOPING.md covers what Member 360 does and who uses it, where everything lives, how a change goes live, every scheduled job, every connection (matching the Connections Map), Jonna's rules and decisions, and what System Health watches. README points to it; Help stays the guide for the people who use the page.
 - Publish a Version: changes go to the test copy, and Actions > Publish a Version makes them live only after Page Checks pass, saving every version in releases/ with one-run rollback. Page Checks now also fails if index.html is uploaded by hand or if the test copy couldn't be published.
 - System Health opens from the menu every time (it sometimes only changed the page address).
