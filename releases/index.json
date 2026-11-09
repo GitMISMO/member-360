@@ -1,5 +1,5 @@
 {
- "live": "20261109-0003",
+ "live": "20261109-0304",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -14,6 +14,13 @@
    "savedAt": "2026-11-09T00:03:39Z",
    "by": "jycritchley",
    "how": "published from the test copy"
+  },
+  {
+   "version": "20261109-0304",
+   "sha256": "066c9fb97a376a5f01e093f723c3fea8edb9ad5cd0358f18f79fe405d19b3354",
+   "savedAt": "2026-11-09T03:04:47Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Forwarded emails log for anyone who can save; Home Forwarded Emails tile"
   }
  ],
  "history": [
@@ -23,6 +30,13 @@
    "action": "publish",
    "version": "20261109-0003",
    "replaced": "20261108-2359-before"
+  },
+  {
+   "at": "2026-11-09T03:04:47Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-0304",
+   "replaced": "20261109-0003"
   }
  ]
 }
