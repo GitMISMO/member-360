@@ -1,5 +1,5 @@
 {
- "live": "20261108-2359-before",
+ "live": "20261109-0003",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -7,7 +7,22 @@
    "savedAt": "2026-11-08T23:59:07Z",
    "by": "jycritchley",
    "how": "the live page as it stood before this publish (it hadn't been saved as a version)"
+  },
+  {
+   "version": "20261109-0003",
+   "sha256": "78c98cac00bd10ca06f0f9adc16042e927e0e983b545f5a5eea35a98af03cb46",
+   "savedAt": "2026-11-09T00:03:39Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
- "history": []
+ "history": [
+  {
+   "at": "2026-11-09T00:03:39Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-0003",
+   "replaced": "20261108-2359-before"
+  }
+ ]
 }
