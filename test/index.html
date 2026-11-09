@@ -1386,6 +1386,8 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 .p360-line b{color:var(--ink);font-weight:600}
 .p360-kv{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-2)}
 .p360-kv b{color:var(--ink);font-weight:600;font-family:var(--mono);white-space:nowrap}
+/* a long value (like a balance due on an order) wraps instead of running out of a narrow card (Jonna, Nov 9, 2026) */
+.p360-kv{min-width:0}.p360-kv b{min-width:0;text-align:right}.p360-kv b.wrap{white-space:normal;overflow-wrap:anywhere}
 .p360-bar{height:6px;border-radius:3px;background:var(--rule);margin-top:5px;overflow:hidden}
 .p360-bar i{display:block;height:6px;border-radius:3px;background:var(--good)}
 .p360-bar i.low{background:var(--warn)}
@@ -3770,7 +3772,7 @@ function p360Update(o,box){
     c.appendChild(h("div",{class:"p360-line"},tot?"On record in the Financial System":"No payments on record"));
     if(mb){const m2=mb.cloneNode(true);m2.className="p360-mixbar";c.appendChild(m2);}
     if(lastDues)c.appendChild(h("div",{class:"p360-line"},"Last dues: ",h("b",null,lastDues.n),", "+lastDues.d));
-    if(!isPro&&F[(RY+" dues").toLowerCase()])c.appendChild(h("div",{class:"p360-kv"},h("span",null,RY+" dues"),h("b",null,F[(RY+" dues").toLowerCase()])));
+    if(!isPro&&F[(RY+" dues").toLowerCase()])c.appendChild(h("div",{class:"p360-kv"},h("span",null,RY+" dues"),h("b",{class:"wrap"},F[(RY+" dues").toLowerCase()])));
     if(act)c.appendChild(h("button",{type:"button",class:"p360-link",style:"text-align:left",onclick:()=>p360Go(box,"money","act","Payments")},"See payments"));
     three.appendChild(c);}
   { const c=h("section",{class:"p360-card"},h("h4",null,"Benefits Used"));let any=false;
