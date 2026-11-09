@@ -3140,7 +3140,12 @@ function freeRen(o){return /^free/i.test(curStatus(o)||"");}
 function inDue(o){return !covered(o)&&!freeRen(o);}
 function covered(o){return stageOf(o)==="Renewed"&&!paid(o)&&(!!prepaid(o)||defAhead(o)||(!!o.aptTerm&&o.thru>=RY+"-12-31"))&&sov(o,"stage")!=="Renewed";}
 function renewable(o){return inCohort(o)&&o.type!=="Lender";}
-function paid(o){const a=ACT[o.k];return a&&a.paid?a.paid:earlyRenewal(o);}
+/* a renewal paid only in part (Jonna, Nov 9, 2026): when a balance is recorded as still due on an Aptify order for the
+   coming year (ov.balDue {yr, order, amount, credited, note}), the renewal is not counted as renewed until MISMO Money shows
+   that order paid; then it turns Renewed on its own. First case: ALE Advisors, $229.17 credited, $270.83 due on order 6286285. */
+function balDue(o){const b=o&&ov(o).balDue;if(!b||String(b.yr)!==String(RY)||!b.order)return null;
+  const its=(ACT[o.k]&&ACT[o.k].items)||[];return its.some(i=>String(i.o||"")===String(b.order)&&(+i.n||0)>0)?null:b;}
+function paid(o){if(balDue(o))return null;const a=ACT[o.k];return a&&a.paid?a.paid:earlyRenewal(o);}
 /* renewing early is not a dues deal (Jonna, Nov 2, 2026): a member whose membership already runs through Dec 31 of this year and who pays in the last quarter of the year has paid next year's renewal, even when Aptify starts the new term the month it was ordered. It counts as next year's payment, a standard 12-month renewal, never as extra months or a covered year. Square special-rate payments and mid-year upgrades (two lines on one order) are not renewals. */
 function earlyRenewal(o){if(!o)return null;const py=String(RY-1),pp=String(RY-2),its=fsItems(o).filter(i=>i&&i.c==="Membership"&&i.s&&(+i.n||0)>0);
   const c=its.filter(i=>i.s>=py+"-10-01"&&i.s<RY+"-01-01"&&String(i.d||"")>=py+"-10-01"&&!i.sq&&!i.sp&&!its.some(j=>j!==i&&j.d===i.d&&j.s<i.s)).sort((a,b)=>String(b.d).localeCompare(String(a.d)))[0];if(!c)return null;
@@ -3178,7 +3183,7 @@ function pipeCtrls(o,c,dis){
       put(k,x);if(t==="money"&&x!=="")el.value=money(x);if(t==="pct"&&x!=="")el.value=x+"%";});
     c.appendChild(F(label,el,hint,t==="area"));});
 }
-function stageOf(o){if(!inCohort(o))return "";const s=sov(o,"stage");if(s==="Lost")return s;if(paid(o)||prepaid(o)||(o.aptTerm&&o.thru>=RY+"-12-31"))return "Renewed";return s||baseStage(o);}
+function stageOf(o){if(!inCohort(o))return "";const s=sov(o,"stage");if(s==="Lost")return s;if(balDue(o))return s&&s!=="Renewed"?s:"Invoiced";if(paid(o)||prepaid(o)||(o.aptTerm&&o.thru>=RY+"-12-31"))return "Renewed";return s||baseStage(o);}
 function sendId(thru,step){return (thru||END)+"_"+step;}
 function stepDate(o,st){return addDays(o.thru||END,st.off);}
 function ruleOn(k){return !(SET.rules&&SET.rules[k]===false);}
@@ -4900,7 +4905,7 @@ function refreshProfile(o,box){
     else if(hd==="hold")rs.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"On hold: no automated emails go to this member until the hold is lifted."));
   }
   const tl=box.querySelector('[data-part="timeline"]');if(tl)fillTimeline(o,tl);
-  const du=box.querySelector('[data-part="dues"]');if(du){const pd=paid(o);du.textContent=pd?"Paid "+fmtS(pd.d)+" \u00b7 "+money(pd.n)+(pd.how==="IIF"?" IIF":""):(covered(o)?(prepaid(o)?"Paid ahead":"Covered through "+fmt(o.thru)+", no "+RY+" payment needed"):baseStage(o)==="Renewed"?"Marked paid in the membership records":"Not paid yet");du.className=pd||o.stage==="Renewed"?"":"muted";}
+  const du=box.querySelector('[data-part="dues"]');if(du){const pd=paid(o),bd=balDue(o);du.textContent=bd?money(+bd.amount||0)+" due on order "+bd.order+(bd.credited?" \u00b7 "+money(+bd.credited)+" credited":""):pd?"Paid "+fmtS(pd.d)+" \u00b7 "+money(pd.n)+(pd.how==="IIF"?" IIF":""):(covered(o)?(prepaid(o)?"Paid ahead":"Covered through "+fmt(o.thru)+", no "+RY+" payment needed"):baseStage(o)==="Renewed"?"Marked paid in the membership records":"Not paid yet");du.className=pd||o.stage==="Renewed"?"":"muted";}
   const ac=box.querySelector('[data-part="act"]');if(ac)fillActivity(o,ac);
   const en=box.querySelector('[data-part="eng"]');if(en)fillEngage(o,en);
   const dlx=box.querySelector('[data-part="dl"]');if(dlx)fillDl(o,dlx);
