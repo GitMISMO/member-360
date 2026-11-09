@@ -1,5 +1,5 @@
 {
- "live": "20261109-1917",
+ "live": "20261109-2324",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -63,6 +63,13 @@
    "savedAt": "2026-11-09T19:17:56Z",
    "by": "jycritchley",
    "how": "published from the test copy: Corporate family members can keep their own membership"
+  },
+  {
+   "version": "20261109-2324",
+   "sha256": "ce77dfd4210dbedb223509de854ca708f50a40442aebba5791b87a449b9757bf",
+   "savedAt": "2026-11-09T23:24:54Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Stage changes reach the Membership Desk within a minute"
   }
  ],
  "history": [
@@ -121,6 +128,13 @@
    "action": "publish",
    "version": "20261109-1917",
    "replaced": "20261109-1814"
+  },
+  {
+   "at": "2026-11-09T23:24:54Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-2324",
+   "replaced": "20261109-1917"
   }
  ]
 }
