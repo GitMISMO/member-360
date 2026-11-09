@@ -1,5 +1,5 @@
 {
- "live": "20261109-1739",
+ "live": "20261109-1814",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -49,6 +49,13 @@
    "savedAt": "2026-11-09T17:39:30Z",
    "by": "jycritchley",
    "how": "published from the test copy: Partly paid renewals: Balance Still Due keeps them Invoiced"
+  },
+  {
+   "version": "20261109-1814",
+   "sha256": "cbbab3478edf08071bac2fdc0458c42744bc8fa84292e6e98ae6326da3a437bf",
+   "savedAt": "2026-11-09T18:14:08Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Money card: dues line fits a narrow window"
   }
  ],
  "history": [
@@ -93,6 +100,13 @@
    "action": "publish",
    "version": "20261109-1739",
    "replaced": "20261109-0325"
+  },
+  {
+   "at": "2026-11-09T18:14:08Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-1814",
+   "replaced": "20261109-1739"
   }
  ]
 }
