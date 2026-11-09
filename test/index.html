@@ -8117,7 +8117,7 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
     if(!S.acts.length)L.appendChild(sub("Saves, logged emails and payments show here as the team works."));
     tile({lab:"Team Activity",k:"#74bfeb",go:"activity",cls:"w3 full",body:[L]});}
   /* 9. forwarded emails to 360@ that need a company picked, for anyone who can save (Jonna, Nov 9, 2026); view-only people still see the next summit */
-  if(canWrite){const el=tile({lab:"Forwarded Emails",k:"#f2b366",cls:"m3h-fwd"});el.id="m3h-fwd";try{m3hFwdFill(el);}catch(e){console.error("forwarded emails",e);}}
+  if(canWrite||PREVIEW){const el=tile({lab:"Forwarded Emails",k:"#f2b366",cls:"m3h-fwd"});el.id="m3h-fwd";try{m3hFwdFill(el);}catch(e){console.error("forwarded emails",e);}}
   else if(S.sum){const dd=Math.max(0,days_(TODAY,S.sum.date));tile({lab:"Next Summit",k:"#5fd39a",body:[big(dd,null,"days"),sub(h("b",null,S.sum.name)," · "+fmt(S.sum.date))]});}
 }
 
@@ -8126,6 +8126,8 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
 function m3hFwdFill(el){
   el=el||document.getElementById("m3h-fwd");if(!el)return;
   const docs=(typeof M360!=="undefined"&&M360.docs)||{},ids=Object.keys(docs);
+  /* not read yet (the opener hasn't run the mail-in, or this is the test copy): read it once, then fill again */
+  if(!ids.length&&!m3hFwdFill.read&&typeof M360!=="undefined"){m3hFwdFill.read=true;m360Rel(null).then(r=>{if(!Object.keys(M360.docs||{}).length)M360.docs=(r&&r.data&&r.data.docs)||{};m3hFwdFill();}).catch(e=>console.error("forwarded emails",e));}
   const need=ids.filter(id=>docs[id]&&docs[id].st==="need").sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));
   const wait=ids.filter(id=>docs[id]&&!docs[id].st).length;
   while(el.children.length>1)el.removeChild(el.lastChild);
