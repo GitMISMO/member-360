@@ -8830,7 +8830,9 @@ function trkTouched(o){if(!o)return [];const c=ov(o).contacts||{};return Object.
    the parent's: it is never Up for Renewal, never Free on Renewals, and gets no renewal outreach of its own. A subsidiary that isn't a
    member in Aptify yet goes on the Membership Desk as a free membership to set up. ---------- */
 function subParent(o){if(!o)return null;const p=(ov(o)||{}).parent;return p&&p!==o.k&&BY[p]?BY[p]:null;}
-function isSub(o){return !!subParent(o);}
+/* a company in a parent's family that has its own membership (ov.ownMem, e.g. an IIF lender like Advance Financial Group under
+   TowneBank, Jonna, Nov 9, 2026) is related to its parent but is not a free subsidiary: it counts, pays and renews on its own */
+function isSub(o){return !!subParent(o)&&!(ov(o)||{}).ownMem;}
 function subsOf(o){return o?ORGS.filter(x=>(ov(x)||{}).parent===o.k&&x.k!==o.k):[];}
 {const _kI=kindIn;kindIn=function(o,y){const k=_kI.apply(this,arguments);if(String(y)===String(RY-1)&&isSub(o)&&memberIn(o,y))return "Subsidiary";return k;};}
 {const _fR=freeRen;freeRen=function(o){return isSub(o)?false:_fR.apply(this,arguments);};}
@@ -8840,18 +8842,21 @@ function subsOf(o){return o?ORGS.filter(x=>(ov(x)||{}).parent===o.k&&x.k!==o.k):
 function subCard(o,box){const ovp=box&&box.querySelector('.p360-panel[data-tab="overview"]');if(!ovp||!o)return;const old=ovp.querySelector(".p360-family");if(old)old.remove();
   const par=subParent(o),kids=subsOf(o),link=x=>h("button",{type:"button",class:"p360-link",onclick:()=>openOrg(x.k)},x.name);
   const c=h("section",{class:"p360-card p360-family"},h("div",{class:"p360-head"},h("h3",null,"Corporate Family")));
-  if(par)c.appendChild(h("p",{class:"p360-famtx"},"Subsidiary of ",link(par),". Its Corporate membership is free through "+par.name+" and follows theirs, so it counts as a member (as a Subsidiary, not Free) and gets no renewal outreach of its own."));
-  if(kids.length){const p=h("p",{class:"p360-famtx"},"Subsidiaries with a free Corporate membership through "+o.name+": ");kids.forEach((x,i)=>{if(i)p.appendChild(document.createTextNode(", "));p.appendChild(link(x));});p.appendChild(document.createTextNode("."));c.appendChild(p);}
-  if(!par&&!kids.length)c.appendChild(h("p",{class:"p360-famtx"},"Not part of a corporate family. If this company's free membership comes through a parent company, pick the parent below."));
+  if(par&&(ov(o)||{}).ownMem)c.appendChild(h("p",{class:"p360-famtx"},"Part of ",link(par),"'s corporate family. It has its own membership, so it counts, pays and renews on its own."));
+  else if(par)c.appendChild(h("p",{class:"p360-famtx"},"Subsidiary of ",link(par),". Its Corporate membership is free through "+par.name+" and follows theirs, so it counts as a member (as a Subsidiary, not Free) and gets no renewal outreach of its own."));
+  [[kids.filter(x=>!(ov(x)||{}).ownMem),"Subsidiaries with a free Corporate membership through "+o.name+": "],[kids.filter(x=>(ov(x)||{}).ownMem),"In this corporate family, with their own membership: "]].forEach(([ks,lab])=>{if(!ks.length)return;const p=h("p",{class:"p360-famtx"},lab);ks.forEach((x,i)=>{if(i)p.appendChild(document.createTextNode(", "));p.appendChild(link(x));});p.appendChild(document.createTextNode("."));c.appendChild(p);});
+  if(!par&&!kids.length)c.appendChild(h("p",{class:"p360-famtx"},"Not part of a corporate family. If this company belongs to a parent company, pick the parent below."));
   if(db&&canWrite!==false&&!kids.length){
     let dl=document.getElementById("p360-parents");if(!dl){dl=h("datalist",{id:"p360-parents"});document.body.appendChild(dl);}
     const opts={};dl.textContent="";ORGS.filter(x=>x.life==="Active"&&!isSub(x)&&!(ov(x)||{}).mergedInto&&x.k!==o.k).sort((a,b)=>a.name.localeCompare(b.name)).forEach(x=>{const v=x.name+(x.cid?" · ID "+x.cid:"");opts[v]=x.k;dl.appendChild(h("option",{value:v}));});
     const inp=h("input",{type:"search",list:"p360-parents",class:"p360-famin",placeholder:par?"Change the parent company":"Type the parent company's name","aria-label":"Parent company"}),msg=h("span",{class:"p360-fammsg"});
     const set=h("button",{type:"button",class:"btn",onclick:()=>{const k=opts[inp.value.trim()];if(!k){msg.textContent="Pick the parent from the list as you type.";inp.focus();return;}
-      set.disabled=true;msg.textContent="Saving…";Promise.resolve(saveOv(o.k,{parent:k})).then(()=>{msg.textContent="Saved.";setTimeout(()=>openOrg(o.k),250);}).catch(e=>{set.disabled=false;msg.textContent="That didn't save. Please try again.";console.error("parent",e);});}},par?"Change the Parent":"Set the Parent");
+      set.disabled=true;msg.textContent="Saving…";Promise.resolve(saveOv(o.k,{parent:k,ownMem:own.checked})).then(()=>{msg.textContent="Saved.";setTimeout(()=>openOrg(o.k),250);}).catch(e=>{set.disabled=false;msg.textContent="That didn't save. Please try again.";console.error("parent",e);});}},par?"Change the Parent":"Set the Parent");
+    const own=h("input",{type:"checkbox","aria-label":"It has its own membership"});own.checked=par?!!(ov(o)||{}).ownMem:memberIn(o,String(RY-1));
     const row=h("div",{class:"p360-famrow"},inp,set);
     if(par)row.appendChild(h("button",{type:"button",class:"btn ghost",onclick:()=>{msg.textContent="Saving…";Promise.resolve(saveOv(o.k,{parent:""})).then(()=>setTimeout(()=>openOrg(o.k),250)).catch(e=>{msg.textContent="That didn't save. Please try again.";console.error("parent",e);});}},"Not a Subsidiary"));
-    row.appendChild(msg);c.appendChild(row);}
+    row.appendChild(msg);c.appendChild(row);
+    c.appendChild(h("label",{class:"p360-famtx",style:"display:flex;gap:8px;align-items:flex-start;margin-top:8px;cursor:pointer"},own,h("span",null,"It has its own membership (pays its own dues or IIF). Leave unticked when its membership is free through the parent.")));}
   ovp.appendChild(c);}
 {const _p3U=p360Update;p360Update=function(o,box){const r=_p3U.apply(this,arguments);try{subCard(o,box);}catch(e){console.error("family",e);}return r;};}
 /* ---------- Payment in Process on the Membership Desk (Jonna, Nov 2, 2026). The desk keeps the invoices the team has sent and not been
