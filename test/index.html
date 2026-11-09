@@ -4104,6 +4104,11 @@ function p360MailPick(m,c){
   const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
   const b=h("div",{class:"p360-dlg-b"}),me=dl;
   dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Log an Email"),h("h2",null,m.subject||"Which company is this with?")),x));dl.appendChild(b);
+  /* the whole email, so the company can be judged from it (Jonna, Nov 9, 2026) */
+  if(m.body||m.from){const fs=x=>{try{return fmtS(x);}catch(e){return String(x||"");}},hd=[["From",[m.fromName,m.from].filter(Boolean).join(" ")],["To",(m.to||[]).join(", ")],["Cc",(m.cc||[]).join(", ")],["Date",m.date?fs(m.date):""]].filter(r=>r[1]);
+    b.appendChild(h("details",{class:"p360-mail",open:"open",style:"margin-bottom:12px"},h("summary",{style:"cursor:pointer;font-weight:600"},"The email"),
+      h("div",{style:"font-size:13px;margin-top:6px"},...hd.map(r=>h("div",null,h("b",null,r[0]+": "),r[1]))),
+      h("div",{style:"white-space:pre-wrap;max-height:40vh;overflow:auto;border:1px solid #d6dde5;border-radius:4px;padding:10px 12px;margin-top:6px;font-size:13px;line-height:1.45"},m.body||"(No text was kept for this email.)")));}
   const who=[m.from].concat(m.to||[]).filter(a=>a&&!/@(mismo|mba)\.org$/i.test(a)).slice(0,3).join(", ");
   b.appendChild(h("p",{class:"p360-pick-say"},c.length?"This email matches more than one company. Which one should it go on?":"No company matched "+(who||"this email")+". Pick the company:"));
   c.slice(0,6).forEach(o=>b.appendChild(h("button",{type:"button",class:"p360-pick",onclick:()=>{me.close();p360LogPop(o,m);}},h("span",{class:"p360-av","aria-hidden":"true"},p360Initials(o.name)),h("span",{class:"nm"},o.name),h("small",null,o.life||""))));
@@ -8137,13 +8142,16 @@ function m3hFwdFill(el){
   while(el.children.length>1)el.removeChild(el.lastChild);
   const top=el.firstChild;if(top){top.querySelectorAll(".m3h-pill").forEach(x=>x.remove());if(need.length)top.appendChild(h("span",{class:"m3h-pill hot"},"Pick a company"));}
   el.appendChild(h("div",{class:"m3h-big"},h("span",{class:"m3h-n"},String(need.length)),h("small",null,need.length===1?"needs a company":"need a company")));
-  need.slice(0,3).forEach(id=>{const d=docs[id],m=d.m||{},subj=m.subject||d.subject||"(no subject)";
-    const pick=h("button",{type:"button",class:"btn small"},"Pick");
+  const list=h("div",{style:"max-height:300px;overflow:auto;margin-top:4px;padding-right:4px"});el.appendChild(list);
+  need.forEach(id=>{const d=docs[id],m=d.m||{},subj=m.subject||d.subject||"(no subject)";
+    const pick=h("button",{type:"button",class:"btn small",title:"See the whole email and pick its company"},"Read and Pick");
     pick.addEventListener("click",ev=>{ev.stopPropagation();p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
-    el.appendChild(h("div",{style:"display:flex;align-items:center;gap:10px;margin-top:8px"},
+    const skip=h("button",{type:"button",title:"Take it off the list. The email stays in Outlook.",style:"color:inherit;opacity:.8;text-decoration:underline;padding:0;background:none;border:0;cursor:pointer;font:inherit;font-size:12px;white-space:nowrap"},"Not needed");
+    skip.addEventListener("click",ev=>{ev.stopPropagation();m360Mark(id,"skipped");});
+    list.appendChild(h("div",{style:"display:flex;align-items:center;gap:10px;margin-top:8px"},
       h("div",{style:"flex:1;min-width:0"},h("div",{style:"font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis",title:subj},subj),
-        h("div",{class:"m3h-sub",style:"margin:0"},[m360ByName(d)||"Someone",m.date?fmtS(m.date):""].filter(Boolean).join(" · "))),pick));});
-  const bits=[];if(need.length>3)bits.push((need.length-3)+" more");if(wait)bits.push(wait+" waiting to be logged");
+        h("div",{class:"m3h-sub",style:"margin:0"},[m360ByName(d)||"Someone",m.date?fmtS(m.date):""].filter(Boolean).join(" · "))),skip,pick));});
+  const bits=[];if(wait)bits.push(wait+" waiting to be logged");
   if(!need.length&&!wait)bits.push("Every email forwarded to 360@ is logged");
   const all=h("button",{type:"button",style:"color:inherit;text-decoration:underline;padding:0;background:none;border:0;cursor:pointer;font:inherit"},"See all in Activity");
   all.addEventListener("click",m3hGo("activity"));
