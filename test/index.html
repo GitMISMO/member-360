@@ -8160,29 +8160,47 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
 /* Home's Forwarded Emails tile (Jonna, Nov 9, 2026): emails forwarded to 360@ that matched no company, or more than one,
    newest first, each with a Pick button, and how many are still waiting to be logged. m360Tray refreshes it. */
 function m3hFwdFill(el){
-  el=el||document.getElementById("m3h-fwd");if(!el)return;
+  el=el||document.getElementById("m3h-fwd");
   const docs=(typeof M360!=="undefined"&&M360.docs)||{},ids=Object.keys(docs);
   /* not read yet (the opener hasn't run the mail-in, or this is the test copy): read it once, then fill again */
   if(!ids.length&&!m3hFwdFill.read&&typeof M360!=="undefined"){m3hFwdFill.read=true;m360Rel(null).then(r=>{if(!Object.keys(M360.docs||{}).length)M360.docs=(r&&r.data&&r.data.docs)||{};m3hFwdFill();}).catch(e=>console.error("forwarded emails",e));}
-  const need=ids.filter(id=>docs[id]&&docs[id].st==="need").sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));
-  const wait=ids.filter(id=>docs[id]&&!docs[id].st).length;
+  try{if(paneK==="fwd:list"&&document.body.classList.contains("paneon"))m360FwdPane();}catch(e){}
+  if(!el)return;
+  const need=m360FwdNeed(docs),wait=ids.filter(id=>docs[id]&&!docs[id].st).length;
   while(el.children.length>1)el.removeChild(el.lastChild);
   const top=el.firstChild;if(top){top.querySelectorAll(".m3h-pill").forEach(x=>x.remove());if(need.length)top.appendChild(h("span",{class:"m3h-pill hot"},"Pick a company"));}
+  /* the whole tile opens the list in the right pane (Jonna, Nov 9, 2026) */
+  if(!el.dataset.fwd){el.dataset.fwd="1";el.classList.remove("still");el.setAttribute("role","button");el.tabIndex=0;el.style.cursor="pointer";el.title="Open the list";
+    el.addEventListener("click",()=>m360FwdPane());el.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();m360FwdPane();}});}
   el.appendChild(h("div",{class:"m3h-big"},h("span",{class:"m3h-n"},String(need.length)),h("small",null,need.length===1?"needs a company":"need a company")));
-  const list=h("div",{style:"max-height:300px;overflow:auto;margin-top:4px;padding-right:4px"});el.appendChild(list);
-  need.forEach(id=>{const d=docs[id],m=d.m||{},subj=m.subject||d.subject||"(no subject)";
-    const pick=h("button",{type:"button",class:"btn small",title:"See the whole email and pick its company"},"Read and Pick");
-    pick.addEventListener("click",ev=>{ev.stopPropagation();p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
-    const skip=h("button",{type:"button",title:"Take it off the list. The email stays in Outlook.",style:"color:inherit;opacity:.8;text-decoration:underline;padding:0;background:none;border:0;cursor:pointer;font:inherit;font-size:12px;white-space:nowrap"},"Not needed");
-    skip.addEventListener("click",ev=>{ev.stopPropagation();m360Mark(id,"skipped");});
-    list.appendChild(h("div",{style:"display:flex;align-items:center;gap:10px;margin-top:8px"},
-      h("div",{style:"flex:1;min-width:0"},h("div",{style:"font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis",title:subj},subj),
-        h("div",{class:"m3h-sub",style:"margin:0"},[m360ByName(d)||"Someone",m.date?fmtS(m.date):""].filter(Boolean).join(" · "))),skip,pick));});
-  const bits=[];if(wait)bits.push(wait+" waiting to be logged");
+  need.slice(0,2).forEach(id=>{const d=docs[id],m=d.m||{},subj=m.subject||d.subject||"(no subject)";
+    el.appendChild(h("div",{style:"margin-top:8px;min-width:0"},h("div",{style:"font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"},subj),
+      h("div",{class:"m3h-sub",style:"margin:0"},[m360ByName(d)||"Someone",m.date?fmtS(m.date):""].filter(Boolean).join(" · "))));});
+  const bits=[];if(need.length>2)bits.push((need.length-2)+" more");if(wait)bits.push(wait+" waiting to be logged");
   if(!need.length&&!wait)bits.push("Every email forwarded to 360@ is logged");
-  const all=h("button",{type:"button",style:"color:inherit;text-decoration:underline;padding:0;background:none;border:0;cursor:pointer;font:inherit"},"See all in Activity");
-  all.addEventListener("click",m3hGo("activity"));
-  el.appendChild(h("div",{class:"m3h-sub",style:"margin-top:8px"},bits.join(" · ")+" · ",all));
+  el.appendChild(h("div",{class:"m3h-sub",style:"margin-top:10px"},bits.join(" · ")+(need.length?" · Click to read them and pick":"")));
+}
+function m360FwdNeed(docs){return Object.keys(docs).filter(id=>docs[id]&&docs[id].st==="need").sort((a,b)=>String(docs[b].received||"").localeCompare(String(docs[a].received||"")));}
+/* the Forwarded Emails list in the right pane (Jonna, Nov 9, 2026), opened from Home's tile: each email opens to read it
+   and pick its company; Not needed takes it off the list (the email stays in Outlook) */
+function m360FwdPane(){
+  const body=$("m360-pane-body");if(!body)return;laneBack=null;paneK="fwd:list";
+  const docs=(typeof M360!=="undefined"&&M360.docs)||{},need=m360FwdNeed(docs),wait=Object.keys(docs).filter(id=>docs[id]&&!docs[id].st).length;
+  $("m360-pane-t").textContent="Forwarded Emails";
+  $("m360-pane-sub").textContent=need.length+(need.length===1?" email needs":" emails need")+" a company"+(wait?" · "+wait+" waiting to be logged":"");
+  body.textContent="";
+  body.appendChild(h("div",{class:"hint",style:"margin:0 0 8px"},"Click an email to read it and pick its company. Not needed takes it off this list; the email stays in Outlook."));
+  if(!need.length)body.appendChild(h("p",null,"Every email forwarded to 360@ has a company."));
+  need.forEach(id=>{const d=docs[id],m=d.m||{},subj=m.subject||d.subject||"(no subject)";
+    const open=h("button",{type:"button",title:"Read the email and pick its company",style:"flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit"},
+      h("div",{style:"font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"},subj),
+      h("div",{class:"hint",style:"margin:2px 0 0"},[m.fromName||m.from?"From "+(m.fromName||m.from):"","forwarded by "+(m360ByName(d)||"someone"),m.date?fmtS(m.date):""].filter(Boolean).join(" · ")));
+    open.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
+    const pick=h("button",{type:"button",class:"btn small"},"Read and Pick");pick.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
+    const skip=h("button",{type:"button",class:"p360-link",title:"Take it off this list. The email stays in Outlook."},"Not needed");skip.addEventListener("click",()=>m360Mark(id,"skipped"));
+    body.appendChild(h("div",{style:"display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e3e8ee"},open,skip,pick));});
+  body.scrollTop=0;document.body.classList.add("paneon");$("m360-pane").setAttribute("aria-hidden","false");try{markSel();}catch(e){}
+  setTimeout(()=>{try{$("m360-pane-x").focus({preventScroll:true});}catch(e){}},30);
 }
 
 /* ---------- Company card, MISMO Media look (Jonna, Oct 31, 2026): the name, tags and figures sit in a navy band, with the
