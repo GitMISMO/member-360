@@ -4451,6 +4451,29 @@ async function m360Run(){
 function m360Mark(id,st,nm){
   (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();if(nm)docs[id].orgName=nm;}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();try{m360Log();}catch(e){}})();
 }
+/* Activity: read a forwarded email, and see where it was logged (Jonna, Nov 9, 2026). One that still needs a
+   company opens the Pick dialog, which shows the whole email too. */
+function m360ShowMail(r){
+  const d=r.d||{},m=d.m||{};
+  if(d.st==="need"&&!r.gone){p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(r.id);return;}
+  let dl=$("p360-dlg");if(dl)dl.remove();
+  dl=h("dialog",{id:"p360-dlg",class:"p360-dlg","aria-label":"Forwarded email"});const me=dl;
+  const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>me.close());
+  const b=h("div",{class:"p360-dlg-b"});
+  dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Forwarded Email"),h("h2",null,m.subject||d.subject||"(no subject)")),x));dl.appendChild(b);
+  const o=d.org&&BY[d.org],by=m360ByName(d)||"Someone";
+  const where=h("p",{style:"margin:0 0 12px"});
+  if(d.st==="logged"&&o){where.appendChild(document.createTextNode(by+" forwarded it. Logged on "));
+    where.appendChild(h("button",{type:"button",class:"p360-link",title:"Open "+o.name,onclick:()=>{me.close();actGoOrg(d.org,true);}},o.name));
+    where.appendChild(document.createTextNode(". If that's the wrong company, use Remove in Activity and log it again from the email."));}
+  else where.appendChild(document.createTextNode(by+" forwarded it. "+(d.st==="skipped"?"It was marked not needed, so it isn't on any company.":d.st==="logged"?"It was logged.":"It hasn't been logged yet.")));
+  b.appendChild(where);
+  const fs=v=>{try{return fmtS(v);}catch(e){return String(v||"");}};
+  const hd=[["From",[m.fromName,m.from].filter(Boolean).join(" ")],["To",(m.to||[]).join(", ")],["Cc",(m.cc||[]).join(", ")],["Date",m.date?fs(m.date):""]].filter(q=>q[1]);
+  b.appendChild(h("div",{style:"font-size:13px"},...hd.map(q=>h("div",null,h("b",null,q[0]+": "),q[1]))));
+  b.appendChild(h("div",{style:"white-space:pre-wrap;max-height:50vh;overflow:auto;border:1px solid #d6dde5;border-radius:4px;padding:10px 12px;margin-top:8px;font-size:13px;line-height:1.45"},m.body||"(No text was kept for this email.)"));
+  dl.addEventListener("close",()=>me.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}
+}
 /* forwarded emails that matched no company, or more than one, wait here */
 function m360Tray(){
   try{m3hFwdFill();}catch(e){}
@@ -4645,7 +4668,10 @@ function actRow(r){
   if(o){line.appendChild(document.createTextNode(r.type==="mail"?(gone?", was logged on ":", logged on "):" · "));line.appendChild(h("button",{type:"button",class:"p360-link",title:"Open "+o.name,onclick:()=>actGoOrg(k,actCat(r)==="tp"||r.type==="mail")},o.name));}
   else if(r.orgName)line.appendChild(document.createTextNode(" · "+r.orgName));
   const st=actStatus(r,gone,hid);if(st){line.appendChild(document.createTextNode(" "));line.appendChild(st);}
-  const m=h("div",{class:"act-m"},line);if(r.detail)m.appendChild(h("div",{class:"act-d"},r.detail));
+  const m=h("div",{class:"act-m"},line);if(r.detail){const dd=h("div",{class:"act-d"},r.detail);
+    /* a forwarded email opens, to check where it was logged or to pick its company (Jonna, Nov 9, 2026) */
+    if(r.type==="mail"){dd.setAttribute("role","button");dd.tabIndex=0;dd.title="Read the email";dd.style.cursor="pointer";dd.style.textDecoration="underline";dd.addEventListener("click",()=>m360ShowMail(r));dd.addEventListener("keydown",ev=>{if(ev.key==="Enter")m360ShowMail(r);});}
+    m.appendChild(dd);}
   const a=h("div",{class:"act-a"});actActions(r,gone,hid).forEach(b=>a.appendChild(b));
   return h("div",{class:"act-r"+(gone?" gone":"")+(hid?" hid":"")},h("div",{class:"act-t"},actTime(r)),m,a);
 }
