@@ -8117,7 +8117,7 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
     if(!S.acts.length)L.appendChild(sub("Saves, logged emails and payments show here as the team works."));
     tile({lab:"Team Activity",k:"#74bfeb",go:"activity",cls:"w3 full",body:[L]});}
   /* 9. forwarded emails to 360@ that need a company picked, for anyone who can save (Jonna, Nov 9, 2026); view-only people still see the next summit */
-  if(canWrite||PREVIEW){const el=tile({lab:"Forwarded Emails",k:"#f2b366",cls:"m3h-fwd"});el.id="m3h-fwd";try{m3hFwdFill(el);}catch(e){console.error("forwarded emails",e);}}
+  if(canWrite||/\/member-360\/test\//.test(location.pathname)){const el=tile({lab:"Forwarded Emails",k:"#f2b366",cls:"m3h-fwd"});el.id="m3h-fwd";try{m3hFwdFill(el);}catch(e){console.error("forwarded emails",e);}}
   else if(S.sum){const dd=Math.max(0,days_(TODAY,S.sum.date));tile({lab:"Next Summit",k:"#5fd39a",body:[big(dd,null,"days"),sub(h("b",null,S.sum.name)," · "+fmt(S.sum.date))]});}
 }
 
