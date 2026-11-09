@@ -1,5 +1,5 @@
 {
- "live": "20261109-0316",
+ "live": "20261109-0325",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -35,6 +35,13 @@
    "savedAt": "2026-11-09T03:16:56Z",
    "by": "jycritchley",
    "how": "published from the test copy: Forwarded Emails: full list on Home, whole email when picking, Activity names the company"
+  },
+  {
+   "version": "20261109-0325",
+   "sha256": "a419a67126e08a7feecd527fed878214291c3477aeb608cc7c45d4b8ef99ae16",
+   "savedAt": "2026-11-09T03:25:17Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Forwarded Emails tile opens a right-pane list; read the email from Activity"
   }
  ],
  "history": [
@@ -65,6 +72,13 @@
    "action": "publish",
    "version": "20261109-0316",
    "replaced": "20261109-0311"
+  },
+  {
+   "at": "2026-11-09T03:25:17Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-0325",
+   "replaced": "20261109-0316"
   }
  ]
 }
