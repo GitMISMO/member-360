@@ -4106,7 +4106,7 @@ function p360MailPick(m,c){
   dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"Log an Email"),h("h2",null,m.subject||"Which company is this with?")),x));dl.appendChild(b);
   /* the whole email, so the company can be judged from it (Jonna, Nov 9, 2026) */
   if(m.body||m.from){const fs=x=>{try{return fmtS(x);}catch(e){return String(x||"");}},hd=[["From",[m.fromName,m.from].filter(Boolean).join(" ")],["To",(m.to||[]).join(", ")],["Cc",(m.cc||[]).join(", ")],["Date",m.date?fs(m.date):""]].filter(r=>r[1]);
-    b.appendChild(h("details",{class:"p360-mail",open:"open",style:"margin-bottom:12px"},h("summary",{style:"cursor:pointer;font-weight:600"},"The email"),
+    b.appendChild(h("details",{class:"m360-email",open:"open",style:"display:block;width:auto;height:auto;margin:0 0 14px"},h("summary",{style:"display:list-item;cursor:pointer;font-weight:600;width:auto;height:auto"},"The email"),
       h("div",{style:"font-size:13px;margin-top:6px"},...hd.map(r=>h("div",null,h("b",null,r[0]+": "),r[1]))),
       h("div",{style:"white-space:pre-wrap;max-height:40vh;overflow:auto;border:1px solid #d6dde5;border-radius:4px;padding:10px 12px;margin-top:6px;font-size:13px;line-height:1.45"},m.body||"(No text was kept for this email.)")));}
   const who=[m.from].concat(m.to||[]).filter(a=>a&&!/@(mismo|mba)\.org$/i.test(a)).slice(0,3).join(", ");
@@ -4641,9 +4641,10 @@ function actRow(r){
   const w=actWhoOf(r),k=r.org&&BY[r.org]?r.org:"",o=k?BY[k]:null,gone=actGone(r),hid=actHidden(r.key);
   const lab=r.label.charAt(0).toLowerCase()+r.label.slice(1);
   const line=h("div",{class:"act-l"},h("b",null,w.name)," "+lab);
-  if(o){line.appendChild(document.createTextNode(" · "));line.appendChild(h("button",{type:"button",class:"p360-link",title:"Open "+o.name,onclick:()=>actGoOrg(k,actCat(r)==="tp"||r.type==="mail")},o.name));}
+  /* a forwarded email says where it was logged (Jonna, Nov 9, 2026) */
+  if(o){line.appendChild(document.createTextNode(r.type==="mail"?(gone?", was logged on ":", logged on "):" · "));line.appendChild(h("button",{type:"button",class:"p360-link",title:"Open "+o.name,onclick:()=>actGoOrg(k,actCat(r)==="tp"||r.type==="mail")},o.name));}
   else if(r.orgName)line.appendChild(document.createTextNode(" · "+r.orgName));
-  const st=actStatus(r,gone,hid);if(st)line.appendChild(st);
+  const st=actStatus(r,gone,hid);if(st){line.appendChild(document.createTextNode(" "));line.appendChild(st);}
   const m=h("div",{class:"act-m"},line);if(r.detail)m.appendChild(h("div",{class:"act-d"},r.detail));
   const a=h("div",{class:"act-a"});actActions(r,gone,hid).forEach(b=>a.appendChild(b));
   return h("div",{class:"act-r"+(gone?" gone":"")+(hid?" hid":"")},h("div",{class:"act-t"},actTime(r)),m,a);
