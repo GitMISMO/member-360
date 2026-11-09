@@ -1,5 +1,5 @@
 {
- "live": "20261109-1814",
+ "live": "20261109-1917",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -56,6 +56,13 @@
    "savedAt": "2026-11-09T18:14:08Z",
    "by": "jycritchley",
    "how": "published from the test copy: Money card: dues line fits a narrow window"
+  },
+  {
+   "version": "20261109-1917",
+   "sha256": "533e6e402f91934e1ddeafb72ec9bc3f0b863aba8cc3c4cbe50f0465ec04d2dd",
+   "savedAt": "2026-11-09T19:17:56Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Corporate family members can keep their own membership"
   }
  ],
  "history": [
@@ -107,6 +114,13 @@
    "action": "publish",
    "version": "20261109-1814",
    "replaced": "20261109-1739"
+  },
+  {
+   "at": "2026-11-09T19:17:56Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-1917",
+   "replaced": "20261109-1814"
   }
  ]
 }
