@@ -3164,6 +3164,15 @@ function baseStage(o){return RY===DATA_RY&&o.stage?o.stage:"Not Renewed Yet";}
 /* the sales pipeline on a record: shown on every prospect, and on any record that has a sales stage or pipeline details */
 function pipeOn(o){const v=ov(o);return o.life==="Prospect"||!!v.pstage||!!v.pipe;}
 function pipeMatch(o,v){if(!v)return true;const s=ov(o).pstage||"";if(v==="__none")return !s;if(v==="__open")return !!s&&!PCLOSED[s]&&s!=="Hold";return s===v;}
+/* a Next Step written in the sales pipeline is logged as a touchpoint too, so Last Touch, Activity and the timeline show it,
+   and the pipeline's Last Touchpoint date moves to today (Jonna, Nov 9, 2026) */
+async function pipeTouch(o,text){
+  if(!db||canWrite===false)return;
+  const doc={org:o.k,date:TODAY,type:"Note",topic:inCohort(o)?"Renewal":(o.life==="Prospect"?"Membership":"Other"),contact:"",sentiment:"Neutral",
+    summary:("Next step: "+text).slice(0,1200),by:ME||"",at:new Date().toISOString(),src:"pipeline"};
+  try{await db.collection("touchpoints").add(doc);toast("Next step saved and logged as a touchpoint.");}
+  catch(e){console.error("pipeline touch",e);toast("The next step saved, but it couldn't be logged as a touchpoint.",true);}
+}
 function pipeCtrls(o,c,dis){
   const v=ov(o),p=v.pipe||{};
   const F=(label,el,hint,wide)=>h("div",{class:"fld"+(wide?" wide":"")},h("label",null,label),el,hint?h("div",{class:"hint"},hint):null);
@@ -3171,7 +3180,8 @@ function pipeCtrls(o,c,dis){
     const ps=select([{v:"",l:"None"}].concat(PSTAGES),v.pstage||"",{disabled:dis,"aria-label":"Sales Stage"});
     ps.addEventListener("change",()=>{saveOv(o.k,{pstage:ps.value});toast("Sales stage set to "+(ps.value||"none")+".");});
     c.appendChild(F("Sales Stage",ps));}
-  const put=(k,val)=>{const cur=Object.assign({},ov(o).pipe||{});if(val===""||val===null||val===undefined)delete cur[k];else cur[k]=val;saveOv(o.k,{pipe:cur});};
+  const put=(k,val)=>{const cur=Object.assign({},ov(o).pipe||{}),was=cur[k];if(val===""||val===null||val===undefined)delete cur[k];else cur[k]=val;
+    const touch=k==="next"&&!!val&&val!==was&&!dis;if(touch&&(!cur.last||cur.last<TODAY))cur.last=TODAY;saveOv(o.k,{pipe:cur});if(touch)pipeTouch(o,val);};
   PIPE_F.forEach(([k,label,t,hint])=>{
     const val=p[k]!==undefined?p[k]:(k==="lead"?(o.source||""):"");
     const shown=t==="money"&&val!==""?money(val):(t==="pct"&&val!==""?val+"%":String(val||""));
@@ -3710,7 +3720,7 @@ function p360Update(o,box){
   if(!o||!box||!box.querySelector(".p360-tabs"))return;
   const F=p360Facts(box),T=p360Touches(o),last=T[0],isPro=o.life==="Prospect",v=ov(o)||{},pipe=v.pipe||{};
   const cnt=p=>{const c=box.querySelector('.cnt[data-cnt="'+p+'"]');return c?c.textContent.trim():"";};
-  const ltxt=last&&last.d?p360D(last.d):(pipe.last?p360D(pipe.last):"None yet"),own=owner(o)||"";
+  const ltd=[(last&&last.d)||"",(pipe.last&&pipe.last<=TODAY)?pipe.last:""].sort().pop(),ltxt=ltd?p360D(ltd):"None yet",own=owner(o)||"";
   /* owner pill */
   const op=box.querySelector(".p360-owner");if(op){op.textContent="";op.appendChild(h("i",{"aria-hidden":"true"},own?p360Initials(own):"?"));op.appendChild(h("span",null,"Owner",h("b",null,own||"Unassigned")));
     /* click the owner to change it, through the record's own owner control */
@@ -6105,7 +6115,9 @@ function weekStart(off){const d=new Date(TODAY+"T12:00:00");const wd=d.getDay();
 function myName(){return (ME&&NAMES[ME])||"";}
 function who(){if(wkWho===null){const m=myName();return (SET.staff||[]).includes(m)?m:"";}return wkWho;}
 function initials(s){if(!s)return "—";const p=s.trim().split(/\s+/);return ((p[0]||"")[0]+((p[1]||"")[0]||"")).toUpperCase();}
-function lastTouch(o){let d="";const t=TPIDX[o.k];if(t&&t.length)d=t[0].date||"";o.notes.forEach(x=>{if(x.d&&x.d>d)d=x.d;});return d;}
+function lastTouch(o){let d="";const t=TPIDX[o.k];if(t&&t.length)d=t[0].date||"";o.notes.forEach(x=>{if(x.d&&x.d>d)d=x.d;});
+  /* the sales pipeline's Last Touchpoint date counts too, never a future one (Jonna, Nov 9, 2026) */
+  const pl=((ov(o)||{}).pipe||{}).last;if(pl&&/^\d{4}-\d\d-\d\d$/.test(pl)&&pl<=TODAY&&pl>d)d=pl;return d;}
 function touchedSince(o,d){return lastTouch(o)>=d;}
 /* the latest sign of any engagement, not just a staff touch: payments, Summit registrations and attendance,
    workgroups, speaking, sponsorships (a sponsor of a current or upcoming event counts as engaged today) */

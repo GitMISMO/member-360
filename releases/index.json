@@ -1,5 +1,5 @@
 {
- "live": "20261109-2324",
+ "live": "20261109-2355",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -70,6 +70,13 @@
    "savedAt": "2026-11-09T23:24:54Z",
    "by": "jycritchley",
    "how": "published from the test copy: Stage changes reach the Membership Desk within a minute"
+  },
+  {
+   "version": "20261109-2355",
+   "sha256": "2ed136bb9ad2149eac38626e1697aa2b1d1ee7fc3ccc58da3e7c41445bd789ea",
+   "savedAt": "2026-11-09T23:55:24Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Pipeline Next Step logs a touchpoint; Last Touch counts the pipeline Last Touchpoint date"
   }
  ],
  "history": [
@@ -135,6 +142,13 @@
    "action": "publish",
    "version": "20261109-2324",
    "replaced": "20261109-1917"
+  },
+  {
+   "at": "2026-11-09T23:55:24Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261109-2355",
+   "replaced": "20261109-2324"
   }
  ]
 }
