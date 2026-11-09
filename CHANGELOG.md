@@ -7,6 +7,10 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-09
+
+- Forwarded emails: an email forwarded to 360@ no longer waits for the person who forwarded it to open Member 360. Anyone on the team who can make changes logs it when they open Member 360, still credited to whoever forwarded it. Home shows a Forwarded Emails tile, in place of Next Summit for people who can make changes, with the emails that need a company and a Pick button for each. Activity now says Waiting to be logged.
+
 ## 2026-11-08
 
 - Reading copy for the president's Claude project: every morning the Member 360 Reading Copy job in member-360-data writes reading-copy/, plain CSV files with a README covering members, renewals, engagement and people, using this page's own code. It checks the files against Home and Membership Stats before saving and writes nothing if they differ. If a change renames a function it uses or changes what Home or Membership Stats say, run that job by hand after publishing. See DEVELOPING.md, Scheduled Jobs.
