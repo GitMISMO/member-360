@@ -144,6 +144,7 @@ GitHub's clock is UTC and doesn't change for daylight saving, so a job runs an h
 | **Member Directory Members** (`directory-members.yml`, `scripts/m360_members.py`) | Publishes every current member (name, level, Lender or Industry, state, city, website; nothing else) to resources.mismo.org/member-directory/members.json. Won't publish fewer than 300 members, or a drop of more than a fifth. | Each save of `data/directory.json`, and daily at about 5:51 AM (10:51 UTC) |
 | **Champion Logo Import** (`champion-logo-import.yml`) | Downloads the website's champion logos into `data/logos/` for Member 360 to place. | When its script changes, or by hand |
 | **Logo Finder** (`logo-finder.yml`) | Looks for missing logos on each company's site and Wikipedia and saves candidates for review in Logo Review. Nothing goes on a company by itself. | When Member 360 asks (`data/logo-fetch.json`) |
+| **Member 360 Reading Copy** - reading-copy.yml, tools/reading-copy.mjs, tools/reading-copy/extract.js, test/reading-copy.mjs | Writes reading-copy/: plain CSV files and a README about members, renewals, engagement and people, for the president's Claude project in MISMO's Team account. Opens the live index.html from this repo in a headless browser with data/, runs this page's own functions, then checks the files against what Home and Membership Stats show. If anything differs, or the folder would pass 500 KB, it writes nothing and fails, and GitHub emails Jonna. Read only. Run it by hand after publishing a change to functions it calls or to Home or Membership Stats. | Daily at about 6:07 AM, 11:07 UTC, after each Aptify Weekly Pull, and by hand |
 
 The public feeds are written to `GitMISMO.github.io` with the repository secret `DIRECTORY_PUBLISH_TOKEN`. Secrets
 live only in GitHub's settings, never in a file.
@@ -188,6 +189,7 @@ mirrors it as of Nov 8, 2026; **if they disagree, the map wins.**
 | MISMO website: champions | Champion members, Lender and Industry by level (name, level, category, website, logo) | `data/champions.json` + `data/logos/` → Website Champions job | Each change |
 | MISMO website: member directory | Lender or Industry per company; every current member `{updated, count, members:[{n,t,c,s,a,u}]}` | `data/aptify-main.json` and `directory/main` → the two directory jobs | Each change and daily |
 | Membership application flow | Deals quoted to prospects | `data/quotes.json` (Deals Quoted job) | Daily and on change |
+| The president's Claude project, MISMO's Team account | The reading copy: CSV files and a README of members, renewals, engagement and people. No emails, phones, addresses, sign-in links or private notes; payments stay in MISMO Money's reading copy | member-360-data/reading-copy/, written by the Member 360 Reading Copy job | Daily |
 
 ---
 
