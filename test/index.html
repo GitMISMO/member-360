@@ -4421,8 +4421,12 @@ async function m360Run(){
   M360.busy=true;
   try{
     const r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};M360.docs=docs;
+    /* the weekly Aptify workbook email (subject "Member 360 Aptify Pull") is never a member email: set it aside (Jonna, Nov 9, 2026) */
+    const AP=/Member 360 Aptify Pull/i,auto=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(!d.st||d.st==="need")&&AP.test(String((d.m&&d.m.subject)||d.subject||""));});
+    auto.forEach(id=>{const d=docs[id];d.st="skipped";d.doneAt=new Date().toISOString();d.why="The weekly Aptify workbook, not a member email";});
     /* every waiting email, not only the opener's: anyone who can save logs the team's forwards, still credited to whoever forwarded it (Jonna, Nov 9, 2026) */
     const todo=Object.keys(docs).filter(id=>{const d=docs[id];return d&&!d.st;}),mine=todo.filter(id=>m360Who(docs[id])===me);
+    if(auto.length&&!todo.length&&r.sha){await m360Rel({content:{docs},sha:r.sha});}
     if(todo.length&&r.sha){
       const logged=[],FULL={};
       todo.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
