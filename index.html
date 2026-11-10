@@ -4084,7 +4084,10 @@ async function m360ShowFull(t){const NL=String.fromCharCode(10);let txt="";
   dl.appendChild(h("div",{class:"p360-dlg-h"},h("div",null,h("div",{class:"k"},"The Full Email"),h("h2",null,head)),x));
   dl.appendChild(h("div",{class:"p360-dlg-b"},txt?h("pre",{class:"m360-full"},txt):h("p",{class:"hint"},"The full email wasn't kept for this touchpoint. Emails logged from now on keep the whole thread.")));
   dl.addEventListener("close",()=>dl.remove());document.body.appendChild(dl);try{dl.showModal();}catch(e){dl.setAttribute("open","");}}
-function m360TpAdded(data,id){const p=M360_PEND;if(!p||!data||data.org!==p.org||Date.now()-p.at>7200000)return;M360_PEND=null;m360NewContacts(BY[p.org],p.m);if(id&&p.m&&p.m.body)m360SaveFull(id,[(p.m.fromName||p.m.from)?"From: "+(p.m.fromName||p.m.from):"",p.m.subject?"Subject: "+p.m.subject:"","",p.m.body].join(String.fromCharCode(10)).trim());}
+function m360TpAdded(data,id){const p=M360_PEND;if(!p||!data||data.org!==p.org||Date.now()-p.at>7200000)return;M360_PEND=null;
+  /* the email it came from comes off the Forwarded Emails list (Jonna, Nov 10, 2026) */
+  try{const w=window.__m360Wid;if(w&&Date.now()-w.at<7200000){window.__m360Wid=null;m360Mark(w.id,"logged",(BY[p.org]||{}).name||"",{org:(BY[p.org]||{}).k||p.org,tp:id||""});}}catch(e){console.error("mail-in mark",e);}
+  m360NewContacts(BY[p.org],p.m);if(id&&p.m&&p.m.body)m360SaveFull(id,[(p.m.fromName||p.m.from)?"From: "+(p.m.fromName||p.m.from):"",p.m.subject?"Subject: "+p.m.subject:"","",p.m.body].join(String.fromCharCode(10)).trim());}
 function p360MailFill(box,o,m){M360_PEND={org:o.k,m:m,at:Date.now()};
   const fl=box.querySelectorAll(".formgrid .fld"),g=i=>fl[i]&&fl[i].querySelector("input,select,textarea");
   const date=g(0),type=g(1),who=g(3),sum=g(5);
@@ -4117,7 +4120,7 @@ function p360MatchMail(m){
     if(ad.includes(e))exact.set(o.k,(exact.get(o.k)||0)+(e===from?3:2));
     const d=e.split("@")[1];if(d&&!P360_FREE.test(d)&&ad.some(a=>a.split("@")[1]===d))dom.add(o.k);}));
   const ks=exact.size?[...exact.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]):[...dom];
-  return ks.map(k=>BY[k]).filter(Boolean);
+  return [...new Set(ks.map(k=>BY[k]).filter(Boolean))];
 }
 function p360MailPick(m,c){
   let dl=$("p360-dlg");if(dl)dl.remove();
@@ -4503,6 +4506,15 @@ async function m360MakeProspect(nw,m){
   const ref=await db.collection("prospects").add(doc);
   const o=prospectOrg(Object.assign({id:ref.id},doc));EXTRA.manual.push(o);rebuildOrgs();
   return BY[o.k]||o;}
+function m360Cands(c){return [...new Set((c||[]).map(k=>BY[k]).filter(Boolean))];}
+/* an email waiting for a company that someone already logged by hand (its touchpoint is on the record): mark it done (Jonna, Nov 10, 2026) */
+function m360Done(docs){const done=[];const flat=s=>String(s||"").replace(/<[^>]+>/g," ").replace(/&nbsp;/g," ").replace(/\s+/g," ").trim().slice(0,70);
+  if(!(TP&&TP.length))return done;
+  Object.keys(docs).forEach(id=>{const d=docs[id];if(!d||d.st!=="need"||!d.m)return;let key;try{key=flat(p360MailText(d.m));}catch(e){return;}if(key.length<25)return;
+    const ks=new Set(m360Cands(d.cands).map(o=>o.k)),seen=String(d.seen||"");
+    const hit=TP.find(t=>{if(!t||!t.org)return false;const o=BY[t.org];if(!o)return false;if(ks.size?!ks.has(o.k):String(t.at||"")<seen)return false;return flat(t.summary)===key;});
+    if(hit){const o=BY[hit.org];d.st="logged";d.org=o.k;d.orgName=o.name;d.tp=hit.id||"";d.doneAt=new Date().toISOString();done.push(id);}});
+  return done;}
 async function m360Run(){
   if(M360.busy||!db||!canWrite||!ME||!(typeof ORGS!=="undefined"&&ORGS&&ORGS.length))return;
   const me=m360Me();if(!me)return;
@@ -4514,7 +4526,8 @@ async function m360Run(){
     auto.forEach(id=>{const d=docs[id];d.st="skipped";d.doneAt=new Date().toISOString();d.why="The weekly Aptify workbook, not a member email";});
     /* every waiting email, not only the opener's: anyone who can save logs the team's forwards, still credited to whoever forwarded it (Jonna, Nov 9, 2026) */
     const todo=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(!d.st||(d.st==="need"&&!d.r2)||(d.st==="logged"&&d.mk&&!d.org&&Date.now()-Date.parse(d.seen||0)>600000));}),mine=todo.filter(id=>m360Who(docs[id])===me);
-    if(auto.length&&!todo.length&&r.sha){await m360Rel({content:{docs},sha:r.sha});}
+    const done=m360Done(docs);
+    if((auto.length||done.length)&&!todo.length&&r.sha){await m360Rel({content:{docs},sha:r.sha});}
     if(todo.length&&r.sha){
       const logged=[],FULL={},made=[];
       todo.forEach(id=>{const d=docs[id];let m;try{m=(!d.html&&d.m)?d.m:m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
@@ -4537,14 +4550,14 @@ async function m360Run(){
   }catch(e){console.error("mail-in",e);}
   finally{M360.busy=false;m360Tray();try{m360Log();}catch(e){}}
 }
-function m360Mark(id,st,nm){
-  (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();if(nm)docs[id].orgName=nm;}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();try{m360Log();}catch(e){}})();
+function m360Mark(id,st,nm,ex){
+  (async()=>{try{const r=await m360Rel(null),docs=r.data.docs;if(docs[id]){docs[id].st=st;docs[id].doneAt=new Date().toISOString();if(nm)docs[id].orgName=nm;if(ex)Object.assign(docs[id],ex);}await m360Rel({content:{docs},sha:r.sha});M360.docs=docs;}catch(e){console.error("mail-in mark",e);}m360Tray();try{m360Log();}catch(e){}})();
 }
 /* Activity: read a forwarded email, and see where it was logged (Jonna, Nov 9, 2026). One that still needs a
    company opens the Pick dialog, which shows the whole email too. */
 function m360ShowMail(r){
   const d=r.d||{},m=d.m||{};
-  if(d.st==="need"&&!r.gone){p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(r.id);return;}
+  if(d.st==="need"&&!r.gone){p360MailPick(m,m360Cands(d.cands));m360Watch(r.id);return;}
   let dl=$("p360-dlg");if(dl)dl.remove();
   dl=h("dialog",{id:"p360-dlg",class:"p360-dlg","aria-label":"Forwarded email"});const me=dl;
   const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>me.close());
@@ -4574,7 +4587,7 @@ function m360Tray(){
   const t=h("div",{class:"m360-tray"},h("div",{class:"m360-tray-h"},list.length===1?"1 forwarded email needs a company":list.length+" forwarded emails need a company"));
   list.slice(0,8).forEach(id=>{const d=docs[id],m=d.m||{};
     const pick=h("button",{type:"button",class:"btn small"},"Pick the Company");
-    pick.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
+    pick.addEventListener("click",()=>{p360MailPick(m,m360Cands(d.cands));m360Watch(id);});
     const skip=h("button",{type:"button",class:"p360-link",title:"Take it off this list. The email stays in Outlook."},"Not needed");
     skip.addEventListener("click",()=>m360Mark(id,"skipped"));
     t.appendChild(h("div",{class:"m360-ti"},h("div",{class:"m360-ts"},m.subject||d.subject||"(no subject)"),h("div",{class:"m360-tm"},[m.fromName||m.from||"",m.date?fmtS(m.date):""].filter(Boolean).join(" · ")),h("div",{class:"m360-ta"},pick,skip)));});
@@ -4582,9 +4595,10 @@ function m360Tray(){
 }
 /* when the touchpoint for a tray email is saved, take it off the list */
 function m360Watch(id){
+  window.__m360Wid={id,at:Date.now()};
   let n=0;const iv=setInterval(()=>{n++;const dl=document.getElementById("p360-dlg");
     if(dl&&!dl.__m360&&dl.querySelector(".p360-dlg-b textarea")){dl.__m360=1;clearInterval(iv);const sum=dl.querySelector(".p360-dlg-b textarea");const nm=(dl.querySelector("h2")||{}).textContent||"";dl.addEventListener("close",()=>{if(!sum.value.trim())m360Mark(id,"logged",nm);});}
-    else if(n>240)clearInterval(iv);},250);
+    else if(n>4800)clearInterval(iv);},250);
 }
 /* how-to under every email drop box: classic Outlook drags, new Outlook and the web forward */
 function m360Help(){
@@ -8310,8 +8324,8 @@ function m360FwdPane(){
     const open=h("button",{type:"button",title:"Read the email and pick its company",style:"flex:1;min-width:0;text-align:left;background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit"},
       h("div",{style:"font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"},subj),
       h("div",{class:"hint",style:"margin:2px 0 0"},[m.fromName||m.from?"From "+(m.fromName||m.from):"","forwarded by "+(m360ByName(d)||"someone"),m.date?fmtS(m.date):""].filter(Boolean).join(" · ")));
-    open.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
-    const pick=h("button",{type:"button",class:"btn small"},"Read and Pick");pick.addEventListener("click",()=>{p360MailPick(m,(d.cands||[]).map(k=>BY[k]).filter(Boolean));m360Watch(id);});
+    open.addEventListener("click",()=>{p360MailPick(m,m360Cands(d.cands));m360Watch(id);});
+    const pick=h("button",{type:"button",class:"btn small"},"Read and Pick");pick.addEventListener("click",()=>{p360MailPick(m,m360Cands(d.cands));m360Watch(id);});
     const skip=h("button",{type:"button",class:"p360-link",title:"Take it off this list. The email stays in Outlook."},"Not needed");skip.addEventListener("click",()=>m360Mark(id,"skipped"));
     body.appendChild(h("div",{style:"display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #e3e8ee"},open,skip,pick));});
   m360FwdNewList(body,docs);

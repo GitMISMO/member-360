@@ -1,5 +1,5 @@
 {
- "live": "20261110-2138",
+ "live": "20261110-2148",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -91,6 +91,13 @@
    "savedAt": "2026-11-10T21:38:32Z",
    "by": "jycritchley",
    "how": "published from the test copy: Forwarded emails match by Company field, subject, website and domain; waiting ones rechecked; prospects on one Aptify ID can merge"
+  },
+  {
+   "version": "20261110-2148",
+   "sha256": "d3603222f0e2eaab7524962cdc0bbeefc4bd443cfc081f9bbebc001811008fb1",
+   "savedAt": "2026-11-10T21:48:30Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -177,6 +184,13 @@
    "action": "publish",
    "version": "20261110-2138",
    "replaced": "20261110-2120"
+  },
+  {
+   "at": "2026-11-10T21:48:30Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261110-2148",
+   "replaced": "20261110-2138"
   }
  ]
 }
