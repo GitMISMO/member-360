@@ -4533,6 +4533,8 @@ async function m360Run(){
       todo.forEach(id=>{const d=docs[id];let m;try{m=(!d.html&&d.m)?d.m:m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
         try{if(d.html){FULL[id]=m360Text(d.html);m.all=m360Addrs(FULL[id]).slice(0,80);}}catch(e){}d.r2=1;const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
         let cc=c,nw=null,one=c.length===1;delete d.mk;
+        /* several companies share the address: the one the subject (or a form's Company field) names wins, e.g. "Renew Path Software" (Jonna, Nov 10, 2026) */
+        if(c.length>1){const co=m360Field(m,/^(company|company name|organization|organisation|organization name|employer|firm)$/),nm=m360Named(co||m.subject||"").filter(o=>c.includes(o));if(nm.length===1){cc=nm;one=true;}}
         if(!c.length){const dc=m360Decide(m);if(dc.org){cc=[dc.org];one=true;}else if(dc.make)nw=dc.make;else cc=dc.cands||[];}
         if(one){d.st="logged";d.org=cc[0].k;logged.push([cc[0],m,id]);}
         else if(nw){d.st="logged";d.mk=nw;made.push([nw,m,id]);}
