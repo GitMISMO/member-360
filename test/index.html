@@ -3225,7 +3225,7 @@ function primaryEmail(o){const p=o.people.find(p=>p.email&&p.roles.includes("Pri
 function staffOpts(first){return [{v:"",l:first||"Unassigned"}].concat((SET.staff||[]).map(s=>({v:s,l:s})));}
 
 function rebuildIdx(){
-  TPIDX={};TP.forEach(t=>{(TPIDX[t.org]=TPIDX[t.org]||[]).push(t);});
+  TPIDX={};TP.forEach(t=>{let k=t.org;try{if(MERGED[k])k=MERGED[k];}catch(e){}(TPIDX[k]=TPIDX[k]||[]).push(t);});
   for(const k in TPIDX)TPIDX[k].sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.at||"").localeCompare(a.at||""));
   SENTIDX={};
   for(const id in SENDS){const d=SENDS[id];const step=d.step;(d.batches||[]).forEach(b=>{(b.orgs||[]).forEach(k=>{const m=SENTIDX[k]=SENTIDX[k]||{};if(!m[step])m[step]=(b.at||"").slice(0,10);});});}
@@ -3398,6 +3398,8 @@ function applyMerges(){
   ORGS.forEach(o=>BY[o.k]=o);
   drop.forEach(([o,w])=>{MERGED[o.k]=w;BY[o.k]=BY[w];
     (BY[w].mergedIn=BY[w].mergedIn||[]).push({k:o.k,name:o.name,cid:o.cid||""});});
+  /* a folded record's touchpoints show on the record it was folded into (Jonna, Nov 10, 2026) */
+  try{const sig=JSON.stringify(MERGED);if(sig!==applyMerges.tpSig){applyMerges.tpSig=sig;if(TP&&TP.length)rebuildIdx();}}catch(e){}
   /* "shared with another row" is worked out from the rows there are now, not
      from what the member list was built with, so folding two together or
      correcting a Company ID settles it straight away */
@@ -4437,27 +4439,51 @@ function m360Doc(o,m,by){
 }
 /* who logged it: the staff sender, or for an email dragged into the 360 mailbox, the staff person it was sent to */
 function m360Who(d){const f=String(d.from||"");if(M360_STAFF.test(f))return m360Local(f);const a=(String(d.to||"")+";"+String(d.cc||"")).match(M360_EM)||[];const s=a.find(x=>M360_STAFF.test(x)&&!/^360@/i.test(x));return s?m360Local(s):"";}
-/* an email no company matches (Jonna, Nov 10, 2026): when the outside person has a real company address and nothing in
-   Member 360 uses that domain, website or a close name, the email becomes a new prospect and is logged to it. Free mail,
-   automated senders and anything close to an existing company still wait for a person to pick. */
-const M360_AUTO=/^(no-?reply|do-?not-?reply|mailer-daemon|postmaster|bounces?|newsletters?|news|marketing|notifications?|notify|alerts?|updates?|digest)([._+-][^@]*)?@/i;
-const M360_BULK=/^(e|em|email|emails|mail|mailer|mailing|mailings|news|newsletter|newsletters|go|click|clicks|lists?|bounces?|mc|marketing|info|campaign|campaigns)\.[^.]+\.[a-z.]+$/i;
-const M360_GENERIC=/^(first|american|united|national|home|homes|mortgage|bank|community|federal|global|digital|premier|capital|financial|title|lending|loan|loans|credit|union|state|north|south|east|west|new|great|guaranteed|direct|guild)$/;
+/* an email no company matches (Jonna, Nov 10, 2026). Before anyone has to pick:
+   - the outside company address it is with: the sender, the people staff wrote to, or for an internal forward or a form
+     (FRAME feedback, an application) the one outside company address anywhere in it
+   - a company whose website is that domain, a company named in a form's Company field or in the subject, or one whose
+     name starts with the domain (rocktop.io is Rocktop Technologies) is logged straight to it
+   - several close names still wait for a person to pick
+   - nothing at all, and a real company address: a new prospect, named from the form's Company field, the signature or the
+     domain, with the email logged to it. Free mail, automated senders and tools (Smartsheet, DocuSign...) never make one. */
+const M360_AUTO=/^(no-?reply|do-?not-?reply|mailer-daemon|postmaster|bounces?|newsletters?|news|marketing|notifications?|notify|alerts?|updates?|digest|automation|automated|workflow|forms?|surveys?|calendar|invitations?|reminders?)([._+-][^@]*)?@/i;
+const M360_BULK=/^(e|em|email|emails|mail|mailer|mailing|mailings|news|newsletter|newsletters|go|click|clicks|lists?|bounces?|mc|marketing|info|campaign|campaigns|app|apps|notify|notifications)\.[^.]+\.[a-z.]+$/i;
+const M360_TOOL=/(^|\.)(smartsheet|docusign|hubspot|hubspotemail|hs-email|mailchimp|mcsv|mcdlv|constantcontact|salesforce|force|zoom|calendly|google|microsoft|office|office365|outlook|sharepoint|linkedin|eventbrite|cvent|higherlogic|surveymonkey|qualtrics|typeform|jotform|formstack|wufoo|gong|fathom|otter|fireflies|slack|asana|monday|aptify|stripe|paypal|intuit|quickbooks|zendesk|freshdesk|github|atlassian|dropbox|box|adobe|adobesign|echosign|pandadoc|riverside|vimeo|youtube)\.(com|net|io|us|ai|video|so|org|co)$/i;
+const M360_GENERIC=/^(first|american|united|national|home|homes|mortgage|bank|community|federal|global|digital|premier|capital|financial|title|lending|loan|loans|credit|union|state|north|south|east|west|new|great|guaranteed|direct|guild|mismo)$/;
 function m360Key(s){return String(s||"").toLowerCase().replace(/&/g," and ").replace(/\b(l\.?l\.?c|inc|incorporated|corp|corporation|co|company|ltd|lp|llp|pllc|plc|n\.?a)\b\.?/g," ").replace(/[^a-z0-9]+/g,"");}
+function m360Core(s){return String(s||"").toLowerCase().replace(/&/g," and ").replace(/\b(l\.?l\.?c|inc|incorporated|corp|corporation|co|company|ltd|lp|llp|pllc|plc|n\.?a|the)\b\.?/g," ").replace(/[^a-z0-9]+/g," ").trim();}
 function m360Ini(s){return String(s||"").toLowerCase().replace(/\b(llc|inc|corp|corporation|co|company|ltd|lp|llp|pllc|plc|the|of|and)\b\.?/g," ").split(/[^a-z0-9]+/).filter(Boolean).map(w=>w[0]).join("");}
-/* the outside company address the email is with: the sender, or when staff wrote it, who they wrote to */
+function m360ExtOk(a){const d=String(a||"").split("@")[1]||"";return !!d&&d.indexOf(".")>0&&!M360_STAFF.test(a)&&!/^360@/.test(a)&&!P360_FREE.test(d)&&!M360_AUTO.test(a)&&!M360_BULK.test(d)&&!M360_TOOL.test(d);}
 function m360Ext(m){
-  const f=String(m.from||"").toLowerCase().trim(),list=M360_STAFF.test(f)?(m.to||[]):[f];
-  for(const raw of list){const a=String(raw||"").toLowerCase().trim(),d=a.split("@")[1]||"";
-    if(!d||M360_STAFF.test(a)||/^360@/.test(a)||P360_FREE.test(d)||M360_AUTO.test(a)||M360_BULK.test(d))continue;return {a,d};}
+  const f=String(m.from||"").toLowerCase().trim(),fd=f.split("@")[1]||"",inner=!f||M360_STAFF.test(f);
+  for(const raw of (inner?(m.to||[]):[f])){const a=String(raw||"").toLowerCase().trim();if(m360ExtOk(a))return {a,d:a.split("@")[1]};}
+  if(inner||M360_TOOL.test(fd)||M360_AUTO.test(f)||M360_BULK.test(fd)){
+    const all=[...new Set((m.all||[]).map(x=>String((x&&x.email)||x||"").toLowerCase().trim()).concat((String(m.body||"").match(/[\w.+'-]+@[\w-]+(\.[\w-]+)+/g)||[]).map(s=>s.toLowerCase())))].filter(m360ExtOk);
+    const doms=[...new Set(all.map(a=>a.split("@")[1]))];if(doms.length===1)return {a:all[0],d:doms[0],body:true};}
   return null;}
-function m360Near(m){
-  const x=m360Ext(m);if(!x)return {x:null,site:[],name:[]};
-  const d=x.d,stem=d.split(".")[0].replace(/[^a-z0-9]/g,"");
-  const site=ORGS.filter(o=>{const s=siteDom(siteOf(o));return !!s&&(s===d||s.endsWith("."+d)||d.endsWith("."+s));});
-  const name=stem.length<3?[]:ORGS.filter(o=>{if(site.includes(o))return false;const k=m360Key(o.name),w=m360Key(String(o.name||"").split(/\s+/)[0]);
-    return (stem.length>=4&&k.length>=4&&(k.startsWith(stem)||stem.startsWith(k)))||m360Ini(o.name)===stem||(w.length>=5&&!M360_GENERIC.test(w)&&stem.startsWith(w));});
-  return {x,site,name:name.slice(0,6)};}
+/* a form field in the email, such as "Company: Gregg & Valby, LLP" */
+function m360Field(m,re){for(const ln of String(m.body||"").split("\n").slice(0,400)){const k=ln.match(/^\s*[*_]*([A-Za-z][A-Za-z ]{1,30}?)[*_]*\s*:\s*[*_]*(.{2,90}?)[*_]*\s*$/);if(k&&re.test(k[1].trim().toLowerCase()))return k[2].trim();}return "";}
+/* companies named in a piece of text, whole words only */
+function m360Named(text){const t=" "+m360Core(text)+" ";if(t.trim().length<3)return [];
+  return ORGS.filter(o=>{const c=m360Core(o.name);if(c.length<5||(c.indexOf(" ")<0&&M360_GENERIC.test(c)))return false;return t.indexOf(" "+c+" ")>=0;});}
+function m360Decide(m){
+  const x=m360Ext(m),co=m360Field(m,/^(company|company name|organization|organisation|organization name|employer|firm)$/);
+  let stem="",site=[],strong=[],weak=[];
+  if(x){const d=x.d;stem=d.split(".")[0].replace(/[^a-z0-9]/g,"");
+    site=ORGS.filter(o=>{const s=siteDom(siteOf(o));return !!s&&(s===d||s.endsWith("."+d)||d.endsWith("."+s));});
+    if(site.length===1)return {org:site[0]};
+    if(stem.length>=3)ORGS.forEach(o=>{if(site.includes(o))return;const k=m360Key(o.name),w=m360Key(String(o.name||"").split(/\s+/)[0]);
+      if(stem.length>=5&&k.length>=5&&k.startsWith(stem))strong.push(o);
+      else if((stem.length>=4&&k.length>=4&&stem.startsWith(k))||m360Ini(o.name)===stem||(w.length>=5&&!M360_GENERIC.test(w)&&stem.startsWith(w)))weak.push(o);});}
+  const named=co?m360Named(co):m360Named(m.subject||"");
+  if(named.length===1&&(co||!x||strong.includes(named[0])||weak.includes(named[0])))return {org:named[0]};
+  if(!named.length&&strong.length===1&&!site.length)return {org:strong[0]};
+  const cands=[...new Set(site.concat(named,strong,weak))].slice(0,6);if(cands.length)return {cands};
+  if(!x)return {cands:[]};
+  if(ORGS.some(o=>(o.people||[]).some(p=>String(p.email||"").toLowerCase().split("@")[1]===x.d)))return {cands:[]};
+  const pn=m360Field(m,/^(name|full name|contact name|your name|contact)$/);
+  return {make:{email:x.a,dom:x.d,name:(co&&co.length<=80?co:"")||m360CoName(m,x),person:pn||(!x.body&&x.a===String(m.from||"").toLowerCase().trim()&&m.fromName?String(m.fromName):"")}};}
 /* the company's name: from the sender's own message (a signature line that fits the domain), or else the domain */
 function m360CoName(m,x){
   const stem=x.d.split(".")[0].replace(/[^a-z0-9]/g,""),body=String(m.body||""),cut=body.search(/\n\s*(From:\s*\S|-{3,}\s*Original Message)/i);
@@ -4468,10 +4494,6 @@ function m360CoName(m,x){
     const n=m360Key(seg),w=m360Key(seg.split(/\s+/)[0]);if(n.length<3||n===who)continue;
     if((stem.length>=4&&(n.startsWith(stem)||(n.length>=5&&stem.startsWith(n))))||(stem.length>=3&&seg.split(/\s+/).length>=2&&m360Ini(seg)===stem)||(w.length>=5&&!M360_GENERIC.test(w)&&stem.startsWith(w)&&seg.split(/\s+/).length>=2))return seg;}}
   return stem.length<=4?stem.toUpperCase():stem.charAt(0).toUpperCase()+stem.slice(1);}
-function m360NewPick(m){const x=m360Ext(m);if(!x)return null;
-  if(ORGS.some(o=>(o.people||[]).some(p=>String(p.email||"").toLowerCase().split("@")[1]===x.d)))return null;
-  const fromIt=x.a===String(m.from||"").toLowerCase().trim();
-  return {email:x.a,dom:x.d,name:m360CoName(m,x),person:fromIt&&m.fromName?String(m.fromName):""};}
 async function m360MakeProspect(nw,m){
   const doc={name:nw.name,cid:"",sector5:"",people:[{name:nw.person||"",title:"",email:nw.email,phone:"",roles:["Primary"]}],
     note:"Added from an email forwarded to 360@ on "+(m.date||TODAY)+(m.subject?" ("+String(m.subject).slice(0,120)+")":"")+". No company in Member 360 matched it.",
@@ -4489,14 +4511,14 @@ async function m360Run(){
     const AP=/Member 360 Aptify Pull/i,auto=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(!d.st||d.st==="need")&&AP.test(String((d.m&&d.m.subject)||d.subject||""));});
     auto.forEach(id=>{const d=docs[id];d.st="skipped";d.doneAt=new Date().toISOString();d.why="The weekly Aptify workbook, not a member email";});
     /* every waiting email, not only the opener's: anyone who can save logs the team's forwards, still credited to whoever forwarded it (Jonna, Nov 9, 2026) */
-    const todo=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(!d.st||(d.st==="logged"&&d.mk&&!d.org&&Date.now()-Date.parse(d.seen||0)>600000));}),mine=todo.filter(id=>m360Who(docs[id])===me);
+    const todo=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(!d.st||(d.st==="need"&&!d.r2)||(d.st==="logged"&&d.mk&&!d.org&&Date.now()-Date.parse(d.seen||0)>600000));}),mine=todo.filter(id=>m360Who(docs[id])===me);
     if(auto.length&&!todo.length&&r.sha){await m360Rel({content:{docs},sha:r.sha});}
     if(todo.length&&r.sha){
       const logged=[],FULL={},made=[];
-      todo.forEach(id=>{const d=docs[id];let m;try{m=m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
-        try{FULL[id]=m360Text(d.html);m.all=m360Addrs(FULL[id]).slice(0,80);}catch(e){}const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
+      todo.forEach(id=>{const d=docs[id];let m;try{m=(!d.html&&d.m)?d.m:m360Parse(d);}catch(e){console.error("mail-in parse",e);m={from:"",to:[],date:TODAY,subject:String(d.subject||""),body:""};}
+        try{if(d.html){FULL[id]=m360Text(d.html);m.all=m360Addrs(FULL[id]).slice(0,80);}}catch(e){}d.r2=1;const c=p360MatchMail(m);d.m=m;d.html="";d.seen=new Date().toISOString();
         let cc=c,nw=null,one=c.length===1;delete d.mk;
-        if(!c.length){const nr=m360Near(m);if(nr.site.length===1){cc=nr.site;one=true;}else{cc=nr.site.concat(nr.name).slice(0,6);if(!cc.length)nw=m360NewPick(m);}}
+        if(!c.length){const dc=m360Decide(m);if(dc.org){cc=[dc.org];one=true;}else if(dc.make)nw=dc.make;else cc=dc.cands||[];}
         if(one){d.st="logged";d.org=cc[0].k;logged.push([cc[0],m,id]);}
         else if(nw){d.st="logged";d.mk=nw;made.push([nw,m,id]);}
         else{d.st="need";d.cands=cc.slice(0,6).map(o=>o.k);}});
