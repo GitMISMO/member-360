@@ -1,5 +1,5 @@
 {
- "live": "20261110-2148",
+ "live": "20261110-2158",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -98,6 +98,13 @@
    "savedAt": "2026-11-10T21:48:30Z",
    "by": "jycritchley",
    "how": "published from the test copy"
+  },
+  {
+   "version": "20261110-2158",
+   "sha256": "0056b81fe9c908dd6e6273290226e1b29d8972ef2b14ef35c8fef2c76eea39b9",
+   "savedAt": "2026-11-10T21:58:27Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Forwarded email matching two companies goes to the one the subject names"
   }
  ],
  "history": [
@@ -191,6 +198,13 @@
    "action": "publish",
    "version": "20261110-2148",
    "replaced": "20261110-2138"
+  },
+  {
+   "at": "2026-11-10T21:58:27Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261110-2158",
+   "replaced": "20261110-2148"
   }
  ]
 }
