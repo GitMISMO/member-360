@@ -3441,6 +3441,8 @@ function mergeCtl(it){
     const w=sel.value,losers=os.filter(o=>o.k!==w);
     if((OV[w]||{}).mergedInto)saveOv(w,{mergedInto:""});
     if(!losers.length)return;
+    /* the kept record takes the folded one's owner, sales stage and pipeline details where it has none (Jonna, Nov 10, 2026) */
+    {const wv=OV[w]||{},cp={};losers.forEach(o=>{const lv=OV[o.k]||{};["owner","pstage","pipe"].forEach(f=>{if(lv[f]&&!wv[f]&&cp[f]===undefined)cp[f]=lv[f];});});if(Object.keys(cp).length)saveOv(w,cp);}
     losers.forEach(o=>saveOv(o.k,{mergedInto:w}));
     rebuildOrgs();
     toast(losers.length===1?(losers[0].name+" folded into "+BY[w].name+"."):(losers.length+" records folded into "+BY[w].name+"."));});
@@ -7579,11 +7581,11 @@ function lev1(a,b){if(a===b)return true;if(Math.abs(a.length-b.length)>1)return 
   const s=a.slice(i+1),t=b.slice(i+1);return a.length===b.length?s===t:a.length>b.length?a.slice(i+1)===b.slice(i):a.slice(i)===b.slice(i+1);}
 function dupPairs(){const sig=ORGS.length+"|"+Object.keys(OV).length;if(DUPC&&DUPS===sig)return DUPC;
   const L=ORGS.map(o=>({o,t:dupKey(o.name)})).filter(x=>x.t.length>=4),seen=new Set(),out=[];
-  const push=(a,b,why)=>{if(a.k===b.k)return;if(a.life!=="Active"&&b.life!=="Active")return;const [x,y]=a.k<b.k?[a,b]:[b,a],id=x.k+"|"+y.k;if(seen.has(id))return;seen.add(id);out.push({id,o:x,also:y,note:why});};
+  const push=(a,b,why,any)=>{if(a.k===b.k)return;if(!any&&a.life!=="Active"&&b.life!=="Active")return;const [x,y]=a.k<b.k?[a,b]:[b,a],id=x.k+"|"+y.k;if(seen.has(id))return;seen.add(id);out.push({id,o:x,also:y,note:why});};
   const byT={};L.forEach(x=>(byT[x.t]=byT[x.t]||[]).push(x.o));
   Object.values(byT).forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++)push(g[i],g[j],"Same name");});
   const byC={};ORGS.forEach(o=>{if(o.cid)(byC[o.cid]=byC[o.cid]||[]).push(o);});
-  Object.values(byC).forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++)push(g[i],g[j],"Same Aptify Company ID");});
+  Object.values(byC).forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++)push(g[i],g[j],"Same Aptify Company ID",true);});
   const b3={};L.filter(x=>x.t.length>=7).forEach(x=>(b3[x.t.slice(0,3)]=b3[x.t.slice(0,3)]||[]).push(x));
   Object.values(b3).forEach(g=>{for(let i=0;i<g.length;i++)for(let j=i+1;j<g.length;j++){const a=g[i],b=g[j];if(a.t!==b.t&&lev1(a.t,b.t))push(a.o,b.o,"Names one letter apart");}});
   // one entry per group: three Acrisure records are one item, not three pairs
