@@ -7669,7 +7669,7 @@ function isChecks(){
       items:()=>dupPairs()},
     {key:"end-early",cat:"Data We're Waiting On",title:"Memberships Ended Early Here but Not in Aptify",
       why:"Staff ended these memberships early in Member 360 because the order behind them was never paid, but Aptify still shows the longer term. Ask the membership team to cancel the order and end the term in Aptify. Each one comes off this list on its own once the weekly Aptify upload agrees.",
-      items:()=>O(ORGS.filter(o=>{const e=ov(o).endEarly;return !!(e&&e.thru&&o._eeThru&&String(o._eeThru).slice(0,10)>e.thru);}),o=>{const e=ov(o).endEarly;return "Ended "+fmtS(e.thru)+" here"+(e.order?" (order "+e.order+" not paid)":"")+" · Aptify shows it through "+fmtS(String(o._eeThru).slice(0,10));})},
+      items:()=>O(ORGS.filter(o=>{const e=ov(o).endEarly;return !!(e&&e.thru&&o._eeThru&&String(o._eeThru).slice(0,10)>e.thru);}),o=>{const e=ov(o).endEarly;return "Ended "+fmt(e.thru)+" here"+(e.order?" (order "+e.order+" not paid)":"")+" · Aptify shows it through "+fmt(String(o._eeThru).slice(0,10));})},
     {key:"no-type",cat:"Missing Information",title:"Members with No Member Type",
       act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"Current members with no Lender or Non-Lender type on record, so they can't be placed in the member counts. Open the record and set Member Type.",
