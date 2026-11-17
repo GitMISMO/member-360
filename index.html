@@ -3344,6 +3344,17 @@ function refreshHeads(){
    one looks as though its membership is missing. The correction is kept with
    the record's other staff edits, which means a rebuild never loses it and the
    record's own key never moves — notes, stages and owners stay where they are. */
+/* an order that was never paid (Jonna, Nov 17, 2026): staff end the membership on the date it really ended. Aptify's terms past
+   that date are cut back and the record stops counting as current, until Aptify itself is corrected. It runs after the Aptify
+   upload is applied; Aptify's own term is kept aside (_eeAptAll, _eeThru, _eeLife) so Undo puts it straight back. */
+function applyEndEarly(){ORGS.forEach(o=>{const ee=(OV[o.k]||{}).endEarly,cur=()=>JSON.stringify([o.aptAll||[],o.thru||"",o.life||""]);
+  const fresh=o._eeSet===undefined||cur()!==o._eeSet;
+  if(ee&&ee.thru){if(fresh){o._eeAptAll=o.aptAll||[];o._eeThru=o.thru||"";o._eeLife=o.life;}
+    o.aptAll=(o._eeAptAll||[]).filter(t=>!(t&&t.s&&String(t.s).slice(0,10)>ee.thru)).map(t=>{const c=Object.assign({},t);if(c.e&&String(c.e).slice(0,10)>ee.thru)c.e=ee.thru;return c;});
+    o.thru=(!o._eeThru||String(o._eeThru).slice(0,10)>ee.thru)?ee.thru:o._eeThru;
+    o.life=(ee.thru<TODAY&&o._eeLife==="Active")?"Former":o._eeLife;o._eeSet=cur();}
+  else if(o._eeSet!==undefined){if(!fresh){o.aptAll=o._eeAptAll;o.thru=o._eeThru;o.life=o._eeLife;}delete o._eeAptAll;delete o._eeThru;delete o._eeLife;delete o._eeSet;}});}
+{const _aa=applyAptify;applyAptify=function(){const r=_aa.apply(this,arguments);try{applyEndEarly();}catch(e){console.error("end early",e);}return r;};}
 function applyCidOv(){
   let changed=false;
   ORGS.forEach(o=>{
@@ -3614,6 +3625,30 @@ function idFact(facts,o,key,label,help){
 }
 
 /* ---------- profile ---------- */
+/* Money tab, under Membership History: end a membership early when its order was never paid (Jonna, Nov 17, 2026) */
+function eeCtl(o,el){
+  if(!el||!o)return;const dis=!db||!canWrite,ee=(OV[o.k]||{}).endEarly;
+  if(!(ee&&ee.thru)&&o.life!=="Active")return;
+  const wrap=h("div",{class:"m360-ee",style:"margin-top:14px;padding-top:12px;border-top:1px solid #e3e8ee"});
+  wrap.appendChild(h("h4",{class:"subh",style:"margin:0 0 4px"},"Order Not Paid: End the Membership Early"));
+  if(ee&&ee.thru){const at=o._eeThru?String(o._eeThru).slice(0,10):"";
+    wrap.appendChild(h("div",{class:"hint",style:"margin:0 0 8px"},"Membership ended "+fmt(ee.thru)+(ee.order?" because order "+ee.order+" was never paid":"")+(ee.note?". "+ee.note:"")+(ee.by?" (set by "+ee.by+")":"")+". "+(at&&at>ee.thru?"Aptify still shows it through "+fmt(at)+", so it's listed in the Issues Log until Aptify is corrected.":"Aptify agrees.")));
+    const un=h("button",{type:"button",class:"btn ghost small"},"Undo");un.disabled=dis;
+    un.addEventListener("click",()=>{if(blocked())return;saveOv(o.k,{endEarly:null});rebuildOrgs();toast("Put back to the end date Aptify shows.");try{openPane(o.k);}catch(e){}});
+    wrap.appendChild(un);el.appendChild(wrap);return;}
+  wrap.appendChild(h("div",{class:"hint",style:"margin:0 0 8px"},"Aptify shows this membership through "+(o.thru?fmt(o.thru):"a later date")+". If the order behind it was never paid, enter the order and the date the membership really ended. Member 360 uses that date until Aptify is corrected."));
+  const ord=h("input",{type:"text",inputmode:"numeric",placeholder:"Aptify order",style:"width:9em","aria-label":"Unpaid Aptify order"});
+  const dt=h("input",{type:"date","aria-label":"Date the membership ended"});dt.value=(+TODAY.slice(0,4)-1)+"-12-31";
+  const nt=h("input",{type:"text",placeholder:"Note (optional)",style:"flex:1;min-width:10em","aria-label":"Note"});
+  const sv=h("button",{type:"button",class:"btn small"},"End Membership");
+  [ord,dt,nt,sv].forEach(x=>{if(dis)x.disabled=true;});
+  sv.addEventListener("click",()=>{if(blocked())return;const d=dt.value;
+    if(!/^\d{4}-\d\d-\d\d$/.test(d)){toast("Pick the date the membership ended.",true);return;}
+    if(o.thru&&d>=String(o.thru).slice(0,10)){toast("That date isn't earlier than the end date Aptify shows.",true);return;}
+    saveOv(o.k,{endEarly:{order:ord.value.trim(),thru:d,note:nt.value.trim(),by:(typeof myName==="function"&&myName())||ME||"",at:new Date().toISOString()}});
+    rebuildOrgs();toast(o.name+"'s membership now ends "+fmt(d)+".");try{openPane(o.k);}catch(e){}});
+  wrap.appendChild(h("div",{style:"display:flex;flex-wrap:wrap;gap:8px;align-items:center"},ord,dt,nt,sv));el.appendChild(wrap);}
+{const _fm=fillMhist;fillMhist=function(o,el){const r=_fm.apply(this,arguments);try{eeCtl(o,el);}catch(e){console.error("end early",e);}return r;};}
 function renderProfile(o,box){
   box.textContent="";if(box.id==="m360-pane-body"&&paneK===o.k){const bb=laneBackBtn();if(bb)box.appendChild(bb);}
   const facts=h("div",{class:"facts"});
@@ -6889,7 +6924,7 @@ function rebuildOrgs(){
   applyMerges();
   leadDirty();
   if(MMF||SQF)remergeAct();
-  if(APT)applyAptify();
+  if(APT)applyAptify();else applyEndEarly();
   const dl=$("orgnames");if(dl)dl.textContent="";
   renderMemChips();renderList("renewals");renderList("members");
   const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="iif")renderList("iif");
@@ -7632,6 +7667,9 @@ function isChecks(){
     {key:"dupes",cat:"Possible Duplicates",title:"Possible Duplicate Records",
       why:"Two records that look like the same company. A duplicate splits payments, contacts and history across two records, which can make a paying member look unpaid. Where the rows already share one Aptify Company ID, Aptify holds them as one company and you can fold them together below \u2014 nothing is deleted and it can be put back. Where the IDs differ, either one of them is wrong (correct it on the record) or the companies really do need merging in Aptify.",
       items:()=>dupPairs()},
+    {key:"end-early",cat:"Data We're Waiting On",title:"Memberships Ended Early Here but Not in Aptify",
+      why:"Staff ended these memberships early in Member 360 because the order behind them was never paid, but Aptify still shows the longer term. Ask the membership team to cancel the order and end the term in Aptify. Each one comes off this list on its own once the weekly Aptify upload agrees.",
+      items:()=>O(ORGS.filter(o=>{const e=ov(o).endEarly;return !!(e&&e.thru&&o._eeThru&&String(o._eeThru).slice(0,10)>e.thru);}),o=>{const e=ov(o).endEarly;return "Ended "+fmt(e.thru)+" here"+(e.order?" (order "+e.order+" not paid)":"")+" · Aptify shows it through "+fmt(String(o._eeThru).slice(0,10));})},
     {key:"no-type",cat:"Missing Information",title:"Members with No Member Type",
       act:{label:"Set Member Type",field:"type",opts:[["Lender","Lender"],["Non-Lender","Non-Lender"]]},
       why:"Current members with no Lender or Non-Lender type on record, so they can't be placed in the member counts. Open the record and set Member Type.",

@@ -1,5 +1,5 @@
 {
- "live": "20261110-2158",
+ "live": "20261117-1542",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -105,6 +105,13 @@
    "savedAt": "2026-11-10T21:58:27Z",
    "by": "jycritchley",
    "how": "published from the test copy: Forwarded email matching two companies goes to the one the subject names"
+  },
+  {
+   "version": "20261117-1542",
+   "sha256": "b131e8ea564ea7885570ed5f6330a1d6a0e3531ab14a9e71ee6b0bc475693c40",
+   "savedAt": "2026-11-17T15:42:00Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Order not paid: end a membership early on the Money tab, tracked in the Issues Log until Aptify agrees"
   }
  ],
  "history": [
@@ -205,6 +212,13 @@
    "action": "publish",
    "version": "20261110-2158",
    "replaced": "20261110-2148"
+  },
+  {
+   "at": "2026-11-17T15:42:00Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261117-1542",
+   "replaced": "20261110-2158"
   }
  ]
 }
