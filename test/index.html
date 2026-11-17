@@ -3344,19 +3344,21 @@ function refreshHeads(){
    one looks as though its membership is missing. The correction is kept with
    the record's other staff edits, which means a rebuild never loses it and the
    record's own key never moves — notes, stages and owners stay where they are. */
+/* an order that was never paid (Jonna, Nov 17, 2026): staff end the membership on the date it really ended. Aptify's terms past
+   that date are cut back and the record stops counting as current, until Aptify itself is corrected. It runs after the Aptify
+   upload is applied; Aptify's own term is kept aside (_eeAptAll, _eeThru, _eeLife) so Undo puts it straight back. */
+function applyEndEarly(){ORGS.forEach(o=>{const ee=(OV[o.k]||{}).endEarly,cur=()=>JSON.stringify([o.aptAll||[],o.thru||"",o.life||""]);
+  const fresh=o._eeSet===undefined||cur()!==o._eeSet;
+  if(ee&&ee.thru){if(fresh){o._eeAptAll=o.aptAll||[];o._eeThru=o.thru||"";o._eeLife=o.life;}
+    o.aptAll=(o._eeAptAll||[]).filter(t=>!(t&&t.s&&String(t.s).slice(0,10)>ee.thru)).map(t=>{const c=Object.assign({},t);if(c.e&&String(c.e).slice(0,10)>ee.thru)c.e=ee.thru;return c;});
+    o.thru=(!o._eeThru||String(o._eeThru).slice(0,10)>ee.thru)?ee.thru:o._eeThru;
+    o.life=(ee.thru<TODAY&&o._eeLife==="Active")?"Former":o._eeLife;o._eeSet=cur();}
+  else if(o._eeSet!==undefined){if(!fresh){o.aptAll=o._eeAptAll;o.thru=o._eeThru;o.life=o._eeLife;}delete o._eeAptAll;delete o._eeThru;delete o._eeLife;delete o._eeSet;}});}
+{const _aa=applyAptify;applyAptify=function(){const r=_aa.apply(this,arguments);try{applyEndEarly();}catch(e){console.error("end early",e);}return r;};}
 function applyCidOv(){
   let changed=false;
   ORGS.forEach(o=>{
     const d=OV[o.k]||{};
-    /* an order that was never paid (Jonna, Nov 17, 2026): staff end the membership on the date it really ended. Aptify's
-       terms past that date are cut back, and the record stops counting as current, until Aptify itself is corrected.
-       Aptify's own term is kept aside (_eeAptAll, _eeThru) so Undo puts it straight back. */
-    if(d.endEarly&&d.endEarly.thru){const ee=d.endEarly;
-      if(o._eeAptAll===undefined){o._eeAptAll=o.aptAll||[];o._eeThru=o.thru||"";o._eeLife=o.life;}
-      o.aptAll=(o._eeAptAll||[]).filter(t=>!(t&&t.s&&String(t.s).slice(0,10)>ee.thru)).map(t=>{const c=Object.assign({},t);if(c.e&&String(c.e).slice(0,10)>ee.thru)c.e=ee.thru;return c;});
-      if(!o.thru||String(o.thru).slice(0,10)>ee.thru)o.thru=ee.thru;
-      if(ee.thru<TODAY&&o._eeLife==="Active")o.life="Former";changed=true;}
-    else if(o._eeAptAll!==undefined){o.aptAll=o._eeAptAll;o.thru=o._eeThru;o.life=o._eeLife;delete o._eeAptAll;delete o._eeThru;delete o._eeLife;changed=true;}
     /* a name set by hand on the record (Aptify renamed the company, or the member list had it wrong).
        The old name is kept as nameWas, so search, payments and the Aptify upload still find the record by it. */
     if(d.name!==undefined){const v=String(d.name||"").trim();
@@ -6922,7 +6924,7 @@ function rebuildOrgs(){
   applyMerges();
   leadDirty();
   if(MMF||SQF)remergeAct();
-  if(APT)applyAptify();
+  if(APT)applyAptify();else applyEndEarly();
   const dl=$("orgnames");if(dl)dl.textContent="";
   renderMemChips();renderList("renewals");renderList("members");
   const cur=(document.querySelector(".hq nav button[aria-current]")||{}).dataset||{};if(cur.hq==="iif")renderList("iif");
