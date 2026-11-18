@@ -6717,7 +6717,7 @@ function prospectOrg(d){return {k:"p"+d.id,cid:d.cid||"",row:0,name:d.name||"New
   people:(d.people||[]).map(p=>Object.assign({email:"",name:"",title:"",phone:"",roles:["Primary"]},p)),advisors:[],hand:[],
   notes:d.note?[{d:(d.at||"").slice(0,10),by:d.byName||"",t:d.note,tags:["Added as a prospect"]}]:[],dupId:false,noId:!d.cid,manual:true,source:d.source||"",addedBy:d.byName||"",addedAt:d.at||""};}
 function mergeNew(list){EXTRA.auto=list;rebuildOrgs();}
-function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);rebuildOrgs();}
+function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);EXTRA.manualAt=EXTRA.manualAt||Date.now();rebuildOrgs();}
 /* ---------- MISMO Connect and work product downloads (Jonna, Oct 26, 2026) ----------
    Three files, each uploaded on Settings > MISMO Connect and Download Data and saved in the
    engage collection as an index document plus parts of under 900,000 characters:
@@ -10316,7 +10316,7 @@ function remergeAct(){
   /* the lender check in the Aptify join needs the payments: run it again the first time they arrive */
   if(APT&&APT.terms&&Object.keys(out).length&&!applyAptify._act){applyAptify._act=true;applyAptify();scheduleRefresh();}
   /* new members join the member list (only when the set changed, so nothing redraws for no reason) */
-  const sig=JSON.stringify(newRecs);
+  if(MMF)EXTRA.mmAt=EXTRA.mmAt||Date.now();const sig=JSON.stringify(newRecs);
   if(sig!==remergeAct._sig){remergeAct._sig=sig;EXTRA.mm=newRecs;MMBUSY=true;try{rebuildOrgs();}finally{MMBUSY=false;}}
   /* names MISMO Money couldn't place join the ones the old sync left for review */
   const base=(REVIEW0&&REVIEW0.items)||[],have=new Set(base.map(r=>r.name));
@@ -11026,7 +11026,9 @@ function hlRuleChecks(){const R=[];
   ck("Level prices come from Settings",()=>((SET&&SET.levels)||[]).filter(l=>l&&l.v&&+l.price>0&&listPrice(l.v)!==+l.price).map(l=>l.v),[]);
   /* the data itself */
   ck("No two records share an Aptify Company ID",()=>{const m={},d=[];ORGS.forEach(o=>{const c=cidReal(o.cid);if(!c)return;if(m[c]&&d.indexOf(c)<0)d.push(c);m[c]=1;});return d.slice(0,10);},[]);
-  ck("Every merged record points to a record that exists",()=>Object.keys(OV).filter(k=>OV[k]&&OV[k].mergedInto&&!BY[OV[k].mergedInto]).slice(0,10),[]);
+  /* a record kept from MISMO Money (n...) or a prospect (p...) only counts as missing once that source has loaded, so a check run
+     while the page is still opening doesn't send a false alert (Jonna, Nov 18, 2026) */
+  ck("Every merged record points to a record that exists",()=>{const rd=t=>t[0]==="n"?!!EXTRA.mmAt:t[0]==="p"?!!EXTRA.manualAt:true;return Object.keys(OV).filter(k=>OV[k]&&OV[k].mergedInto&&!BY[OV[k].mergedInto]&&rd(String(OV[k].mergedInto))).slice(0,10);},[]);
   return R;}
 const HL_FILES=["outbox","mailin","trkpatch","touchpoints","activity","orgs","issues","deals","lists","listsends","health","settings","templates","engage","plans","sends"];
 async function hlStorage(){const st=HL.store||{};if(st.at&&hlAge(st.at)*24<6)return st;const out=[];
