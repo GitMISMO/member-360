@@ -5284,7 +5284,7 @@ const APT_PH=/mismo|innovation|\bfee\b|payable|billing|invoice|\bdues\b|membersh
 function aptSamePerson(a,b){const A=norm(a).replace(/\([^)]*\)/g," ").split(/[\s,.-]+/).filter(Boolean),Bn=norm(b).replace(/\([^)]*\)/g," ").split(/[\s,.-]+/).filter(Boolean);if(!A.length||!Bn.length)return true;return A[0]===Bn[0]||A[A.length-1]===Bn[Bn.length-1];}
 function aptPeopleDiff(rows){
   const byC={},nm=r=>[r.FirstName,r.LastName].map(x=>String(x||"").trim()).filter(Boolean).join(" ");
-  (rows||[]).forEach(r=>{const c=String(r.CompanyID||"").trim();if(c&&!APT_PH.test(nm(r)))(byC[c]=byC[c]||[]).push(r);});
+  const byE={};(rows||[]).forEach(r=>{const c=String(r.CompanyID||"").trim();if(APT_PH.test(nm(r)))return;if(c)(byC[c]=byC[c]||[]).push(r);const e=String(r.Email||"").trim().toLowerCase();if(e)(byE[e]=byE[e]||[]).push(r);});
   const out={};let n=0;
   ORGS.forEach(o=>{const cids=[o.cid].concat((o.mergedIn||[]).map(x=>x.cid)).map(x=>String(x||"").trim()).filter(Boolean);if(!cids.length)return;
     const L=[].concat(...cids.map(c=>byC[c]||[]));if(!L.length)return;
@@ -5292,10 +5292,34 @@ function aptPeopleDiff(rows){
       /* an address shared by several people (a team mailbox) matches nobody; a match whose name is clearly someone else is skipped */
       let m=null;if(em){const h=L.filter(r=>String(r.Email||"").trim().toLowerCase()===em);m=h.length===1?h[0]:(h.find(r=>norm(nm(r))===pn)||null);if(m&&p.name&&!aptSamePerson(p.name,nm(m)))return;}
       if(!m&&pn){const c=L.filter(r=>norm(nm(r))===pn);if(c.length===1)m=c[0];}
-      if(!m)return;const N=nm(m),E=String(m.Email||"").trim(),T=String(m.Title||"").trim();
+      /* not at the same company in Aptify (the person's Aptify record sits under another company): one Aptify person with
+         that exact email only fills in a blank name or title, and never changes the email */
+      if(!m){if(em&&(!p.name||!p.title)){const h=byE[em]||[];if(h.length===1){const r=h[0],d=[!p.name?nm(r):"","",!p.title?String(r.Title||"").trim():""];if(d.some(Boolean)){(out[o.k]=out[o.k]||{})[ckey(p,i)]=d;n++;}}}return;}
+      const N=nm(m),E=String(m.Email||"").trim(),T=String(m.Title||"").trim();
       const d=[N&&N!==String(p.name||"").trim()?N:"",E&&E.toLowerCase()!==em?E:"",T&&T!==String(p.title||"").trim()?T:""];
       if(d.some(Boolean)){(out[o.k]=out[o.k]||{})[ckey(p,i)]=d;n++;}});});
   return {at:new Date().toISOString(),rows:(rows||[]).length,n,u:out};}
+/* names and titles from what Member 360 already receives (Jonna, Nov 18, 2026): when a contact has no name or no title and the
+   same email shows up in a mismo.org work product download (name and title), the workgroup leaders list, a MISMO Connect login
+   or an email forwarded to 360@ (the sender's name), it is filled in from there and tagged with where it came from. Aptify comes
+   first, and a name or title someone entered is never replaced. Nobody is added. */
+let FILLX=null,FILLSIG="";
+function fillIndex(){
+  const docs=(typeof M360!=="undefined"&&M360.docs)||{},wp=(typeof WPDL!=="undefined"&&WPDL)||[];
+  const sig=[wp.length,Object.keys((LEAD&&LEAD.orgs)||{}).length,(DL&&DL.log&&DL.log.r?DL.log.r.length:0),Object.keys(docs).length].join("|");
+  if(FILLX&&sig===FILLSIG)return FILLX;FILLSIG=sig;const X={};
+  const put=(em,n,t,src)=>{em=String(em||"").trim().toLowerCase();if(!em||em.indexOf("@")<0||M360_STAFF.test(em))return;
+    n=String(n||"").replace(/["']/g,"").replace(/\s*\(.*?\)\s*/g," ").replace(/\s+/g," ").trim();if(/^[^,]+,\s*[^,]+$/.test(n))n=n.replace(/^([^,]+),\s*(.+)$/,"$2 $1");
+    t=String(t||"").replace(/\s+/g," ").trim();if(n&&(APT_PH.test(n)||n.indexOf("@")>=0||n.split(" ").length<2||n.length>60))n="";if(t.length>90)t="";if(!n&&!t)return;
+    const x=X[em]||(X[em]={});if(n&&!x.n){x.n=n;x.ns=src;}if(t&&!x.t){x.t=t;x.ts=src;}};
+  wp.forEach(d=>put(d.e,[d.first,d.last].filter(Boolean).join(" ")||d.n,d.t,"a mismo.org download"));
+  Object.values((LEAD&&LEAD.orgs)||{}).forEach(L=>(L||[]).forEach(l=>put(l.e,l.n,"","the workgroup leaders list")));
+  if(DL&&DL.log&&DL.log.r)DL.log.r.forEach(x=>put(x[2],x[0],"","MISMO Connect"));
+  Object.values(docs).forEach(d=>{const m=d&&d.m;if(m&&m.from&&m.fromName)put(m.from,m.fromName,"","an email to 360@");});
+  return FILLX=X;}
+function fillPeople(o){const X=fillIndex();(o.people||[]).forEach(p=>{const em=String(p.email||"").trim().toLowerCase(),x=em&&X[em];if(!x)return;
+  if(x.n&&(!String(p.name||"").trim()||p._nameFromEmail)){p.name=x.n;p._nameFromEmail=false;p._fill=x.ns;}
+  if(x.t&&!String(p.title||"").trim()){p.title=x.t;p._fill=p._fill||x.ts;}});}
 function aptPeopleApply(o){const P=typeof APT!=="undefined"&&APT&&APT.pupd,U=P&&P.u&&P.u[o.k];if(!U)return;
   const ed=((ov(o).contacts||{}).edits)||{};
   (o.people||[]).forEach(p=>{if(p._src!=="aptify"&&p._src!=="edited")return;const u=U[p._key];if(!u)return;const e=ed[p._key]||{};
@@ -5319,6 +5343,7 @@ function applyContacts(o){
 const M360_ROLEBOX=/^(info|admin|accounting|accounts?|ap|ar|billing|invoices?|membership|members|marketing|sales|support|hr|contact|office|compliance|legal|finance|ops|operations|team|help|service|events?|noreply|no-reply|hello|general|mortgage|lending|loans?|servicing|it|security|payables?|receivables?)([._-]|\d|$)/i;
 function nameFromEmail(em){const l=String(em||"").split("@")[0].toLowerCase();if(M360_ROLEBOX.test(l))return "";const m=l.match(/^([a-z]{2,})[._-]([a-z]{2,})$/);if(!m)return "";const c=s=>s.charAt(0).toUpperCase()+s.slice(1);return c(m[1])+" "+c(m[2]);}
 {const _ac=applyContacts;applyContacts=function(o){const r=_ac.apply(this,arguments);try{aptPeopleApply(o);}catch(e){console.error("aptify contacts",e);}
+  try{fillPeople(o);}catch(e){console.error("contact fill",e);}
   try{(o.people||[]).forEach(p=>{if(!String(p.name||"").trim()&&p.email){const n=nameFromEmail(p.email);if(n){p.name=n;p._nameFromEmail=true;}}});}catch(e){}return r;};}
 function contactsOv(o){const c=ov(o).contacts||{};return {edits:Object.assign({},c.edits||{}),removed:Object.assign({},c.removed||{}),added:(c.added||[]).map(x=>Object.assign({},x))};}
 function saveContact(o,p,patch){
@@ -5702,7 +5727,7 @@ function fillContacts(o,box){
     o.people.forEach(p=>{
       const em=p.email?h("span",null,p.email,h("button",{type:"button",class:"copy",onclick:(e)=>{e.stopPropagation();copyText(p.email);}},"Copy")):"—";
       const ct=certOf(o,p);const spk=spkOf(o).some(x=>samePerson(p,x.n));const ldr=leadOf(o).some(x=>samePerson(p,x.n)||(p.email&&x.e&&p.email.toLowerCase()===x.e));const open=box._open===p._key;
-      const src=p._nameFromEmail?h("span",{class:"tag ed",title:"No name in Member 360 or Aptify, so the name is read from the email address"},"Name From Email"):p._src==="edited"?h("span",{class:"tag ed"},"Edited"):p._src==="added"?h("span",{class:"tag ed"},"Added"):null;
+      const src=p._fill?h("span",{class:"tag ed",title:"No name or title in Member 360 or Aptify, so it was filled in from "+p._fill},"Filled In"):p._nameFromEmail?h("span",{class:"tag ed",title:"No name in Member 360 or Aptify, so the name is read from the email address"},"Name From Email"):p._src==="edited"?h("span",{class:"tag ed"},"Edited"):p._src==="added"?h("span",{class:"tag ed"},"Added"):null;
       const tr=h("tr",{class:"crow"+(open?" open":""),tabindex:dis?null:"0","aria-expanded":dis?null:String(open)},
         h("td",null,p.name||h("span",{class:"muted"},"No name"),ct?h("span",{class:"tag",style:"margin-left:6px"},ct):null,spk?h("span",{class:"tag",style:"margin-left:6px"},"Speaker"):null,ldr?h("span",{class:"tag",style:"margin-left:6px"},"Workgroup Leader"):null,src),
         h("td",null,p.roles.join(", ")||"—"),h("td",null,p.title||"—"),h("td",null,em),h("td",{class:"num"},p.phone||"—"));
