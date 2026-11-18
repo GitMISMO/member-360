@@ -6736,9 +6736,11 @@ let DL={lic:null,hl:null,log:null},DLX=null;
    by the company they typed only when the email isn't known. Only downloads from Nov 18, 2026 on count. */
 let WPDL=null;const WPDL_FROM="2026-11-18";
 async function wpdlLoad(){try{const u=M360_RELAY.replace(/\/member-360\/data\/[^/]*$/,"/marketing-hq/data/wpdl");
-  const r=await fetch(u,{headers:{Authorization:"Bearer "+ResourcesSession.token()}});if(!r.ok)return;const j=await r.json();
+  const r=await fetch(u,{headers:{Authorization:"Bearer "+ResourcesSession.token()}});
+  /* the sign-in may not be ready when the page first opens: try again shortly */
+  if(!r.ok){wpdlLoad.n=(wpdlLoad.n||0)+1;if(wpdlLoad.n<8)setTimeout(wpdlLoad,20000);return;}wpdlLoad.n=0;const j=await r.json();
   WPDL=Object.values((j&&j.data&&j.data.docs)||{}).filter(x=>x&&String(x.at||x.firstAt||"").slice(0,10)>=WPDL_FROM);DLX=null;try{scheduleRefresh();}catch(e){}}
-  catch(e){console.error("work product downloads",e);}}const DLB={licdl:"lic",hldl:"hl",hllog:"log"},DLP={};
+  catch(e){console.error("work product downloads",e);wpdlLoad.n=(wpdlLoad.n||0)+1;if(wpdlLoad.n<8)setTimeout(wpdlLoad,20000);}}const DLB={licdl:"lic",hldl:"hl",hllog:"log"},DLP={};
 const DL_FREE=/^(gmail|googlemail|yahoo|ymail|rocketmail|outlook|hotmail|live|msn|aol|icloud|me|mac|comcast|verizon|att|sbcglobal|bellsouth|charter|cox|earthlink|protonmail|proton|gmx|mail|email|test|example|qq|163|126|zoho|yandex|mailinator|yopmail|mba|mismo)\./;
 const DL_JUNK=/^(self|none|n\/?a|na|personal|individual|student|test|retired|consultant|independent|private|home|me|mr|mrs|ms|-+|\.+|x+|abc|unknown|freelance|self[- ]employed|testing|mismo|mba|mortgage bankers association)$/i;
 function dlListen(base){
@@ -6835,7 +6837,8 @@ function dlIndex(){
   if(DL.log)DL.log.r.forEach((x,i)=>{const o=pick(byCid[x[4]])||byMail(x[2])||byNm(x[1])||byStem(dlDom(x[2]));if(o){put(o,"log",i);if(x[3])perOrg[x[3]]=o;}});
   /* library downloads: by company name, then by the person's Aptify ID through the login list */
   if(DL.hl)DL.hl.r.forEach((x,i)=>{const o=byNm(x[4])||(x[5]?perOrg[x[5]]:null);if(o)put(o,"hl",i);});
-  if(WPDL)WPDL.forEach((x,i)=>{const o=pick(byEm[String(x.e||"").trim().toLowerCase()])||byNm(x.o);if(o)put(o,"wp",i);});
+  /* the person's email first (their Aptify contact, then their company's email domain), then the company they typed */
+  if(WPDL)WPDL.forEach((x,i)=>{const em=String(x.e||"").trim().toLowerCase();const o=byMail(em)||byNm(x.o)||byStem(dlDom(em));if(o)put(o,"wp",i);});
   if(DL.lic)DL.lic.r.forEach((x,i)=>{const d=dlDom(x[3]);const o=byMail(x[3])||byNm(x[5])||byStem(d);
     if(o){put(o,"lic",i);return;}
     if(/^(mba|mismo)\.org$/.test(d))return;
