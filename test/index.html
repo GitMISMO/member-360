@@ -6729,7 +6729,16 @@ function mergeProspects(docs){EXTRA.manual=docs.map(prospectOrg);EXTRA.manualAt=
             company, Aptify company ID, last login.
    Rows are matched to records when shown: logins by Aptify company ID, library downloads by company
    name, license downloads by email domain (never a free-mail domain) and then company name. */
-let DL={lic:null,hl:null,log:null},DLX=null;const DLB={licdl:"lic",hldl:"hl",hllog:"log"},DLP={};
+let DL={lic:null,hl:null,log:null},DLX=null;
+/* work product downloads on www.mismo.org (Jonna, Nov 18, 2026): since Nov 18, 2026 signed-in members accept the license in the
+   same "Before You Download" pop-up as non-members, and MISMO Media records every download in marketing-hq-data data/wpdl.json
+   (written only by MISMO Media; read-only here). Each is matched to a company by the person's email (Aptify contacts), and
+   by the company they typed only when the email isn't known. Only downloads from Nov 18, 2026 on count. */
+let WPDL=null;const WPDL_FROM="2026-11-18";
+async function wpdlLoad(){try{const u=M360_RELAY.replace(/\/member-360\/data\/[^/]*$/,"/marketing-hq/data/wpdl");
+  const r=await fetch(u,{headers:{Authorization:"Bearer "+ResourcesSession.token()}});if(!r.ok)return;const j=await r.json();
+  WPDL=Object.values((j&&j.data&&j.data.docs)||{}).filter(x=>x&&String(x.at||x.firstAt||"").slice(0,10)>=WPDL_FROM);DLX=null;try{scheduleRefresh();}catch(e){}}
+  catch(e){console.error("work product downloads",e);}}const DLB={licdl:"lic",hldl:"hl",hllog:"log"},DLP={};
 const DL_FREE=/^(gmail|googlemail|yahoo|ymail|rocketmail|outlook|hotmail|live|msn|aol|icloud|me|mac|comcast|verizon|att|sbcglobal|bellsouth|charter|cox|earthlink|protonmail|proton|gmx|mail|email|test|example|qq|163|126|zoho|yandex|mailinator|yopmail|mba|mismo)\./;
 const DL_JUNK=/^(self|none|n\/?a|na|personal|individual|student|test|retired|consultant|independent|private|home|me|mr|mrs|ms|-+|\.+|x+|abc|unknown|freelance|self[- ]employed|testing|mismo|mba|mortgage bankers association)$/i;
 function dlListen(base){
@@ -6821,11 +6830,12 @@ function dlIndex(){
   const byStem=d=>{if(dlFree(d))return null;if(d in stemC)return stemC[d];const st=d.split(".")[0].replace(/[^a-z0-9]/g,"");let o=null;
     if(st.length>=3){const set=new Set();flat.forEach(([fn,x])=>{if(fn.startsWith(st))set.add(x);});o=pick(set);}return stemC[d]=o;};
   const byMail=em=>{const d=dlDom(em);return pick(byEm[String(em||"").toLowerCase()])||(!dlFree(d)?pick(byDom[d]):null);};
-  const X={org:{},un:{}};const put=(o,kind,i)=>{const e=X.org[o.k]||(X.org[o.k]={lic:[],hl:[],log:[]});e[kind].push(i);};
+  const X={org:{},un:{}};const put=(o,kind,i)=>{const e=X.org[o.k]||(X.org[o.k]={lic:[],hl:[],log:[],wp:[]});e[kind].push(i);};
   const perOrg={};
   if(DL.log)DL.log.r.forEach((x,i)=>{const o=pick(byCid[x[4]])||byMail(x[2])||byNm(x[1])||byStem(dlDom(x[2]));if(o){put(o,"log",i);if(x[3])perOrg[x[3]]=o;}});
   /* library downloads: by company name, then by the person's Aptify ID through the login list */
   if(DL.hl)DL.hl.r.forEach((x,i)=>{const o=byNm(x[4])||(x[5]?perOrg[x[5]]:null);if(o)put(o,"hl",i);});
+  if(WPDL)WPDL.forEach((x,i)=>{const o=pick(byEm[String(x.e||"").trim().toLowerCase()])||byNm(x.o);if(o)put(o,"wp",i);});
   if(DL.lic)DL.lic.r.forEach((x,i)=>{const d=dlDom(x[3]);const o=byMail(x[3])||byNm(x[5])||byStem(d);
     if(o){put(o,"lic",i);return;}
     if(/^(mba|mismo)\.org$/.test(d))return;
@@ -6837,12 +6847,17 @@ function dlIndex(){
 function dlTitle(slug){return String(slug||"").replace(/_/g,"-").replace(/-{3}/g," – ").replace(/-/g," ").replace(/\s+/g," ").trim().replace(/\b([a-z])/g,c=>c.toUpperCase());}
 /* the record's MISMO Connect and download activity */
 function fillDl(o,box){
-  box.textContent="";const X=dlIndex(),e=X.org[o.k]||{lic:[],hl:[],log:[]},yr=addDays(TODAY,-365);
+  box.textContent="";const X=dlIndex(),e=X.org[o.k]||{lic:[],hl:[],log:[],wp:[]},yr=addDays(TODAY,-365);
   const cnt=box.closest("details").querySelector('[data-cnt="dl"]');
-  if(!DL.lic&&!DL.hl&&!DL.log){box.appendChild(h("div",{class:"hint"},"MISMO Connect logins and library downloads, and website work product downloads, appear here once their files are uploaded on Settings > MISMO Connect and Download Data."));return;}
+  if(!DL.lic&&!DL.hl&&!DL.log&&!WPDL){box.appendChild(h("div",{class:"hint"},"MISMO Connect logins and library downloads, and website work product downloads, appear here once their files are uploaded on Settings > MISMO Connect and Download Data."));return;}
   const tbl=(cols,rows)=>{const t=h("table",{class:"tbl"});t.appendChild(h("thead",null,h("tr",null,cols.map(c=>h("th",null,c)))));const b=h("tbody");rows.forEach(r=>b.appendChild(h("tr",null,r.map(c=>h("td",null,c)))));t.appendChild(b);return t;};
   const head=t=>h("div",{style:"font-weight:600;margin:12px 0 4px"},t);
   let total=0;
+  if(WPDL){const R=(e.wp||[]).map(i=>WPDL[i]).filter(Boolean).sort((a,b)=>String(b.at||"").localeCompare(String(a.at||"")));
+    const nd=R.reduce((a,x)=>a+(+x.times||1),0),ppl=new Set(R.map(x=>String(x.e||"").toLowerCase())).size,prods=[...new Set(R.map(x=>x.product||x.pid||""))].filter(Boolean);total+=nd;
+    box.appendChild(head("Work Product Downloads on mismo.org"));
+    box.appendChild(h("div",{class:"hint",style:"margin:0 0 6px"},R.length?(n(nd)+(nd===1?" download":" downloads")+" of "+plural(prods.length,"work product","work products")+" by "+plural(ppl,"person","people")+" since "+fmt(WPDL_FROM)+" · last "+fmt(String(R[0].at||R[0].firstAt).slice(0,10))+(prods.length?". Downloaded: "+prods.join(", ")+".":"")):"No work product downloads by this organization's people since "+fmt(WPDL_FROM)+", when member downloads started being recorded."));
+    if(R.length)box.appendChild(tbl(["Date","Work Product","Person","How"],R.slice(0,15).map(x=>[fmt(String(x.at||x.firstAt).slice(0,10)),(x.product||x.pid||"")+((+x.times||1)>1?" ("+x.times+" times)":""),(x.n||[x.first,x.last].filter(Boolean).join(" ")||x.e||""),x.source==="website-member"?"Signed in":"License form"])));}
   if(DL.log){const L=e.log.map(i=>DL.log.r[i]).sort((a,b)=>(b[5]||"").localeCompare(a[5]||""));total+=L.length;
     box.appendChild(head("MISMO Connect Logins"));
     box.appendChild(h("div",{class:"hint",style:"margin:0 0 6px"},L.length?(plural(L.length,"person","people")+" logged in between "+fmt(DL.log.from)+" and "+fmt(DL.log.to)+" · last login "+fmt(L[0][5])):"No one from this organization logged in to MISMO Connect between "+fmt(DL.log.from)+" and "+fmt(DL.log.to)+"."));
@@ -10390,6 +10405,7 @@ async function boot(){
   loadKeyDates();
   db.doc("engage/deferral").onSnapshot(s=>{DEF=s&&s.exists?s.data():null;scheduleRefresh();},()=>{});
   dlListen("licdl");dlListen("hldl");dlListen("hllog");
+  wpdlLoad();setInterval(wpdlLoad,15*60*1000);
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
   db.doc("sync/namesync").onSnapshot(s=>{NSYNC=s.exists?s.data():null;scheduleRefresh();},err);
