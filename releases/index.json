@@ -1,5 +1,5 @@
 {
- "live": "20261118-2304",
+ "live": "20261118-2334",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -154,6 +154,13 @@
    "savedAt": "2026-11-18T23:04:11Z",
    "by": "jycritchley",
    "how": "published from the test copy: Settings: Fill Contact Details From a List (Mailchimp export or any list) fills blank names and titles by email"
+  },
+  {
+   "version": "20261118-2334",
+   "sha256": "702cc4f7e67224f58658904c6fb2c9187d621d089843791d518004e256d7dccd",
+   "savedAt": "2026-11-18T23:34:22Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Undo after every renewal stage change (stage bar or dropdown)"
   }
  ],
  "history": [
@@ -303,6 +310,13 @@
    "action": "publish",
    "version": "20261118-2304",
    "replaced": "20261118-2250"
+  },
+  {
+   "at": "2026-11-18T23:34:22Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261118-2334",
+   "replaced": "20261118-2304"
   }
  ]
 }
