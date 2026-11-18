@@ -1,5 +1,5 @@
 {
- "live": "20261118-2121",
+ "live": "20261118-2238",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -133,6 +133,13 @@
    "savedAt": "2026-11-18T21:21:39Z",
    "by": "jycritchley",
    "how": "published from the test copy: Aptify contacts: skip placeholder people, shared mailboxes and a different person on the same email"
+  },
+  {
+   "version": "20261118-2238",
+   "sha256": "57a80380646d1fa9d4d4f267e0dac2c6868056403e632a15987dbe2f07368f3b",
+   "savedAt": "2026-11-18T22:38:45Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Contacts with no name show a name read from a first.last email, tagged Name From Email"
   }
  ],
  "history": [
@@ -261,6 +268,13 @@
    "action": "publish",
    "version": "20261118-2121",
    "replaced": "20261118-2052"
+  },
+  {
+   "at": "2026-11-18T22:38:45Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261118-2238",
+   "replaced": "20261118-2121"
   }
  ]
 }

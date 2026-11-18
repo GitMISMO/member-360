@@ -5314,7 +5314,12 @@ function applyContacts(o){
   o.people=out.filter(p=>{if(!p._sqp)return true;const b=out.find(b=>b!==p&&!b._sqp&&((p.email&&lc(b.email)===lc(p.email))||(p.name&&samePerson(b,p.name))));
     if(!b)return true;const r=p.roles.filter(x=>!b.roles.includes(x));if(r.length)b.roles=b.roles.concat(r);return false;});
 }
-{const _ac=applyContacts;applyContacts=function(o){const r=_ac.apply(this,arguments);try{aptPeopleApply(o);}catch(e){console.error("aptify contacts",e);}return r;};}
+/* a contact with no name anywhere but an address like first.last@company shows that name, tagged Name From Email; shared
+   inboxes (info@, billing@, membership@...) never get a person's name, and Aptify or staff replace it whenever they have one (Jonna, Nov 18, 2026) */
+const M360_ROLEBOX=/^(info|admin|accounting|accounts?|ap|ar|billing|invoices?|membership|members|marketing|sales|support|hr|contact|office|compliance|legal|finance|ops|operations|team|help|service|events?|noreply|no-reply|hello|general|mortgage|lending|loans?|servicing|it|security|payables?|receivables?)([._-]|\d|$)/i;
+function nameFromEmail(em){const l=String(em||"").split("@")[0].toLowerCase();if(M360_ROLEBOX.test(l))return "";const m=l.match(/^([a-z]{2,})[._-]([a-z]{2,})$/);if(!m)return "";const c=s=>s.charAt(0).toUpperCase()+s.slice(1);return c(m[1])+" "+c(m[2]);}
+{const _ac=applyContacts;applyContacts=function(o){const r=_ac.apply(this,arguments);try{aptPeopleApply(o);}catch(e){console.error("aptify contacts",e);}
+  try{(o.people||[]).forEach(p=>{if(!String(p.name||"").trim()&&p.email){const n=nameFromEmail(p.email);if(n){p.name=n;p._nameFromEmail=true;}}});}catch(e){}return r;};}
 function contactsOv(o){const c=ov(o).contacts||{};return {edits:Object.assign({},c.edits||{}),removed:Object.assign({},c.removed||{}),added:(c.added||[]).map(x=>Object.assign({},x))};}
 function saveContact(o,p,patch){
   const c=contactsOv(o);
@@ -5697,7 +5702,7 @@ function fillContacts(o,box){
     o.people.forEach(p=>{
       const em=p.email?h("span",null,p.email,h("button",{type:"button",class:"copy",onclick:(e)=>{e.stopPropagation();copyText(p.email);}},"Copy")):"—";
       const ct=certOf(o,p);const spk=spkOf(o).some(x=>samePerson(p,x.n));const ldr=leadOf(o).some(x=>samePerson(p,x.n)||(p.email&&x.e&&p.email.toLowerCase()===x.e));const open=box._open===p._key;
-      const src=p._src==="edited"?h("span",{class:"tag ed"},"Edited"):p._src==="added"?h("span",{class:"tag ed"},"Added"):null;
+      const src=p._nameFromEmail?h("span",{class:"tag ed",title:"No name in Member 360 or Aptify, so the name is read from the email address"},"Name From Email"):p._src==="edited"?h("span",{class:"tag ed"},"Edited"):p._src==="added"?h("span",{class:"tag ed"},"Added"):null;
       const tr=h("tr",{class:"crow"+(open?" open":""),tabindex:dis?null:"0","aria-expanded":dis?null:String(open)},
         h("td",null,p.name||h("span",{class:"muted"},"No name"),ct?h("span",{class:"tag",style:"margin-left:6px"},ct):null,spk?h("span",{class:"tag",style:"margin-left:6px"},"Speaker"):null,ldr?h("span",{class:"tag",style:"margin-left:6px"},"Workgroup Leader"):null,src),
         h("td",null,p.roles.join(", ")||"—"),h("td",null,p.title||"—"),h("td",null,em),h("td",{class:"num"},p.phone||"—"));
