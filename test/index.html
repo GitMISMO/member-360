@@ -5278,14 +5278,19 @@ function ckey(p,i){return p.email?"e:"+p.email.toLowerCase():p.name?"n:"+norm(p.
    follow Aptify. Only the differences are kept (APT.pupd), anything staff changed by hand on a contact still wins, contacts
    staff added are left alone, and nobody new is added. */
 let APT_ALLC=null;
+/* not a real person: Aptify's placeholder people (MISMO Innovation Fee, Accounts Payable...) never rename a contact */
+const APT_PH=/mismo|innovation|\bfee\b|payable|billing|invoice|\bdues\b|membership|\badmin\b|accounting|department|\bteam\b|^n\/?a$/i;
+/* the same person, not a shared mailbox handed to someone else: first or last name agrees (Jeff/Jeffrey Bode, Sam/Shamshad Ansari) */
+function aptSamePerson(a,b){const A=norm(a).replace(/\([^)]*\)/g," ").split(/[\s,.-]+/).filter(Boolean),Bn=norm(b).replace(/\([^)]*\)/g," ").split(/[\s,.-]+/).filter(Boolean);if(!A.length||!Bn.length)return true;return A[0]===Bn[0]||A[A.length-1]===Bn[Bn.length-1];}
 function aptPeopleDiff(rows){
   const byC={},nm=r=>[r.FirstName,r.LastName].map(x=>String(x||"").trim()).filter(Boolean).join(" ");
-  (rows||[]).forEach(r=>{const c=String(r.CompanyID||"").trim();if(c)(byC[c]=byC[c]||[]).push(r);});
+  (rows||[]).forEach(r=>{const c=String(r.CompanyID||"").trim();if(c&&!APT_PH.test(nm(r)))(byC[c]=byC[c]||[]).push(r);});
   const out={};let n=0;
   ORGS.forEach(o=>{const cids=[o.cid].concat((o.mergedIn||[]).map(x=>x.cid)).map(x=>String(x||"").trim()).filter(Boolean);if(!cids.length)return;
     const L=[].concat(...cids.map(c=>byC[c]||[]));if(!L.length)return;
     (o._base||[]).forEach((p,i)=>{const em=String(p.email||"").trim().toLowerCase(),pn=norm(p.name||"");
-      let m=em?L.find(r=>String(r.Email||"").trim().toLowerCase()===em):null;
+      /* an address shared by several people (a team mailbox) matches nobody; a match whose name is clearly someone else is skipped */
+      let m=null;if(em){const h=L.filter(r=>String(r.Email||"").trim().toLowerCase()===em);m=h.length===1?h[0]:(h.find(r=>norm(nm(r))===pn)||null);if(m&&p.name&&!aptSamePerson(p.name,nm(m)))return;}
       if(!m&&pn){const c=L.filter(r=>norm(nm(r))===pn);if(c.length===1)m=c[0];}
       if(!m)return;const N=nm(m),E=String(m.Email||"").trim(),T=String(m.Title||"").trim();
       const d=[N&&N!==String(p.name||"").trim()?N:"",E&&E.toLowerCase()!==em?E:"",T&&T!==String(p.title||"").trim()?T:""];
@@ -5294,7 +5299,7 @@ function aptPeopleDiff(rows){
 function aptPeopleApply(o){const P=typeof APT!=="undefined"&&APT&&APT.pupd,U=P&&P.u&&P.u[o.k];if(!U)return;
   const ed=((ov(o).contacts||{}).edits)||{};
   (o.people||[]).forEach(p=>{if(p._src!=="aptify"&&p._src!=="edited")return;const u=U[p._key];if(!u)return;const e=ed[p._key]||{};
-    if(u[0]&&!("name" in e))p.name=u[0];if(u[1]&&!("email" in e))p.email=u[1];if(u[2]&&!("title" in e))p.title=u[2];p._aptAt=P.at;});}
+    if(u[0]&&!("name" in e)&&!APT_PH.test(u[0])&&(!p.name||aptSamePerson(p.name,u[0])))p.name=u[0];else if(u[0]&&p.name&&!aptSamePerson(p.name,u[0]))return;if(u[1]&&!("email" in e))p.email=u[1];if(u[2]&&!("title" in e))p.title=u[2];p._aptAt=P.at;});}
 function applyContacts(o){
   if(!o._base){const base=(o.people||[]).map(p=>Object.assign({},p,{roles:(p.roles||[]).slice()}));
     (o.advisors||[]).forEach(nm=>{const c=base.find(p=>samePerson(p,nm));if(c){if(!c.roles.includes("Senior Advisor"))c.roles.push("Senior Advisor");if(!c.name)c.name=nm;}
