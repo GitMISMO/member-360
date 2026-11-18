@@ -5303,15 +5303,16 @@ function aptPeopleDiff(rows){
    same email shows up in a mismo.org work product download (name and title), the workgroup leaders list, a MISMO Connect login
    or an email forwarded to 360@ (the sender's name), it is filled in from there and tagged with where it came from. Aptify comes
    first, and a name or title someone entered is never replaced. Nobody is added. */
-let FILLX=null,FILLSIG="";
+let FILLX=null,FILLSIG="",CFILL=null;
 function fillIndex(){
   const docs=(typeof M360!=="undefined"&&M360.docs)||{},wp=(typeof WPDL!=="undefined"&&WPDL)||[];
-  const sig=[wp.length,Object.keys((LEAD&&LEAD.orgs)||{}).length,(DL&&DL.log&&DL.log.r?DL.log.r.length:0),Object.keys(docs).length].join("|");
+  const sig=[(CFILL&&CFILL.at)||"",wp.length,Object.keys((LEAD&&LEAD.orgs)||{}).length,(DL&&DL.log&&DL.log.r?DL.log.r.length:0),Object.keys(docs).length].join("|");
   if(FILLX&&sig===FILLSIG)return FILLX;FILLSIG=sig;const X={};
   const put=(em,n,t,src)=>{em=String(em||"").trim().toLowerCase();if(!em||em.indexOf("@")<0||M360_STAFF.test(em))return;
     n=String(n||"").replace(/["']/g,"").replace(/\s*\(.*?\)\s*/g," ").replace(/\s+/g," ").trim();if(/^[^,]+,\s*[^,]+$/.test(n))n=n.replace(/^([^,]+),\s*(.+)$/,"$2 $1");
     t=String(t||"").replace(/\s+/g," ").trim();if(n&&(APT_PH.test(n)||n.indexOf("@")>=0||n.split(" ").length<2||n.length>60))n="";if(t.length>90)t="";if(!n&&!t)return;
     const x=X[em]||(X[em]={});if(n&&!x.n){x.n=n;x.ns=src;}if(t&&!x.t){x.t=t;x.ts=src;}};
+  if(CFILL&&CFILL.u)Object.keys(CFILL.u).forEach(em=>{const v=CFILL.u[em]||[];put(em,v[0],v[1],"the "+(CFILL.src||"uploaded")+" list");});
   wp.forEach(d=>put(d.e,[d.first,d.last].filter(Boolean).join(" ")||d.n,d.t,"a mismo.org download"));
   Object.values((LEAD&&LEAD.orgs)||{}).forEach(L=>(L||[]).forEach(l=>put(l.e,l.n,"","the workgroup leaders list")));
   if(DL&&DL.log&&DL.log.r)DL.log.r.forEach(x=>put(x[2],x[0],"","MISMO Connect"));
@@ -6968,6 +6969,41 @@ async function dlAddProspect(it,btn){
   catch(e){btn.disabled=false;onWriteErr(e);}
 }
 /* Settings > MISMO Connect and Download Data */
+/* Settings > MISMO Connect and Download Data: fill blank contact names and titles from any list with emails, such as a
+   Mailchimp audience export (Jonna, Nov 18, 2026). The list is read here, matched by email to contacts that have no name (or
+   only one read from the email) or no title, and only those matches are saved (engage/cfill). It never replaces a name or
+   title Aptify or staff entered, and nobody is added. */
+let CFP=null;
+async function cfillRead(files){const X=await loadXlsx(),M={};let rows=0;
+  const col=(o,re)=>{const k=Object.keys(o).find(k=>re.test(String(k).trim()));return k?String(o[k]||"").trim():"";};
+  for(const f of files){const wb=X.read(new Uint8Array(await f.arrayBuffer()),{type:"array"});
+    wb.SheetNames.forEach(nm=>{X.utils.sheet_to_json(wb.Sheets[nm],{defval:"",raw:false}).forEach(r=>{rows++;
+      const em=col(r,/^(email address|email|e-mail|email1)$/i).toLowerCase();if(!em||em.indexOf("@")<0)return;
+      const n=[col(r,/^(first name|fname|first)$/i),col(r,/^(last name|lname|last)$/i)].filter(Boolean).join(" ")||col(r,/^(full name|name)$/i);
+      const t=col(r,/^(title|job title|jobtitle)$/i);if(n||t)M[em]={n,t};});});}
+  const u={};let names=0,titles=0;const orgs=new Set();
+  ORGS.forEach(o=>(o.people||[]).forEach(p=>{const em=String(p.email||"").trim().toLowerCase(),x=em&&M[em];if(!x)return;
+    const wantN=x.n&&!APT_PH.test(x.n)&&(!String(p.name||"").trim()||p._nameFromEmail),wantT=x.t&&!String(p.title||"").trim();
+    if(!wantN&&!wantT)return;u[em]=[wantN?x.n:"",wantT?x.t:""];if(wantN)names++;if(wantT)titles++;orgs.add(o.k);}));
+  return {rows,emails:Object.keys(M).length,u,names,titles,orgs:orgs.size};}
+function cfillRender(box){const old=box.querySelector("#cfill");if(old)old.remove();const dis=!db||!canWrite;
+  const w=h("div",{id:"cfill",style:"margin-top:18px;padding-top:12px;border-top:1px solid #e3e8ee"});
+  w.appendChild(h("h4",{class:"subh",style:"margin:0 0 4px"},"Fill Contact Details From a List"));
+  w.appendChild(h("div",{class:"hint",style:"margin:0 0 8px"},"Upload any list with emails, names and titles, such as a Mailchimp audience export (unzip it and choose the CSV files). Member 360 matches it by email and fills in only contacts with no name or no title, tagged Filled In. Nothing someone entered is replaced, and nobody is added."+(CFILL&&CFILL.at?" Last list: "+(CFILL.src||"a list")+", "+fmt(String(CFILL.at).slice(0,10))+(CFILL.by?" by "+CFILL.by:"")+", filling "+n(CFILL.names||0)+" names and "+n(CFILL.titles||0)+" titles.":"")));
+  const fi=h("input",{type:"file",accept:".csv,.xlsx,.xls",multiple:true,"aria-label":"List files"});
+  const src=h("input",{type:"text",value:"Mailchimp",style:"width:12em","aria-label":"Where the list came from"});
+  const chk=h("button",{type:"button",class:"btn small"},"Check the List");const msg=h("div",{class:"hint",style:"margin:8px 0 0"});
+  const save=h("button",{type:"button",class:"btn small",hidden:true},"Fill These In");
+  [fi,src,chk].forEach(x=>{if(dis)x.disabled=true;});
+  chk.addEventListener("click",async()=>{if(!fi.files.length){toast("Choose the list file first.",true);return;}chk.disabled=true;msg.textContent="Reading the list…";
+    try{CFP=await cfillRead([...fi.files]);msg.textContent=n(CFP.rows)+" rows, "+n(CFP.emails)+" people with a name or title. It would fill "+n(CFP.names)+" names and "+n(CFP.titles)+" titles on "+n(CFP.orgs)+" companies.";save.hidden=!(CFP.names||CFP.titles);}
+    catch(e){console.error("list fill",e);msg.textContent="That file couldn't be read. Choose the CSV or Excel file itself.";}chk.disabled=false;});
+  save.addEventListener("click",async()=>{if(blocked()||!CFP)return;save.disabled=true;
+    try{const prev=(CFILL&&CFILL.u)||{};const u=Object.assign({},prev,CFP.u);
+      await db.doc("engage/cfill").set({u,src:src.value.trim()||"uploaded",at:new Date().toISOString(),by:(typeof myName==="function"&&myName())||ME||"",rows:CFP.rows,names:CFP.names,titles:CFP.titles});
+      toast("Filled in "+n(CFP.names)+" names and "+n(CFP.titles)+" titles.");CFP=null;}
+    catch(e){save.disabled=false;onWriteErr(e);}});
+  w.appendChild(h("div",{style:"display:flex;flex-wrap:wrap;gap:8px;align-items:center"},fi,src,chk,save));w.appendChild(msg);box.appendChild(w);}
 function renderDlSettings(){
   const box=$("dlinfo");if(!box)return;const ae=document.activeElement;if(box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return;box.textContent="";
   const F=(l,v)=>h("div",{class:"fact"},h("label",null,l),h("div",null,v));
@@ -6988,6 +7024,7 @@ function renderDlSettings(){
   box.appendChild(h("div",{class:"fld",style:"margin-bottom:8px"},h("label",{for:"dl-files"},"Exported Files"),inp,h("div",{class:"btnrow",style:"margin-top:4px"},pick,picked)));
   box.appendChild(h("div",{class:"btnrow"},go,msg));
 }
+{const _rd=renderDlSettings;renderDlSettings=function(){const box=$("dlinfo");const ae=document.activeElement;if(box&&box.contains(ae)&&/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(ae.tagName))return;const r=_rd.apply(this,arguments);try{if(box)cfillRender(box);}catch(e){console.error("list fill",e);}return r;};}
 function rebuildOrgs(){
   DLX=null;
   const keep=ORGS.filter(o=>!o.auto&&!o.manual);const seen=new Set(keep.map(o=>o.k));
@@ -10469,6 +10506,7 @@ async function boot(){
   db.doc("engage/deferral").onSnapshot(s=>{DEF=s&&s.exists?s.data():null;scheduleRefresh();},()=>{});
   dlListen("licdl");dlListen("hldl");dlListen("hllog");
   wpdlLoad();setInterval(wpdlLoad,15*60*1000);
+  db.doc("engage/cfill").onSnapshot(s=>{CFILL=s&&s.exists?s.data():null;FILLX=null;try{rebuildOrgs();}catch(e){}try{renderDlSettings();}catch(e){}},()=>{});
   db.collection("regs").onSnapshot(s=>{const r={},w={};let st=null;s.docs.forEach(d=>{const v=d.data()||{};if(d.id==="state"){st=v;return;}Object.assign(r,v.orgs||{});Object.assign(w,v.wg||{});});REGS=r;WG=w;REGSTATE=st;scheduleRefresh();},err);
   db.doc("speakers/main").onSnapshot(s=>{SPK=s.exists?Object.assign({orgs:{}},s.data()):{orgs:{}};scheduleRefresh();},err);
   db.doc("sync/namesync").onSnapshot(s=>{NSYNC=s.exists?s.data():null;scheduleRefresh();},err);

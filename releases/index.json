@@ -1,5 +1,5 @@
 {
- "live": "20261118-2250",
+ "live": "20261118-2304",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -147,6 +147,13 @@
    "savedAt": "2026-11-18T22:50:28Z",
    "by": "jycritchley",
    "how": "published from the test copy: Blank contact names and titles filled from downloads, leaders, MISMO Connect, 360@ emails and Aptify by email"
+  },
+  {
+   "version": "20261118-2304",
+   "sha256": "b93182a76c3af765679f118b5a1eec669fa22e90659bad3a6ba69a82401c8cbe",
+   "savedAt": "2026-11-18T23:04:11Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Settings: Fill Contact Details From a List (Mailchimp export or any list) fills blank names and titles by email"
   }
  ],
  "history": [
@@ -289,6 +296,13 @@
    "action": "publish",
    "version": "20261118-2250",
    "replaced": "20261118-2238"
+  },
+  {
+   "at": "2026-11-18T23:04:11Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261118-2304",
+   "replaced": "20261118-2250"
   }
  ]
 }
