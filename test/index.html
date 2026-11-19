@@ -5511,6 +5511,17 @@ function benefitsText(o){return levelBenefits(o).concat(benCommonNow()).map(x=>"
 function wrapLines(ctx,t,w){const words=t.split(" "),out=[];let line="";words.forEach(wd=>{const tt=line?line+" "+wd:wd;if(ctx.measureText(tt).width>w&&line){out.push(line);line=wd;}else line=tt;});if(line)out.push(line);return out;}
 /* a membership counts in the year it covers (its start date), not the year it was paid */
 function memberItems_(o,r){return ((ACT[o.k]||{}).items||[]).filter(i=>{const d=i.c==="Membership"&&i.s?i.s:i.d;return !r||(d>=r.from&&d<=r.to);}).filter(i=>i.c!=="Other"&&!/cancellation fee/i.test(i.p||"")&&i.n>=0).sort((a,b)=>b.d.localeCompare(a.d));}
+/* MISMO webinar registrations for the Activity Snapshot (Jonna, Nov 18, 2026): by person from the weekly Webinar Registrants sheet
+   (webinars from Nov 18, 2026 on), and before that by company from Aptify's orders. A webinar covered by the sheet isn't counted twice. */
+function webOf(o,r){
+  const inR=d=>!r||r.p==="all"||(d>=r.from&&d<=r.to),key=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,""),out=[],covered=new Set();
+  if(WRD&&Array.isArray(WRD.rows)){const hide=WRD.hide||{},W=WRD.w||{};Object.values(W).forEach(w=>covered.add(key(w[0])));
+    WRD.rows.forEach(x=>{let k=x[2];if(!k)return;try{if(MERGED[k])k=MERGED[k]}catch(e){}if(k!==o.k||hide["wr-"+x[0]+"-"+x[1]])return;
+      const w=W[x[0]]||[],d=w[1]||x[6]||"";if(d&&inR(d))out.push({d,wd:w[1]||"",w:w[0]||"",who:x[3]||""})})}
+  if(APT&&APT.orders&&APT.orders.w){[o.cid].concat((o.mergedIn||[]).map(x=>x&&x.cid)).filter(Boolean).map(String).filter((c,i,a)=>a.indexOf(c)===i)
+    .forEach(c=>(APT.orders.w[c]||[]).forEach(([d,i])=>{const w=APT.orders.wt[i]||"";if(w&&!covered.has(key(w))&&inR(d))out.push({d,wd:"",w,who:""})}))}
+  return out.sort((a,b)=>b.d.localeCompare(a.d));
+}
 function drawSnapshot(canvas,o,opt){
   const it=memberItems_(o,opt.range),cnt={},amt={};it.forEach(i=>{cnt[i.c]=(cnt[i.c]||0)+1;amt[i.c]=(amt[i.c]||0)+i.n;});
   const first=it.length?it[it.length-1].d:"";
@@ -5537,6 +5548,7 @@ function drawSnapshot(canvas,o,opt){
     if(wgN)add("wg",wgN,"Workgroup Joined","Workgroups Joined");
     if(mt.length)add("mtg",mtgCount(mt),"Workgroup Meeting Attended","Workgroup Meetings Attended");
     if(c_.Education)add("edu",c_.Education,"Training and Education","Training and Education");
+    {const wb=webOf(o,r);if(wb.length)add("web",wb.length,"Webinar Registration","Webinar Registrations")}
     if(c_.Certification)add("cert",c_.Certification,"Certification","Certifications");
     if(spn)add("spon",spn,"Sponsorship","Sponsorships");
     if(liveC.length)add("prod",liveC.length,"Certified Product","Certified Products",true);
@@ -5641,6 +5653,24 @@ function drawSnapshot(canvas,o,opt){
     ctx.fillStyle=SNAP_INK2;ctx.font="400 13px "+SANS;ctx.fillText("A meeting counts once however many of your people joined it.",P,y+1);
     if(ML.length>rows.length){ctx.textAlign="right";ctx.fillText("and "+(ML.length-rows.length)+" more workgroups",W-P,y+1);ctx.textAlign="left";}
     y+=40;}}
+  {const WB=webOf(o,R_);if(WB.length){heading("MISMO Webinars");
+    const G={};WB.forEach(x=>{const g=G[x.w]=G[x.w]||{w:x.w,n:0,d:"",who:new Set()};g.n++;const dd=x.wd||x.d;if(dd>g.d)g.d=dd;if(x.who)g.who.add(x.who)});
+    const rows=Object.values(G).sort((a,b)=>b.d.localeCompare(a.d)),show=rows.slice(0,10),mx=Math.max(...show.map(g=>g.n)),allT=!R_||R_.p==="all";
+    ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;
+    ctx.fillText(fitText(ctx,"Your people registered for "+n(rows.length)+" MISMO webinar"+(rows.length===1?"":"s")+" ("+n(WB.length)+" registration"+(WB.length===1?"":"s")+")"+(allT?"":R_.p==="yr"?" in "+R_.yr:", "+fmt(R_.from)+" to "+fmt(R_.to))+".",W-2*P),P,y);y+=34;
+    const lw=440,tw=270,bw=W-2*P-lw-tw-16;
+    ctx.fillStyle=SNAP_INK2;ctx.font="600 13px "+SANS;ctx.fillText("Webinar",P+8,y);ctx.fillText("Registrations",P+lw,y);ctx.textAlign="right";ctx.fillText("Date",W-P-8,y);ctx.textAlign="left";
+    y+=12;ctx.fillStyle="#0d314c";ctx.fillRect(P,y,W-2*P,2);y+=10;
+    show.forEach((g,ri)=>{const who=[...g.who],rh=who.length?58:40;if(ri%2){ctx.fillStyle="#f6fafd";ctx.fillRect(P,y,W-2*P,rh)}
+      ctx.fillStyle=SNAP_INK;ctx.font="500 15px "+SANS;ctx.fillText(fitText(ctx,g.w,lw-24),P+8,y+25);
+      if(who.length){ctx.fillStyle=SNAP_INK3;ctx.font="400 12px "+SANS;ctx.fillText(fitText(ctx,who.join(", "),lw-24),P+8,y+45)}
+      rr(ctx,P+lw,y+11,bw,18,4);ctx.fillStyle=SNAP_WASH;ctx.fill();rr(ctx,P+lw,y+11,Math.max(6,bw*g.n/mx),18,4);ctx.fillStyle="#2477b8";ctx.fill();
+      ctx.fillStyle=SNAP_INK;ctx.font="600 15px "+MONO;ctx.fillText(n(g.n),P+lw+bw+14,y+25);
+      ctx.textAlign="right";ctx.fillStyle=SNAP_INK2;ctx.font="400 15px "+SANS;ctx.fillText(fmt(g.d),W-P-8,y+25);ctx.textAlign="left";y+=rh});
+    ctx.fillStyle=SNAP_RULE;ctx.fillRect(P,y,W-2*P,1);y+=24;
+    ctx.fillStyle=SNAP_INK2;ctx.font="400 13px "+SANS;ctx.fillText("Names are listed for registrations from November 2026 on.",P,y+1);
+    if(rows.length>show.length){ctx.textAlign="right";ctx.fillText("and "+(rows.length-show.length)+" more webinars",W-P,y+1);ctx.textAlign="left"}
+    y+=40}}
   if(EG.people.length){heading("Your MISMO-Certified Professionals");
     const cols=3,cw=(W-2*P)/cols,show=EG.people.slice(0,cols*6);
     show.forEach((x,i)=>{const cx=P+(i%cols)*cw,cy=y+Math.floor(i/cols)*32;
