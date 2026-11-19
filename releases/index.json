@@ -1,5 +1,5 @@
 {
- "live": "20261119-0134",
+ "live": "20261119-0158",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -175,6 +175,13 @@
    "savedAt": "2026-11-19T01:34:28Z",
    "by": "jycritchley",
    "how": "published from the test copy: Prospects can be merged into their company or removed (archived); new-prospect list label fixed"
+  },
+  {
+   "version": "20261119-0158",
+   "sha256": "f5483ba43f911d8a7f4ef04a7c7a6a96eae66e96a81e9c541db130d3ba77a9fb",
+   "savedAt": "2026-11-19T01:58:58Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -345,6 +352,13 @@
    "action": "publish",
    "version": "20261119-0134",
    "replaced": "20261119-0053"
+  },
+  {
+   "at": "2026-11-19T01:58:58Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261119-0158",
+   "replaced": "20261119-0134"
   }
  ]
 }

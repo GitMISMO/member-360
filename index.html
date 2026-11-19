@@ -6325,7 +6325,7 @@ function weekStart(off){const d=new Date(TODAY+"T12:00:00");const wd=d.getDay();
 function myName(){return (ME&&NAMES[ME])||"";}
 function who(){if(wkWho===null){const m=myName();return (SET.staff||[]).includes(m)?m:"";}return wkWho;}
 function initials(s){if(!s)return "—";const p=s.trim().split(/\s+/);return ((p[0]||"")[0]+((p[1]||"")[0]||"")).toUpperCase();}
-function lastTouch(o){let d="";const t=(TPIDX[o.k]||[]).filter(x=>!x.virtual);if(t.length)d=t[0].date||"";o.notes.forEach(x=>{if(x.d&&x.d>d)d=x.d;});
+function lastTouch(o){let d="";const t=(TPIDX[o.k]||[]).filter(x=>!x.virtual);if(t.length)d=t[0].date||"";o.notes.forEach(x=>{if(x.d&&x.d>d&&!(/^Member 360/.test(x.by||"")&&(x.tags||[]).includes("Added as a prospect")))d=x.d;});/* a prospect Member 360 added on its own (webinar registration, forwarded email) is not a touch by the team (Jonna, Nov 18, 2026) */
   /* the sales pipeline's Last Touchpoint date counts too, never a future one (Jonna, Nov 9, 2026) */
   const pl=((ov(o)||{}).pipe||{}).last;if(pl&&/^\d{4}-\d\d-\d\d$/.test(pl)&&pl<=TODAY&&pl>d)d=pl;return d;}
 function touchedSince(o,d){return lastTouch(o)>=d;}
