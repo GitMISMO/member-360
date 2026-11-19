@@ -3210,7 +3210,7 @@ function handReasons(o){
   if(v.personal)r.push("Marked for personal outreach"+(v.personalWhy?": "+v.personalWhy:""));
   if(sov(o,"replied"))r.push("Member replied to an automated email");
   if(ruleOn("noResponse")){const sm=SENTIDX[o.k]||{};const ds=Object.values(sm).sort();
-    if(ds.length>=2&&!(TPIDX[o.k]||[]).some(t=>t.date>=ds[0]))r.push("No response after two automated emails");}
+    if(ds.length>=2&&!(TPIDX[o.k]||[]).some(t=>!t.virtual&&t.date>=ds[0]))r.push("No response after two automated emails");}
   return r;
 }
 function handling(o){const s=stageOf(o);if(!s)return "";
@@ -5846,7 +5846,7 @@ function fillHistory(o,box){
         h("div",null,h("span",{class:"tag"},t.type),...String(t.topic||"").split(/\s*,\s*/).filter(Boolean).map(x=>h("span",{class:"tag"},x)),t.sentiment&&t.sentiment!=="Neutral"?h("span",{class:"tag"},t.sentiment):null),
         p360HistTxt(t),
         t.next?h("div",{class:"nx"},(t.next.done?"✓ Done: ":"Next: ")+t.next.text+(t.next.owner?" · "+t.next.owner:"")+(t.next.due?" · due "+fmtS(t.next.due):"")):null,
-        h("div",{class:"who"},"Logged by "+who+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null,t.type==="Email"&&(t.via==="forward"||String(t.at||"")>="2026-10-29")?h("button",{type:"button",class:"p360-link hi-rm",title:"See the whole email and the thread",onclick:()=>m360ShowFull(t)},"View Full Email"):null))));}
+        h("div",{class:"who"},(t.virtual?t.byName:"Logged by "+who)+(t.contact?" · with "+t.contact:""),((t.by===ME||(window.ResourcesSession&&ResourcesSession.isAdmin&&ResourcesSession.isAdmin()))&&db&&canWrite)?h("button",{type:"button",class:"p360-link hi-rm",title:"Take this touchpoint off the record",onclick:()=>m360RmTp(t)},"Remove"):null,t.type==="Email"&&(t.via==="forward"||String(t.at||"")>="2026-10-29")?h("button",{type:"button",class:"p360-link hi-rm",title:"See the whole email and the thread",onclick:()=>m360ShowFull(t)},"View Full Email"):null))));}
     else if(i.kind==="auto"){into.appendChild(h("div",{class:"hi auto-h"},h("div",{class:"d"},fmt(i.d)),h("div",null,h("span",{class:"tag"},"Automated"),h("div",{class:"txt"},i.st.name+" email sent through the renewal runway"))));}
     else{const x=i.x;into.appendChild(h("div",{class:"hi"},h("div",{class:"d"},x.d?fmt(x.d):"Undated"),h("div",null,
         h("div",null,h("span",{class:"tag"},"Earlier Note"),(x.tags||[]).map(t=>h("span",{class:"tag"},t))),
@@ -6319,7 +6319,7 @@ function lastEngaged(o){let d="",w="";const up=(x,what)=>{if(x&&x>d&&x<=TODAY){d
   return {d,w};}
 function snoozed(o){const s=ov(o).snooze;return s&&s>TODAY;}
 function monthYr(d){if(!d)return "";const p=d.split("-").map(Number);return MONTHS[p[1]-1]+" "+p[0];}
-function planDone(p){if(p.done)return true;const t=TPIDX[p.org];const since=(p.at||"").slice(0,10)||p.day;return !!(t&&t.some(x=>(x.date||"")>=since));}
+function planDone(p){if(p.done)return true;const t=(TPIDX[p.org]||[]).filter(x=>!x.virtual);const since=(p.at||"").slice(0,10)||p.day;return !!(t&&t.some(x=>(x.date||"")>=since));}
 function ownerOk(o){const w=who();return !w||!owner(o)||owner(o)===w;}
 /* ---------- benefit outreach: free Summit registrations and Boot Camp seats by level (mismo.org Champions Program page) ---------- */
 const BEN_SUMMIT={Chair:6,Executive:3,Associate:2};
@@ -9949,7 +9949,7 @@ async function wrHide(t){const o=BY[t.org];if(!confirm("Remove this note"+(o?" f
   const hide=Object.assign({},(WRD&&WRD.hide)||{},{[t.id]:new Date().toISOString()});
   try{await db.doc("engage/webreg").set(Object.assign({},WRD||{},{hide}));toast("Note removed.")}catch(e){onWriteErr(e)}}
 {const _ra=renderApt;renderApt=function(){_ra.apply(this,arguments);try{const box=$("aptinfo");if(!box||!WRD||!WRD.last||box.querySelector(".wr-line"))return;const L=WRD.last;
-  box.appendChild(h("div",{class:"hint wr-line",style:"margin-top:8px"},"Webinar registrants since "+fmt(WR_FROM)+": "+n(L.people)+" registration"+(L.people===1?"":"s")+" for "+n(L.webinars)+" webinar"+(L.webinars===1?"":"s")+", loaded "+fmt(String(WRD.at||"").slice(0,10))+". "+n(L.matched)+" are noted on company records"+(L.prospects?", including "+n(L.prospects)+" new prospect"+(L.prospects===1?"":"s"):"")+"."+(L.noCompany?" "+n(L.noCompany)+" with no company in Aptify were left out.":"")))}catch(e){}}}
+  box.appendChild(h("div",{class:"hint wr-line",style:"margin-top:8px"},"Webinar registrants since "+fmt(WR_FROM)+": "+n(L.people)+" registration"+(L.people===1?"":"s")+" for "+n(L.webinars)+" webinar"+(L.webinars===1?"":"s")+", loaded "+fmt(new Date(WRD.at||Date.now()).toLocaleDateString("en-CA"))+". "+n(L.matched)+" are noted on company records"+(L.prospects?", including "+n(L.prospects)+" new prospect"+(L.prospects===1?"":"s"):"")+"."+(L.noCompany?" "+n(L.noCompany)+(L.noCompany===1?" registrant with no company in Aptify was left out.":" registrants with no company in Aptify were left out."):"")))}catch(e){}}}
 async function aptRead(files){
   APT_ALLC=null;WEBREG=null;const X=await loadXlsx();let comp=null,terms=null,ords=null,certs=null,cts=null;const OMAP={};const names={};
   for(const f of files){const wb=X.read(await f.arrayBuffer(),{type:"array",cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];
