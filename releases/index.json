@@ -1,5 +1,5 @@
 {
- "live": "20261118-2334",
+ "live": "20261119-0053",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -161,6 +161,13 @@
    "savedAt": "2026-11-18T23:34:22Z",
    "by": "jycritchley",
    "how": "published from the test copy: Undo after every renewal stage change (stage bar or dropdown)"
+  },
+  {
+   "version": "20261119-0053",
+   "sha256": "476327c3d058ffc2bf3730e69b41093cad5c374a88bdf3ec6942ad15d826f462",
+   "savedAt": "2026-11-19T00:53:50Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -317,6 +324,13 @@
    "action": "publish",
    "version": "20261118-2334",
    "replaced": "20261118-2304"
+  },
+  {
+   "at": "2026-11-19T00:53:50Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261119-0053",
+   "replaced": "20261118-2334"
   }
  ]
 }
