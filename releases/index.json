@@ -1,5 +1,5 @@
 {
- "live": "20261119-0227",
+ "live": "20261119-0243",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -189,6 +189,13 @@
    "savedAt": "2026-11-19T02:27:06Z",
    "by": "jycritchley",
    "how": "published from the test copy"
+  },
+  {
+   "version": "20261119-0243",
+   "sha256": "7eb1ccc7f2908839f7b1a91340720819f60f364c6b8786ca9943c54aaa0d04eb",
+   "savedAt": "2026-11-19T02:43:03Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Help: webinar registrations on the Activity Snapshot"
   }
  ],
  "history": [
@@ -373,6 +380,13 @@
    "action": "publish",
    "version": "20261119-0227",
    "replaced": "20261119-0158"
+  },
+  {
+   "at": "2026-11-19T02:43:03Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261119-0243",
+   "replaced": "20261119-0227"
   }
  ]
 }
