@@ -11258,6 +11258,17 @@ function hlInit(){if($("v-health")||!hlIsAdmin())return;const main=document.quer
   $("hl-now").addEventListener("click",async()=>{const b=$("hl-now");b.disabled=true;b.textContent="Checking…";try{await hlCheck();}catch(e){console.error("health",e);}b.disabled=false;b.textContent="Check Now";hlPaint();});
   if(location.hash==="#health")setTimeout(()=>show("health"),500);
   window.addEventListener("hashchange",()=>{if(location.hash==="#health")show("health");});}
+/* Send Again on a failed email (Jonna, Nov 19, 2026): queues a copy of the same batch the normal way, marked resendOf the failed one, so it can only be sent again once */
+async function hlResend(id,btn){if(blocked())return;const src=OUTBOX[id];if(!src){toast("That email is no longer in the outbox.",true);return}
+  if(Object.keys(OUTBOX).some(k=>OUTBOX[k]&&OUTBOX[k].resendOf===id)){toast("That email was already sent again.");return}
+  const to=(src.recipients||[]).map(r=>r.name||r.to).filter(Boolean);
+  if(!confirm("Send \u201c"+(src.stepName||"this email")+"\u201d again to "+(to.length?to.join(", "):"its recipients")+"?"))return;
+  if(btn)btn.disabled=true;
+  const nid=(src.step==="mention"?"mn":"rs")+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  const doc=Object.assign({},src,{status:"queued",queuedAt:new Date().toISOString(),queuedBy:ME||"",resendOf:id});delete doc.id;
+  try{await db.doc("outbox/"+nid).set(doc);toast("Sending it again to "+(to.length?to.join(" and "):"its recipients")+".");try{hlPaint()}catch(e){}}
+  catch(e){if(btn)btn.disabled=false;onWriteErr(e)}}
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-hlresend]");if(b)hlResend(b.dataset.hlresend,b)});
 function hlPaint(){const sec=$("v-health");const rows=HL.rows||[];const pip=$("pip-health");const nb=rows.filter(r=>r.level==="bad").length,nw=rows.filter(r=>r.level==="warn").length;
   if(pip){pip.textContent=nb?String(nb):"";pip.hidden=!nb;}if(!sec||sec.hidden)return;
   const no=rows.filter(r=>r.level==="ok").length,hm=HL.hm||{};
@@ -11265,7 +11276,7 @@ function hlPaint(){const sec=$("v-health");const rows=HL.rows||[];const pip=$("p
     .map(k=>'<div class="hl-k '+(k[2]&&k[0]?k[2]:k[2]==="ok"?"ok":"")+'"><b>'+tlEsc(String(k[0]))+'</b><span>'+k[1]+'</span></div>').join("");
   const lab={ok:"On time",warn:"Late",bad:"Needs a look",info:"Last update"};
   const row=r=>{let x='<div class="hl-r"><div class="hl-d '+r.level+'"></div><div><div class="hl-n">'+tlEsc(r.name)+'</div><div class="hl-w">'+tlEsc(r.what)+(r.every?" · "+tlEsc(r.every):"")+'</div><div class="hl-t">'+(r.when?"Last: "+tlEsc(hlWhen(r.when)):"Last: none on record")+'</div></div><div class="hl-s '+r.level+'">'+tlEsc(r.level==="info"?lab.info:r.note||lab[r.level])+'</div>';
-    if(r.key==="email-failed"&&(r.ids||[]).length){const MD=MAILED||{},OB=OUTBOX||{};x+='<div class="hl-list">'+r.ids.map(id=>{const m=MD[id]||{},b=OB[id]||{};return '<div><b>'+tlEsc(hlWhen(m.at).split(" · ")[0])+'</b> · '+tlEsc(b.stepName||b.step||"Email")+(b.test&&!/test/i.test(b.stepName||"")?" (test)":"")+' · '+tlEsc(String(m.error||((m.failed||[]).length?(m.failed.length+" address"+(m.failed.length===1?"":"es")+" failed"):"failed")).slice(0,160))+'</div>';}).join("")+'</div>';}
+    if(r.key==="email-failed"&&(r.ids||[]).length){const MD=MAILED||{},OB=OUTBOX||{};x+='<div class="hl-list">'+r.ids.map(id=>{const m=MD[id]||{},b=OB[id]||{};return '<div><b>'+tlEsc(hlWhen(m.at).split(" · ")[0])+'</b> · '+tlEsc(b.stepName||b.step||"Email")+(b.test&&!/test/i.test(b.stepName||"")?" (test)":"")+' · '+tlEsc(String(m.error||((m.failed||[]).length?(m.failed.length+" address"+(m.failed.length===1?"":"es")+" failed"):"failed")).slice(0,160))+(function(){const again=Object.keys(OB).some(k=>OB[k]&&OB[k].resendOf===id);return b.test||!OB[id]?'':again?' · sent again':' <button type="button" class="btn ghost small" style="white-space:nowrap;min-width:max-content;margin-left:6px" data-hlresend="'+tlEsc(id)+'">Send Again</button>'})()+'</div>';}).join("")+'</div>';}
     if(r.key==="saves-failed"){const e=HL.errs.filter(z=>hlAge(z.at)<=7);if(e.length)x+='<div class="hl-list">'+e.slice(0,20).map(z=>'<div><b>'+tlEsc(hlWhen(z.at).split(" · ")[0])+'</b> · '+tlEsc(z.by||"")+' · '+tlEsc(z.msg)+'</div>').join("")+'</div>';}
     return x+'</div>';};
   const card=(id,title,g,foot)=>{$(id).innerHTML='<h2>'+title+'</h2>'+rows.filter(r=>r.grp===g).map(row).join("")+(foot?'<div class="hl-foot">'+foot+'</div>':"");};
