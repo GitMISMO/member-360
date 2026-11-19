@@ -163,7 +163,7 @@ mirrors it as of Nov 8, 2026; **if they disagree, the map wins.**
 
 | From | What | Where | How often |
 |---|---|---|---|
-| Aptify (Reporting Services report `Member360_AptifyPull`) | One workbook: Membership Terms, Companies, Orders (this year's MISMO orders), Member Contacts (shipped in the last 45 days), MISMO Cases. Sheet and column names are the contract. | Emailed to Jonna and 360@mba.org. The flow **Member 360 - Aptify Weekly Pull** saves it to `data/aptify-pull/`, the GitHub job writes `aptifypull/main`, and Member 360 loads it as an upload in Settings › Aptify would (`aptify/main`, `aptify/terms`, `aptify/ordermap`). | Mondays 6:00 AM ET; loaded the next time someone who can save opens Member 360 |
+| Aptify (Reporting Services report `Member360_AptifyPull`) | One workbook: Membership Terms, Companies, Orders (this year's MISMO orders), Member Contacts (shipped in the last 45 days), MISMO Cases, All Contacts, Webinar Registrants (everyone registered for a MISMO webinar held on or after Nov 18, 2026; from `vwOrderMeetDetail`, meeting type Webinar, product category MISMO or a name with MISMO, cancelled ones left out by Member 360). Sheet and column names are the contract. | Emailed to Jonna and 360@mba.org. The flow **Member 360 - Aptify Weekly Pull** saves it to `data/aptify-pull/`, the GitHub job writes `aptifypull/main`, and Member 360 loads it as an upload in Settings › Aptify would (`aptify/main`, `aptify/terms`, `aptify/ordermap`). | Mondays 6:00 AM ET; loaded the next time someone who can save opens Member 360 |
 | Aptify, by hand (backup) | The same files, uploaded in Settings › Aptify Member Data | same | Only if the email stops |
 | MISMO Money | Paid Aptify orders, to count payments by company | `member-360-data/data/mismo-money-paid.json` (MISMO Money writes) | Each morning, plus changes; read every 30 minutes |
 | MISMO Money | Square special members set up (TMC, Broker, ACUMA) | `data/mismo-money-square.json` (MISMO Money writes) | As set-ups happen; read every 5 minutes |
@@ -194,6 +194,8 @@ mirrors it as of Nov 8, 2026; **if they disagree, the map wins.**
 ---
 
 ## Rules and Decisions (Jonna's)
+
+- **Webinar registrants (Jonna, Nov 18, 2026).** Each load of the weekly pull reads the Webinar Registrants sheet (`webRegImport`). Every registrant's company is found by Aptify company ID, then email, company name, then email domain; a company not in Member 360 becomes a prospect (`prospects/wr<CompanyID>`, source "Webinar registration"). The whole list is saved in one doc, `engage/webreg`, and each registration shows on the company's Activity as a note built at load time (`rebuildIdx`, `virtual: true`), so no touchpoint is written per person. Those notes never count as the team's Last Touch, never complete a plan and never count as a reply. Removing one adds it to `engage/webreg` `hide`. MBA and MISMO staff are left out.
 
 These were decided on purpose. Don't change them without Jonna.
 
