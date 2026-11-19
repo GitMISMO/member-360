@@ -11194,7 +11194,7 @@ async function hlCheck(){if(HL.busy)return HL.rows;HL.busy=true;try{
   let lastRun="";Object.values(MD).forEach(x=>{if(x&&x.at&&x.at>lastRun)lastRun=x.at;});
   rows.push({grp:"email",key:"email-flow",name:"Email Flow",what:"Power Automate picking up emails Member 360 queues",when:lastRun,every:"Every few minutes",
     level:stuck.length?"bad":"ok",note:stuck.length?stuck.length+" email batch"+(stuck.length===1?"":"es")+" waiting more than 20 minutes":"Nothing waiting"});
-  const fails=Object.keys(MD).filter(id=>{const x=MD[id];return x&&(x.status!=="sent"||(x.failed||[]).length)&&hlAge(x.at)<=7;});
+  const fails=Object.keys(MD).filter(id=>{const x=MD[id];return x&&(x.status!=="sent"||(x.failed||[]).length)&&hlAge(x.at)<=7&&!Object.keys(OB).some(k=>OB[k]&&OB[k].resendOf===id&&MD[k]&&MD[k].status==="sent"&&!(MD[k].failed||[]).length);});/* a failed email that was sent again with Send Again, and went, no longer counts (Jonna, Nov 19, 2026) */
   const real=fails.filter(id=>!(OB[id]&&OB[id].test));
   rows.push({grp:"email",key:"email-failed",name:"Failed Emails, Last 7 Days",what:"Batches Power Automate could not send, or sent with some addresses failing",when:fails.length?fails.map(id=>MD[id].at).sort().pop():"",every:"",
     level:real.length?"bad":fails.length?"warn":"ok",note:fails.length?(real.length+" real, "+(fails.length-real.length)+" test"):"None",ids:fails});
