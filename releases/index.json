@@ -1,5 +1,5 @@
 {
- "live": "20261119-2139",
+ "live": "20261120-0216",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -210,6 +210,13 @@
    "savedAt": "2026-11-19T21:39:42Z",
    "by": "jycritchley",
    "how": "published from the test copy: System Health: Send Again on failed emails"
+  },
+  {
+   "version": "20261120-0216",
+   "sha256": "ed4eb647ab6b489ba6fc224fcb78d74faa5cb01d363a6bcdd0ce5a70d9c9b9a3",
+   "savedAt": "2026-11-20T02:16:39Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -415,6 +422,13 @@
    "action": "publish",
    "version": "20261119-2139",
    "replaced": "20261119-1739"
+  },
+  {
+   "at": "2026-11-20T02:16:39Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261120-0216",
+   "replaced": "20261119-2139"
   }
  ]
 }
