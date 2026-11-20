@@ -1,5 +1,5 @@
 {
- "live": "20261120-2253",
+ "live": "20261120-2328",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -238,6 +238,13 @@
    "savedAt": "2026-11-20T22:53:41Z",
    "by": "jycritchley",
    "how": "published from the test copy: Contacts: No Longer with This Company checkbox moves a person to Former Contacts"
+  },
+  {
+   "version": "20261120-2328",
+   "sha256": "6f6ef66b28f58c105ea8844d160e60351de4067c7b275a9b3d2a4408bd1cabab",
+   "savedAt": "2026-11-20T23:28:00Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -471,6 +478,13 @@
    "action": "publish",
    "version": "20261120-2253",
    "replaced": "20261120-0324"
+  },
+  {
+   "at": "2026-11-20T23:28:00Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261120-2328",
+   "replaced": "20261120-2253"
   }
  ]
 }
