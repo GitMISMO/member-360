@@ -10134,7 +10134,7 @@ function myEmail(){const m=/<([^>]+)>/.exec(ME||"");return m?m[1].trim().toLower
 function mySender(){const e=myEmail(),u=e.split("@")[0];return SENDERS[u]?{email:e,key:u,name:SENDERS[u]}:null;}
 function canEmail(){return !!(window.__hqRelay&&db&&canWrite&&mySender());}
 /* emails and campaigns go out only from Amy and Jonna, and either can pick whose voice (Send As) it goes out in (Jonna, Oct 29, 2026) */
-const SEND_AS=["amoses","kbradshaw","jcritchley"],SEND_NO="Sending emails from Member 360 is set up only for the senders under Settings, Shared Rules.";
+/* Brian added Nov 20, 2026: Jonna has Send As on his mailbox, so his mention emails go out from him */const SEND_AS=["amoses","kbradshaw","bvieaux","jcritchley"],SEND_NO="Sending emails from Member 360 is set up only for the senders under Settings, Shared Rules.";
 function canSend(){const s=mySender();return canEmail()&&!!s&&sendKeys().includes(s.key);}
 function sendAsList(){return sendKeys().map(k=>({key:k,name:senderName(k),email:k+"@mismo.org"}));}
 function escH(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
