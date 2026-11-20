@@ -319,3 +319,8 @@ When you add an incoming connection, add a row here so a failed hand-off shows u
   (`if(document.readyState==="loading")…boot…`) and may wrap earlier functions.
 - The page and this repo are public: test only with made-up records, and never commit member data.
 - Plain language with Jonna. Do the work rather than handing her steps.
+
+
+## Contacts Who Leave a Company (Nov 20, 2026)
+
+In a contact's edit form, No Longer with This Company calls `ctFormer(o,p,box)`. The contact comes off the list the same way Remove Contact does it (`contacts.removed` for Aptify contacts, out of `contacts.added` for added ones), and a snapshot goes in `contacts.former[key]` = `{name,title,email,phone,roles,src,at,by,edit|added}`. `contactsOv` carries `former`, so every contacts save keeps it. `fillContacts` lists them under a collapsed Former Contacts section. Bring Back (and Undo right after marking) calls `ctBack(o,key,box)`, which restores the edit or the added row and drops the snapshot. Former contacts are not in `o.people`, so they get no emails, are left out of targeted lists and hold no roles.
