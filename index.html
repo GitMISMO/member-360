@@ -10789,6 +10789,7 @@ async function m360ArchBody(id,d){if(d&&d.m&&d.m.body)return d.m.body;if(!d||!d.
 async function m360Archive(){try{
   if(!db||!canWrite||!ACTV.rawDoc)return;
   const lk="m360.mailarch."+(m360Me()||"me");let last=0;try{last=+localStorage.getItem(lk)||0}catch(e){}if(Date.now()-last<20*36e5)return;
+  /* once a day per person even when a save is refused, so a refusal never repeats all day */try{localStorage.setItem(lk,String(Date.now()))}catch(e){}
   const cut=new Date(Date.now()-7*864e5).toISOString(),r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};
   const ids=Object.keys(docs).filter(id=>{const d=docs[id];const w=String((d&&(d.received||d.at))||"");return d&&(d.st==="logged"||d.st==="skipped")&&w&&w<cut&&d.m&&d.m.body&&!d.arch}).slice(0,150);
   if(ids.length){
