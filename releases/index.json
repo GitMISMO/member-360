@@ -1,5 +1,5 @@
 {
- "live": "20261120-2328",
+ "live": "20261121-0005",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -245,6 +245,13 @@
    "savedAt": "2026-11-20T23:28:00Z",
    "by": "jycritchley",
    "how": "published from the test copy"
+  },
+  {
+   "version": "20261121-0005",
+   "sha256": "98a76501e8a9ece68b867f0834af8c7dd718c414ef4076b0318ca018ffc1a933",
+   "savedAt": "2026-11-21T00:05:47Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -485,6 +492,13 @@
    "action": "publish",
    "version": "20261120-2328",
    "replaced": "20261120-2253"
+  },
+  {
+   "at": "2026-11-21T00:05:47Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261121-0005",
+   "replaced": "20261120-2328"
   }
  ]
 }
