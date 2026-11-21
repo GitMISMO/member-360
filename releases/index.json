@@ -1,5 +1,5 @@
 {
- "live": "20261121-0146",
+ "live": "20261121-0207",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -259,6 +259,13 @@
    "savedAt": "2026-11-21T01:46:36Z",
    "by": "jycritchley",
    "how": "published from the test copy: Full email text saved a file a week (November's file was full)"
+  },
+  {
+   "version": "20261121-0207",
+   "sha256": "a38e1a557f3150a9ebe5e5648a017c144c962bda7093ed9cc584f0e75cf7278f",
+   "savedAt": "2026-11-21T02:07:26Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -513,6 +520,13 @@
    "action": "publish",
    "version": "20261121-0146",
    "replaced": "20261121-0005"
+  },
+  {
+   "at": "2026-11-21T02:07:26Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261121-0207",
+   "replaced": "20261121-0146"
   }
  ]
 }

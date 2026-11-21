@@ -4144,7 +4144,7 @@ function m360FullKey(at){const s=String(at||new Date().toISOString());return "ma
 function m360SaveFull(tpId,text){if(!tpId||!text||!ACTV.rawDoc)return;try{ACTV.rawDoc(m360FullKey()+"/"+tpId).set({t:String(text).slice(0,40000),at:new Date().toISOString()}).catch(e=>console.error("full email",e));}catch(e){console.error("full email",e);}}
 async function m360ShowFull(t){const NL=String.fromCharCode(10);let txt="";
   try{const t0=Date.parse(t.at||"")||Date.now();for(const k of [...new Set([0,1,2,3,4,5,6].map(n=>m360FullKey(new Date(t0+n*864e5).toISOString())).concat([0,5].map(n=>"mailfull-"+new Date(t0+n*864e5).toISOString().slice(0,7))))]){const s=await ACTV.rawDoc(k+"/"+t.id).get();if(s&&s.exists){txt=((typeof s.data==="function"?s.data():s.data)||{}).t||"";if(txt)break;}}}catch(e){console.error("full email",e);}
-  if(!txt){const d=Object.values(M360.docs||{}).find(x=>x&&x.tp===t.id);if(d&&d.m)txt=[(d.m.fromName||d.m.from)?"From: "+(d.m.fromName||d.m.from):"",d.m.subject?"Subject: "+d.m.subject:"","",d.m.body||""].join(NL).trim();}
+  if(!txt){const de=Object.entries(M360.docs||{}).find(e=>e[1]&&e[1].tp===t.id);let d=de&&de[1];if(d&&d.m&&!d.m.body&&d.arch){const b=await m360ArchBody(de[0],d);d=Object.assign({},d,{m:Object.assign({},d.m,{body:b})})}if(d&&d.m)txt=[(d.m.fromName||d.m.from)?"From: "+(d.m.fromName||d.m.from):"",d.m.subject?"Subject: "+d.m.subject:"","",d.m.body||""].join(NL).trim();}
   let dl=document.getElementById("p360-full");if(dl)dl.remove();
   dl=h("dialog",{id:"p360-full",class:"p360-dlg","aria-label":"The full email"});const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
   const head=String(t.summary||"").split(NL)[0].replace(/^Email: /,"").slice(0,140)||"Email";
@@ -10778,6 +10778,27 @@ async function deskInfoSync(){if(!db||canWrite===false||!ORGS.length)return;
  const _aA=applyAptify;applyAptify=function(){const r=_aA.apply(this,arguments);_ifnR();return r;};
  const _rA=remergeAct;remergeAct=function(){const r=_rA.apply(this,arguments);_ifnR();return r;};}
 
+/* ---------- forwarded emails: older text to a weekly archive (Jonna, Nov 21, 2026) ----------
+   data/mailin holds every email forwarded to 360@ and was nearing what the relay can save in one piece. Once a logged (or Not needed)
+   email is a week old, its text moves to mailarch-YYYY-MM-wN (kept, never deleted) and the email stays
+   in mailin without it, marked arch. Reading an email loads the text back from the archive. */
+function m360ArchKey(d){const s=String((d&&(d.received||d.at))||new Date().toISOString());return "mailarch-"+s.slice(0,7)+"-w"+Math.ceil((parseInt(s.slice(8,10),10)||1)/7)}
+async function m360ArchBody(id,d){if(d&&d.m&&d.m.body)return d.m.body;if(!d||!d.arch||!ACTV.rawDoc)return "";
+  try{const s=await ACTV.rawDoc(d.arch+"/"+id).get();const v=(s&&s.exists)?((typeof s.data==="function"?s.data():s.data)||{}):{};return v.body||""}catch(e){console.error("mail archive read",e);return ""}}
+async function m360Archive(){try{
+  if(!db||!canWrite||!ACTV.rawDoc)return;
+  const lk="m360.mailarch."+(m360Me()||"me");let last=0;try{last=+localStorage.getItem(lk)||0}catch(e){}if(Date.now()-last<20*36e5)return;
+  const cut=new Date(Date.now()-7*864e5).toISOString(),r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};
+  const ids=Object.keys(docs).filter(id=>{const d=docs[id];const w=String((d&&(d.received||d.at))||"");return d&&(d.st==="logged"||d.st==="skipped")&&w&&w<cut&&d.m&&d.m.body&&!d.arch}).slice(0,150);
+  if(ids.length){
+    for(const id of ids){const d=docs[id];await ACTV.rawDoc(m360ArchKey(d)+"/"+id).set({body:d.m.body,subject:d.m.subject||d.subject||"",received:d.received||"",archivedAt:new Date().toISOString()})}
+    for(let i=0;i<4;i++){const r2=await m360Rel(null),D=(r2&&r2.data&&r2.data.docs)||{};ids.forEach(id=>{const d=D[id];if(d&&d.m&&d.m.body){d.arch=m360ArchKey(d);d.m.body=undefined}});
+      try{await m360Rel({content:{docs:D},sha:r2.sha});M360.docs=D;break}catch(e){if(i===3)throw e;await new Promise(z=>setTimeout(z,2000))}}
+  }
+  try{localStorage.setItem(lk,String(Date.now()))}catch(e){}
+}catch(e){console.error("mail archive",e)}}
+{const _mr=m360Run;m360Run=async function(){const x=await _mr.apply(this,arguments);try{if(!M360.archT)M360.archT=setTimeout(()=>{M360.archT=0;m360Archive()},30000)}catch(e){}return x}}
+{const _sm=m360ShowMail;m360ShowMail=function(r){const d=(r&&r.d)||{};if(d.arch&&!(d.m&&d.m.body)){m360ArchBody(r.id,d).then(b=>_sm(Object.assign({},r,{d:Object.assign({},d,{m:Object.assign({},d.m||{},{body:b||"(The text of this email is in the archive and couldn't be read just now. Please try again.)"})})})));return}return _sm.apply(this,arguments)}}
 /* ---------- Payment in Process for prospects too (Jonna, Nov 7, 2026) ----------
    Kelly marks a prospect Payment in Process once they've committed and the invoice is out, the same way renewals already work.
    Member 360 Home and the Membership Desk both list everything in Payment in Process, each marked New Member or Renewal,
