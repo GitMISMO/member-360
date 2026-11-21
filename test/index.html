@@ -175,6 +175,7 @@
 .p360-logometa{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
 
 /* New Members table at narrower widths: room for the name, type and term; scrolls sideways rather than squeezing (Jonna, Nov 21, 2026) */
+#dl-tiles{grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:1500px){.dlhead,.dlrow{grid-template-columns:84px minmax(150px,1.8fr) minmax(92px,1fr) minmax(112px,1fr) 76px 76px 104px minmax(50px,.6fr) 150px;gap:8px;padding:10px 12px;min-width:960px}#dl-rows{overflow-x:auto}}
 </style>
 <script>(function(){
