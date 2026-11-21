@@ -7411,6 +7411,7 @@ function nmPay(j){const o=j.o;if(!o)return null;const jd=j.d.slice(0,10),hi=addD
 function nmLevel(j){const lv=String(j.lv||"").trim(),m=lv.match(/^(TMC|Broker|BROKER|ACUMA) (.+)$/);
   if(j.kind==="sq")return m?m[2]+" ("+(m[1].toUpperCase()==="BROKER"?"Broker":m[1])+")":(lv||"Corporate");
   if(j.kind==="iif")return (lv||"Corporate").replace(/ \(.*\)$/,"")+" (IIF)";return lv||"Level Not Recorded";}
+function nmMon(x){const p=String(x||"").split("-").map(Number);return p[1]?MONTHS[p[1]-1].slice(0,3)+" "+p[0]:"—";}
 function nmRows(useFilters,month){dealFixAll();const m=month!==undefined?month:$("dl-month").value,back=nmBack();
   const f=useFilters===false?{}:{ap:$("dl-ap").value,by:$("dl-by").value,tm:$("dl-terms").value,pd:$("dl-pd").value};
   const out=[];memberJoins().forEach(j=>{const jm=j.d.slice(0,7);if(m?jm!==m:(jm<back||jm>TODAY.slice(0,7)))return;
@@ -7418,8 +7419,8 @@ function nmRows(useFilters,month){dealFixAll();const m=month!==undefined?month:$
     if(d){r={j,d,o,date:j.d,name:d.orgName||(o&&o.name)||j.orgName||"",level:d.level||nmLevel(j),terms:termsOf(d),start:d.start,end:d.end,amt:d.price||0,paid:dealPaid(d),by:d.by||"",ap:d.ap||"Needs AP Update"};}
     else{const pay=nmPay(j),T=((o&&o.aptAll)||[]).filter(t=>t.s&&!t.x),jd=j.d.slice(0,10);
       const t=T.filter(t=>t.s>=addDays(jd,-62)&&t.s<=addDays(jd,120)).sort((a,b)=>a.s.localeCompare(b.s))[0]||T.filter(t=>t.s<=jd&&(t.e||"")>=jd).sort((a,b)=>b.s.localeCompare(a.s))[0]||null;
-      const pi=pay&&pay.its.find(i=>i.s||i.e)||null,lv=nmLevel(j);
-      r={j,d:null,o,date:j.d,name:(o&&o.name)||j.orgName||"",level:lv,terms:j.srcs.some(x=>x==="Dues Deal")?"Dues Deal":"Standard",start:t?t.s:(pi&&pi.s)||"",end:t?(t.e||""):(pi&&pi.e)||"",
+      const pi=pay&&pay.its.find(i=>i.s||i.e)||null,lv=nmLevel(j),useP=pi&&(j.kind==="sq"||!t);/* a Square special's own payment says what it covers */
+      r={j,d:null,o,date:j.d,name:(o&&o.name)||j.orgName||"",level:lv,terms:j.srcs.some(x=>x==="Dues Deal")?"Dues Deal":"Standard",start:useP?(pi.s||pay.d||""):(t?t.s:""),end:useP?(pi.e||""):(t?(t.e||""):""),
         amt:pay?Math.round(pay.n*100)/100:(j.kind==="iif"?iifMin():listPrice(lv)),paid:pay?{d:pay.d,n:pay.n,o:pay.o}:null,by:o?owner(o):"",ap:"No AP Needed",
         why:j.kind==="sq"?"set up through Square":"already in Aptify"};}
     if(f.ap&&r.ap!==f.ap)return;if(f.by&&r.by!==f.by)return;if(f.tm&&r.terms!==f.tm)return;if(f.pd&&(f.pd==="paid")!==!!r.paid)return;out.push(r);});
@@ -7484,7 +7485,7 @@ function renderDeals(){dealFixAll();
     else apS=h("span",{class:"muted"},"No AP Needed",h("small",null,r.why));
     const diff=d&&p&&Math.abs(p.n-(d.price||0))>1,ids=[d&&d.cid?"ID "+d.cid:(o&&o.cid?"ID "+o.cid:""),d&&d.order?"Order "+d.order:(p&&p.o?"Order "+p.o:"")].filter(Boolean).join(" · ");
     const row=h("div",{class:"dlrow",role:"button",tabindex:"0",title:"Open the member record"},h("span",{class:"num"},fmt(r.date.slice(0,10))),h("span",{class:"nm"},r.name,h("small",null,ids)),
-      h("span",null,MJ_KIND[r.j.kind].lab,h("small",null,r.level+" · "+r.terms)),h("span",null,r.start?fmt(r.start)+" to "+fmt(r.end):"—",h("small",null,m?m+" months":(r.start?"":"no term yet"))),h("span",{class:"num"},money(r.amt||0),!d&&!p?h("small",null,"level price"):null),h("span",{class:"num"},m?money(Math.round((r.amt||0)/m*100)/100):"—"),
+      h("span",null,MJ_KIND[r.j.kind].lab,h("small",null,r.level+" · "+r.terms)),h("span",null,r.start?nmMon(r.start)+" to "+(r.end?nmMon(r.end):"—"):"—",h("small",null,m?m+" months":(r.start?"":"no term yet"))),h("span",{class:"num"},money(r.amt||0),!d&&!p?h("small",null,"level price"):null),h("span",{class:"num"},m?money(Math.round((r.amt||0)/m*100)/100):"—"),
       h("span",null,p?h("span",{class:"pill c-full"},"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
       h("span",null,r.by||h("span",{class:"muted"},"—")),h("span",null,apS));
     const go=()=>{if(o&&BY[o.k])openPane(o.k);};row.addEventListener("click",go);row.addEventListener("keydown",e=>{if(e.key==="Enter")go();});box.appendChild(row);});
