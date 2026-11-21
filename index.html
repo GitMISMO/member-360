@@ -4139,10 +4139,11 @@ function m360NewContacts(o,m){
   toast("Added "+(add.length===1?"a new contact":add.length+" new contacts")+" to "+o.name+" from the email: "+add.map(x=>x.name||x.email).join(", ")+".");
   return add.length;}
 /* the whole email, thread and all, kept beside the touchpoint in a monthly file (mailfull-YYYY-MM); the touchpoint shows only the latest message (Jonna, Oct 29, 2026) */
-function m360FullKey(at){return "mailfull-"+String(at||new Date().toISOString()).slice(0,7);}
+/* a file a week, not a month (Jonna, Nov 21, 2026): November filled the monthly file past what the relay can save in one piece; older emails stay in their monthly file and are still found */
+function m360FullKey(at){const s=String(at||new Date().toISOString());return "mailfull-"+s.slice(0,7)+"-w"+Math.ceil((parseInt(s.slice(8,10),10)||1)/7);}
 function m360SaveFull(tpId,text){if(!tpId||!text||!ACTV.rawDoc)return;try{ACTV.rawDoc(m360FullKey()+"/"+tpId).set({t:String(text).slice(0,40000),at:new Date().toISOString()}).catch(e=>console.error("full email",e));}catch(e){console.error("full email",e);}}
 async function m360ShowFull(t){const NL=String.fromCharCode(10);let txt="";
-  try{const t0=Date.parse(t.at||"")||Date.now();for(const k of [m360FullKey(new Date(t0).toISOString()),m360FullKey(new Date(t0+5*864e5).toISOString())]){const s=await ACTV.rawDoc(k+"/"+t.id).get();if(s&&s.exists){txt=((typeof s.data==="function"?s.data():s.data)||{}).t||"";if(txt)break;}}}catch(e){console.error("full email",e);}
+  try{const t0=Date.parse(t.at||"")||Date.now();for(const k of [...new Set([0,1,2,3,4,5,6].map(n=>m360FullKey(new Date(t0+n*864e5).toISOString())).concat([0,5].map(n=>"mailfull-"+new Date(t0+n*864e5).toISOString().slice(0,7))))]){const s=await ACTV.rawDoc(k+"/"+t.id).get();if(s&&s.exists){txt=((typeof s.data==="function"?s.data():s.data)||{}).t||"";if(txt)break;}}}catch(e){console.error("full email",e);}
   if(!txt){const d=Object.values(M360.docs||{}).find(x=>x&&x.tp===t.id);if(d&&d.m)txt=[(d.m.fromName||d.m.from)?"From: "+(d.m.fromName||d.m.from):"",d.m.subject?"Subject: "+d.m.subject:"","",d.m.body||""].join(NL).trim();}
   let dl=document.getElementById("p360-full");if(dl)dl.remove();
   dl=h("dialog",{id:"p360-full",class:"p360-dlg","aria-label":"The full email"});const x=h("button",{type:"button",class:"p360-dlg-x","aria-label":"Close"},"×");x.addEventListener("click",()=>dl.close());
