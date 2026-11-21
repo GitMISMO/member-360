@@ -6158,10 +6158,10 @@ function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textConte
   try{sqRender(box);}catch(e){console.error(e);}
   /* IIF members only: a lender, a company on the IIF list, or one in the InvFee Member Contacts export. Members who paid their own dues (Sole and the like) are in the planner's Welcome New Members list instead (Jonna, Oct 30, 2026) */
   const isIif=x=>{const o=x.o;return !!((x.cid&&(P.contacts||{})[x.cid])||(o&&(o.type==="Lender"||o.iif)));};
-  const L=(P.items||[]).filter(x=>!D[x.id]&&(!x.at||String(x.at).slice(0,10)>=addDays(TODAY,-7))).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
+  const L=(P.items||[]).filter(x=>!D[x.id]).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
   L.sort((a,b)=>String(b.at).localeCompare(String(a.at))||((b.o&&b.o.type==="Lender")-(a.o&&a.o.type==="Lender"))||String(a.co||a.who).localeCompare(String(b.co||b.who)));
   box.appendChild(h("h2",null,"New IIF Members This Week"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"IIF lenders turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Each one shows for a week after it turns on, then drops off on its own."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"IIF lenders turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Mark each one Done once they've been welcomed."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
   if(!L.length){box.appendChild(h("div",{class:"hint"},"No new IIF members since the last Aptify upload."));return;}
   const dis=!db||!canWrite;
   L.forEach(x=>{const o=x.o,ct=x.cid?(P.contacts||{})[x.cid]:null;
@@ -6175,7 +6175,7 @@ function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textConte
     else if(rec.length)lines.push(h("div",{class:"act-d"},h("span",{class:"act-s warn",style:"margin-left:0;margin-right:6px"},"No Aptify contacts"),"Member 360 has "+rec.map(p=>p.email).join(", ")));
     else lines.push(h("div",{class:"act-d"},h("span",{class:"act-s warn",style:"margin-left:0;margin-right:6px"},"No contacts"),"Neither Aptify nor Member 360 has a contact for them yet."));
     const done=h("button",{type:"button",class:"btn ghost",disabled:dis},"Done");done.addEventListener("click",()=>iifNewDone(x.id));
-    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(x.at)),h("div",{class:"act-m"},...lines),h("div",{class:"act-a"})));});}
+    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(x.at)),h("div",{class:"act-m"},...lines),h("div",{class:"act-a"},done)));});}
 /* Square payments now come from MISMO Money (Jonna, Oct 30, 2026): an order in its paid file whose payment type, source or
    line says Square is a special (TMC, Broker, ACUMA) paid outside the Financial System. Member 360 sets the special from it and
    lists the company under "Paid by Square: Set Up in Aptify" until the weekly Aptify upload shows their membership. */
