@@ -10779,8 +10779,8 @@ async function deskInfoSync(){if(!db||canWrite===false||!ORGS.length)return;
  const _rA=remergeAct;remergeAct=function(){const r=_rA.apply(this,arguments);_ifnR();return r;};}
 
 /* ---------- forwarded emails: older text to a weekly archive (Jonna, Nov 21, 2026) ----------
-   data/mailin holds every email forwarded to 360@ and was nearing what the relay can save in one piece. Once an email has been
-   logged (or marked Not needed) for 30 days, its text moves to mailarch-YYYY-MM-wN (kept, never deleted) and the email stays
+   data/mailin holds every email forwarded to 360@ and was nearing what the relay can save in one piece. Once a logged (or Not needed)
+   email is a week old, its text moves to mailarch-YYYY-MM-wN (kept, never deleted) and the email stays
    in mailin without it, marked arch. Reading an email loads the text back from the archive. */
 function m360ArchKey(d){const s=String((d&&(d.received||d.at))||new Date().toISOString());return "mailarch-"+s.slice(0,7)+"-w"+Math.ceil((parseInt(s.slice(8,10),10)||1)/7)}
 async function m360ArchBody(id,d){if(d&&d.m&&d.m.body)return d.m.body;if(!d||!d.arch||!ACTV.rawDoc)return "";
@@ -10788,8 +10788,8 @@ async function m360ArchBody(id,d){if(d&&d.m&&d.m.body)return d.m.body;if(!d||!d.
 async function m360Archive(){try{
   if(!db||!canWrite||!ACTV.rawDoc)return;
   const lk="m360.mailarch."+(m360Me()||"me");let last=0;try{last=+localStorage.getItem(lk)||0}catch(e){}if(Date.now()-last<20*36e5)return;
-  const cut=new Date(Date.now()-30*864e5).toISOString(),r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};
-  const ids=Object.keys(docs).filter(id=>{const d=docs[id];return d&&(d.st==="logged"||d.st==="skipped")&&d.doneAt&&d.doneAt<cut&&d.m&&d.m.body&&!d.arch}).slice(0,60);
+  const cut=new Date(Date.now()-7*864e5).toISOString(),r=await m360Rel(null),docs=(r&&r.data&&r.data.docs)||{};
+  const ids=Object.keys(docs).filter(id=>{const d=docs[id];const w=String((d&&(d.received||d.at))||"");return d&&(d.st==="logged"||d.st==="skipped")&&w&&w<cut&&d.m&&d.m.body&&!d.arch}).slice(0,150);
   if(ids.length){
     for(const id of ids){const d=docs[id];await ACTV.rawDoc(m360ArchKey(d)+"/"+id).set({body:d.m.body,subject:d.m.subject||d.subject||"",received:d.received||"",archivedAt:new Date().toISOString()})}
     for(let i=0;i<4;i++){const r2=await m360Rel(null),D=(r2&&r2.data&&r2.data.docs)||{};ids.forEach(id=>{const d=D[id];if(d&&d.m&&d.m.body){d.arch=m360ArchKey(d);d.m.body=undefined}});
