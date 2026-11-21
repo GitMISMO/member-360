@@ -173,6 +173,9 @@
 .p360-logo img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .p360-logoname{font-size:12.5px;color:var(--ink-3,#7794aa);text-align:center}
 .p360-logometa{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+
+/* New Members table at narrower widths: room for the name, type and term; scrolls sideways rather than squeezing (Jonna, Nov 21, 2026) */
+@media(max-width:1500px){.dlhead,.dlrow{grid-template-columns:84px minmax(150px,1.8fr) minmax(92px,1fr) minmax(112px,1fr) 76px 76px 104px minmax(50px,.6fr) 150px;gap:8px;padding:10px 12px;min-width:960px}#dl-rows{overflow-x:auto}}
 </style>
 <script>(function(){
   var out = true;
@@ -2213,7 +2216,7 @@ button.htile:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 .m3d-pt b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
 .m3d-pt span{font-size:12px;color:rgba(255,255,255,.65);white-space:nowrap}
 #v-deals td,#v-deals td *{white-space:nowrap}
-@media(max-width:1100px){.m3d-band{grid-template-columns:1fr 1fr!important}.m3d-band .m3m-col:first-child{grid-column:1/-1}}
+@media(max-width:1400px){.m3d-band{grid-template-columns:1fr 1fr!important}.m3d-band .m3m-col:first-child{grid-column:1/-1}}
 @media(max-width:640px){.m3d-band{grid-template-columns:1fr!important}}
 
 /* ---------- IIF Cycle band ---------- */
@@ -6154,10 +6157,10 @@ function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textConte
   try{sqRender(box);}catch(e){console.error(e);}
   /* IIF members only: a lender, a company on the IIF list, or one in the InvFee Member Contacts export. Members who paid their own dues (Sole and the like) are in the planner's Welcome New Members list instead (Jonna, Oct 30, 2026) */
   const isIif=x=>{const o=x.o;return !!((x.cid&&(P.contacts||{})[x.cid])||(o&&(o.type==="Lender"||o.iif)));};
-  const L=(P.items||[]).filter(x=>!D[x.id]).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
+  const L=(P.items||[]).filter(x=>!D[x.id]&&(!x.at||String(x.at).slice(0,10)>=addDays(TODAY,-7))).map(x=>Object.assign({o:iifOrg(x)},x)).filter(isIif);
   L.sort((a,b)=>String(b.at).localeCompare(String(a.at))||((b.o&&b.o.type==="Lender")-(a.o&&a.o.type==="Lender"))||String(a.co||a.who).localeCompare(String(b.co||b.who)));
   box.appendChild(h("h2",null,"New IIF Members This Week"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"IIF lenders turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Mark each one Done once they've been welcomed."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"IIF lenders turned on in Aptify since the last upload, at the level Aptify gave them, with Aptify's contacts. Each one shows for a week after it turns on, then drops off on its own."+(P.updatedAt?" Last Aptify upload with changes: "+fmt(P.updatedAt.slice(0,10))+".":"")));
   if(!L.length){box.appendChild(h("div",{class:"hint"},"No new IIF members since the last Aptify upload."));return;}
   const dis=!db||!canWrite;
   L.forEach(x=>{const o=x.o,ct=x.cid?(P.contacts||{})[x.cid]:null;
@@ -6171,7 +6174,7 @@ function iifNewRender(){const box=$("iifnew-panel");if(!box)return;box.textConte
     else if(rec.length)lines.push(h("div",{class:"act-d"},h("span",{class:"act-s warn",style:"margin-left:0;margin-right:6px"},"No Aptify contacts"),"Member 360 has "+rec.map(p=>p.email).join(", ")));
     else lines.push(h("div",{class:"act-d"},h("span",{class:"act-s warn",style:"margin-left:0;margin-right:6px"},"No contacts"),"Neither Aptify nor Member 360 has a contact for them yet."));
     const done=h("button",{type:"button",class:"btn ghost",disabled:dis},"Done");done.addEventListener("click",()=>iifNewDone(x.id));
-    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(x.at)),h("div",{class:"act-m"},...lines),h("div",{class:"act-a"},done)));});}
+    box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(x.at)),h("div",{class:"act-m"},...lines),h("div",{class:"act-a"})));});}
 /* Square payments now come from MISMO Money (Jonna, Oct 30, 2026): an order in its paid file whose payment type, source or
    line says Square is a special (TMC, Broker, ACUMA) paid outside the Financial System. Member 360 sets the special from it and
    lists the company under "Paid by Square: Set Up in Aptify" until the weekly Aptify upload shows their membership. */
@@ -6179,11 +6182,14 @@ function sqItems(o){return fsItems(o).filter(i=>i.sq);}
 function sqSpecial(o){const L=sqItems(o).filter(i=>i.sp).sort((a,b)=>String(b.d).localeCompare(String(a.d)));return L.length?L[0].sp:"";}
 function sqWaiting(){const out=[];ORGS.forEach(o=>{if(ov(o).mergedInto)return;const L=sqItems(o).sort((a,b)=>String(b.d).localeCompare(String(a.d)));if(!L.length)return;const i=L[0];
   if(!i.d||i.d<addDays(TODAY,-180))return;const yr=String(i.s||i.d).slice(0,4);
-  if(i.o)return;out.push({o,i});});
+  if(i.o)return;
+  /* set up in MISMO Money (it records the set-up and the Aptify order) counts as done, as MISMO Money shows it (Jonna, Nov 21, 2026) */
+  {const M=(typeof SQF!=="undefined"&&SQF&&SQF.members)||{};if(o.cid&&Object.values(M).some(r=>r&&r.setUpOn&&String(r.companyId||"")===String(o.cid)))return;}
+  out.push({o,i});});
   return out.sort((a,b)=>String(b.i.d).localeCompare(String(a.i.d)));}
 function sqRender(box){const L=sqWaiting();if(!L.length)return;
   box.appendChild(h("h2",null,"Paid by Square: Set Up in Aptify"));
-  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Special payments taken through Square. The membership team ships the company's IIF quotation in Aptify for the amount paid, and each one drops off once that Aptify payment comes through."));
+  box.appendChild(h("div",{class:"hint",style:"margin:-4px 0 12px"},"Special payments taken through Square. The membership team ships the company's IIF quotation in Aptify for the amount paid, and each one drops off once MISMO Money shows it set up."));
   L.forEach(({o,i})=>{const sp=i.sp||specialOf(o);
     box.appendChild(h("div",{class:"act-r",style:"grid-template-columns:72px minmax(0,1fr) auto"},h("div",{class:"act-t"},fmtS(i.d)),
       h("div",{class:"act-m"},h("div",{class:"act-l"},h("a",{href:"#",class:"p360-link",onclick:ev=>{ev.preventDefault();openOrg(o.k);}},o.name),sp?h("span",{class:"act-s"},sp):null,h("span",{class:"act-s warn"},"Payment not in Aptify yet")),
