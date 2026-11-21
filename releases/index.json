@@ -1,5 +1,5 @@
 {
- "live": "20261121-0232",
+ "live": "20261121-0237",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -280,6 +280,13 @@
    "savedAt": "2026-11-21T02:32:30Z",
    "by": "jycritchley",
    "how": "published from the test copy: 360@ archive: try once a day per person even when the save is refused"
+  },
+  {
+   "version": "20261121-0237",
+   "sha256": "b8b04153b0fd012575509fd8ddddab0bb17d530e49429da819e85cb5128e14b1",
+   "savedAt": "2026-11-21T02:37:49Z",
+   "by": "jycritchley",
+   "how": "published from the test copy"
   }
  ],
  "history": [
@@ -555,6 +562,13 @@
    "action": "publish",
    "version": "20261121-0232",
    "replaced": "20261121-0213"
+  },
+  {
+   "at": "2026-11-21T02:37:49Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261121-0237",
+   "replaced": "20261121-0232"
   }
  ]
 }
