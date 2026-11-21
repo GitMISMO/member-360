@@ -332,3 +332,8 @@ The relay saves and reads back a file of about 1 MB at most. The whole text of a
 
 
 The relay refuses a single save that takes too much out of a file at once (a safety rule), so `m360Archive` clears two emails a save with a short pause, re-reading mailin each time, and stops for the day if a save is still refused after three tries. It also marks its daily run before starting, so a refusal never repeats all day (Jonna chose this over changing the relay, Nov 21, 2026). Archive copies are saved under `m360ArchId(id)` because mailin ids contain a slash.
+
+
+## New Members Report by Join Date (Nov 21, 2026)
+
+Jonna: the New Members page should be the new members for the month she picks, not the deals the team logged ("committed"). `nmRows(useFilters, month)` builds one row per new member from `memberJoins()` for the month in `dl-month` (or the twelve months through this one when none is picked, `nmBack()`). A join with a New Member deal within 120 days (`nmDeal`) uses the deal: price, terms, term dates, `dealPaid`, `by` and its AP status. A join with no deal gets its amount from the Financial System (`nmPay`: membership or Square payments near the join date; for IIF lenders every IIF payment that calendar year), or the level's price (`listPrice`, or `iifMin()` for IIF) when nothing has come in, and AP status "No AP Needed". `renderDeals`, the tiles, the headline, `m3dDress` (Dollars by Level, Paid in the Financial System) and `paidNotReported` all read `nmRows`, and `dealsShown()` is now the deals among those rows, so Download for AP and Mark Shown as Sent to AP still only touch deals. `m3jDress` keeps the month chart but no longer draws the separate Joined In list.
