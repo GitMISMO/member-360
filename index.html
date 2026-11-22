@@ -6443,7 +6443,7 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}try{iivRende
       say="The "+Y+" cycle has collected "+em(Math.round(100*paid/Math.max(1,inv))+"%")+" of what was invoiced. "+em(money(Math.round(out)))+" is still outstanding"+(bn?", and "+em(plural(bn,"lender","lenders"))+" with invoices of $20,000 or more owe "+em(money(Math.round(bo)))+" of it":"")+".";}
     else say="Only Financial System payments exist for "+Y+", so there's no invoice to compare against. "+em(plural(L.length,"lender","lenders"))+" paid, and "+em(n(members))+" paid enough to be members.";
     if(IIFYI===0&&nxk)say+=" Next for the "+IYN()+" cycle: "+em(nxk[1].split(" ").map((w,i,a)=>i&&i<a.length-1&&/^(a|an|the|and|or|to|of|in|on|at|by|for|with|from)$/.test(w)?w:w.replace(/(^|[-(])([a-z])/g,(m,p,c)=>p+c.toUpperCase())).join(" "))+" on "+fmtS(nxk[0])+".";
-    hl("iif","IIF "+Y+" Cycle"+(IIFYI===0?" · Planning Starts in October; Invoices Go Out in February":""),say);}
+    hl("iif","IIF "+Y+" Cycle"+(IIFYI===0?" · Planning Starts in October; Invoices Go Out in Late January":""),say);}
   const s=$("iif-os");if(!s.childElementCount){s.appendChild(h("option",{value:""},"All Outreach Statuses"));OUTREACH.forEach(x=>s.appendChild(h("option",{value:x},x)));}
 }
 function renderList(list){

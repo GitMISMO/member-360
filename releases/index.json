@@ -1,5 +1,5 @@
 {
- "live": "20261122-2220",
+ "live": "20261122-2252",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -378,6 +378,13 @@
    "savedAt": "2026-11-22T22:20:49Z",
    "by": "jycritchley",
    "how": "published from the test copy: Oct-Dec joiners through next year, old-form apps on Home, Comped, IIF Cycle header, key dates, Planning HQ link"
+  },
+  {
+   "version": "20261122-2252",
+   "sha256": "6cdfee1bc26abe73741a1edded948810ee1b8ba0869b5634a7d807d9eea1d17d",
+   "savedAt": "2026-11-22T22:52:24Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: IIF summary: invoices go out in late January"
   }
  ],
  "history": [
@@ -751,6 +758,13 @@
    "action": "publish",
    "version": "20261122-2220",
    "replaced": "20261122-2143"
+  },
+  {
+   "at": "2026-11-22T22:52:24Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2252",
+   "replaced": "20261122-2220"
   }
  ]
 }
