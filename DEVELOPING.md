@@ -368,9 +368,19 @@ In Member 360 (`IIV`, `iiv…` functions in the page):
 - **Expected** comes from the Aptify pull: every Innovation Investment Fee order (Quotation or Regular, not
   cancelled) in the Orders sheet, kept in `aptify/iifq` (`q: {orderId: [companyId, amount, orderDate, Q|R, name]}`)
   and replaced with each pull. The cycle is the order date's year.
-- **Matching:** by invoice number first (any number in the copy that is one of the quotations, then a labeled
-  number); otherwise by the To address to a contact here to one company, then that company's quotation for the year.
-  `IIV_PARSE` is a **placeholder** until Erin's sample copies confirm the subject line; change only it.
+- **Invoice number (confirmed Nov 22, 2026):** the email body says "Innovation Investment Fee (IIF) invoice #" and a
+  7-digit number, which is the Aptify order ID of the lender's IIF quotation. Checked: 6208839 (Erin's sample) is PHH
+  Mortgage's FY26 IIF quotation in the Aptify pull; 34 of the 35 FY26 invoice PDFs on the Q Drive
+  (MISMO/Active Documents/Innovation Investment Fee/2026) that show "Invoice No" are IIF orders in the pull (the 35th
+  is a 2025 order); and 97 of 98 FY26 IIF payments in MISMO Money carry an IIF order number in the pull (the 98th was
+  paid after that pull). The PDF reads "Invoice No : 6208839 … Current Invoice Amount" and also shows the 7-digit MERS
+  ORG ID, so a bare 7-digit number is only trusted when it is one of the quotations (`IIV_PARSE`).
+- **Matching:** invoice number first; then the To address to a contact here to one company and that company's
+  quotation for the year; then the PDF's name (an Aptify company ID, then the lender's exact name; last cycle's were
+  "<Lender> 2026 MISMO IIF Invoice" and "<Lender> - 2026 IIF Invoice - <company ID>"). Run against last cycle's 3,376
+  IIF orders: invoice number 3,376 of 3,376; with the number removed, email 3,041 right and none wrong.
+- **Test copies:** a workbook with "test" in its name (for example `fy27-test-index.xlsx` for IT's end-to-end test)
+  marks its rows `t: 1`. They stay out of the counts and payment matching unless Show Test Copies is selected.
 - **Payments:** matched invoice numbers feed payment matching (`iivOrgOf`, used by `mmMatcher` and
   `payerResolved`), so a payment against the invoice is credited to the lender and the IIF benefits apply.
 - **Bounce reports:** Upload Bounce Report on the IIF Cycle page reads IT's export (CSV or Excel; placeholder
