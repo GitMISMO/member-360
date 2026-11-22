@@ -9659,7 +9659,8 @@ function appMatch(a){const nz=s=>String(s||"").toLowerCase().replace(/&/g," and 
   const names=[a.company,a.dba].map(nz).filter(Boolean);let L=one(live.filter(o=>names.includes(nz(o.name))));if(L.length===1)return {o:L[0],how:"company name"};
   const ppl=appPeople(a),em=ppl.map(p=>p.email).filter(Boolean);
   L=one(live.filter(o=>(o.people||[]).some(p=>em.includes(String(p.email||"").toLowerCase().trim()))));if(L.length===1)return {o:L[0],how:"a contact's email"};
-  const dom=[...new Set(em.map(e=>e.split("@")[1]).filter(d=>d&&!P360_FREE.test(d)).concat(siteDom(a.website)?[siteDom(a.website)]:[]))];
+  /* MISMO's and MBA's own domains never match an applicant to a company (a test application used mismo.org; Jonna, Nov 22, 2026) */
+  const dom=[...new Set(em.map(e=>e.split("@")[1]).filter(d=>d&&!P360_FREE.test(d)).concat(siteDom(a.website)?[siteDom(a.website)]:[]))].filter(d=>!/^(www\.)?(mismo|mba)\.org$/i.test(d));
   if(dom.length){L=one(live.filter(o=>(o.people||[]).some(p=>dom.includes(String(p.email||"").toLowerCase().split("@")[1]||"-"))||(siteDom(siteOf(o))&&dom.includes(siteDom(siteOf(o))))));if(L.length===1)return {o:L[0],how:"a contact's email domain"};}
   const nm=ppl.map(p=>p.name).filter(n=>n&&n.includes(" "));
   if(nm.length){L=one(live.filter(o=>(o.people||[]).some(p=>nm.includes(String(p.name||"").toLowerCase().replace(/\s+/g," ").trim()))));if(L.length===1)return {o:L[0],how:"a contact's name"};}
