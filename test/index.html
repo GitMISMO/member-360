@@ -1271,6 +1271,8 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 @media(max-width:760px){.rv{grid-template-columns:1fr}.rv .btnrow{margin-top:0!important}}
 .kd{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .kd .kdi{border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--surface-2);min-width:130px;flex:1 1 130px}
+/* key dates fill their rows evenly: no long, mostly empty last box (Jonna, Nov 22, 2026) */
+.kd.bal .kdi{flex:1 1 calc((100% - (var(--kdc) - 1) * 8px) / var(--kdc));min-width:0}
 .kd .kdi.soon{border-color:var(--c4);box-shadow:inset 3px 0 0 var(--c4)}
 .kd .kdi.past{opacity:.55}
 .kd .kdi b{display:block;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);font-weight:600}
@@ -6430,7 +6432,8 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}try{iivRende
     x=>{if(selK===x.k)iifPick(null,"","");else iifPick(null,x.k.slice(3),"");},selK);
   const kd=$("iif-dates");kd.textContent="";
   KEYDATES.forEach(([d,l,dn])=>{const days=Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);
-    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":"In "+n(days)+" days")));});
+    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":days===1?"Tomorrow":"In "+n(days)+" days")));});
+  iifKdBalance();
   const ir=$("iif-right");ir.textContent="";ir.hidden=false;
   /* sits on the same line as the intro, same size (Jonna, Nov 22, 2026) */ir.appendChild(h("div",{class:"hint",style:"margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)"},"Planning starts in October; invoices go out in February"+(KEYSRC?". Key dates come from IIF Planning HQ.":"")));
   
@@ -8712,6 +8715,8 @@ function m3hData(){
   const iss=Number(((document.getElementById("pip-issues")||{}).textContent||"0").replace(/[^0-9]/g,""))||0;
   let sum=null;try{sum=nextEvent("Summit");}catch(e){}
   return {ics,Y,A,K,champ,Dd,ren,pip,lost,todo,nmMo,nmYr,inv,paid,iifMem,L,newIif,pros,ps,npw,ws,tpw,days,coW,fus,acts,iss,sum};}
+function iifKdBalance(){const kd=$("iif-dates");if(!kd)return;const k=kd.children.length;if(!k)return;const w=kd.clientWidth||1100,per=Math.max(1,Math.floor((w+8)/146)),rows=Math.ceil(k/per),cols=Math.ceil(k/rows);kd.classList.add("bal");kd.style.setProperty("--kdc",String(cols));}
+window.addEventListener("resize",()=>{try{iifKdBalance();}catch(e){}});
 function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;const S=m3hData();root.textContent="";const NB=String.fromCharCode(160);
   const hr=new Date().getHours(),gr=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening",first=String(myName()||"").split(" ")[0];
   const em=(t,tab,cls)=>{const a=h("a",{href:"#",class:"m3h-em"+(cls?" "+cls:"")},t);a.addEventListener("click",m3hGo(tab));return a;};
