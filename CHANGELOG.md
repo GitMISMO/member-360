@@ -9,6 +9,12 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-22
 
+- Membership applications: since Nov 20 every application failed after saving (the dues-deal lookup in the application flow broke), so membership@ got no email and the applicant was told it hadn't gone through. Fixed; a problem with the logo or the dues-deal lookup can no longer stop the membership email or the applicant's confirmation. Doss Docs' application was sent to membership@ again. Jonna and Vanessa are now copied on each application email.
+- An application from a company Member 360 doesn't have yet is added as a prospect (source: Membership application) at 7 - Application Submitted. MISMO's and MBA's own domains never match an application to a company.
+- Open the Application (PDF) on the company record (Logo, Website and Payments) and on the Membership Desk set-up: every application gets a PDF copy with its logo.
+- New member set-ups no longer show an unpaid application's price as Amount Paid.
+- Complimentary Membership on the record (Stage, owner and outreach settings): in kind, comped or subsidiary. It counts as Free, is never chased for payment, and shows as Complimentary on New Members and the Membership Desk. John Stoner and Thomas Sitzler marked Comped.
+- Member 360 emails and the 360@ mailbox were down from Nov 20 (their GitHub key stopped working); the key was replaced Nov 22.
 - IIF Invoice Copies: the invoice number is confirmed as the Aptify order ID of the lender's IIF quotation (from Erin's sample copies); the lender's email, then the company ID or name in the PDF's file name, are the fallbacks. Copies received before Jan 26, 2027 (IT's end-to-end test) count as test copies, kept out of the counts and payments.
 - Elections HQ is now Leadership HQ: the one mention here, a style comment, is renamed. Nothing on the page changes; the elections-hq address stays.
 - IIF Cycle: FY27 Invoice Copies. The invoice copies MERS sends to invfee@ (from Jan 27, 2027) are matched to each lender’s IIF quotation from the Aptify pull, by invoice number or by the lender’s email. The page shows what’s expected, received, missing, bounced and not matched, with a link to each Q Drive PDF, and Download This List. Upload Bounce Report takes IT’s export of failed messages. Matched invoices feed payment matching. Only the list comes in, never a PDF.

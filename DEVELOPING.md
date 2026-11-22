@@ -393,3 +393,17 @@ In Member 360 (`IIV`, `iiv…` functions in the page):
   each lender with its status, invoice, amount, received date, mailbox and a link to the PDF, or Copy Q Drive Path
   when the link isn't a web address; Download This List). On This Year it shows the newest cycle from FY27 on once
   its quotations or copies arrive (`IIV_FROM`).
+
+## Membership Applications (Nov 22, 2026)
+
+The chain, end to end (an application is never lost: it is saved before anything else runs):
+
+1. resources.mismo.org/member-360/apply/ posts to the flow **MISMO Membership Application - Submission**.
+2. The flow saves it to `data/applications.json` (one doc per reference; a resubmit replaces it, never duplicates), then the logo to `data/logos/<id>.<ext>`, reads `data/quotes.json` for a dues deal, sends the branded email to membership@ (copied: Amy, Kelly, Jonna, Vanessa), then answers the page. Read quotes, Deal rows and Build the rows run even if the step before failed, so the logo or the deal lookup can never stop the email. Lesson (Nov 20 to 22): `createArray()` with no arguments is invalid in Power Automate and failed every application; use `json('[]')`.
+3. GitHub job **Membership Application PDFs** (`member-360-data`, `application-pdfs.yml`, `scripts/m360_application_pdfs.py`) writes `data/application-pdfs/<id>.pdf` (with the logo) and `index.json` on each application or logo save. A run that loses the race to the other save resets to the newest main and makes the PDFs again.
+4. Member 360 (`m360AppRun`) matches the application to a company (never by MISMO's or MBA's domains) or adds a new prospect (`appNewProspect`: last 60 days, only when nothing could be the company), sets 7 - Application Submitted, brings over the website and logo. `appPdfOpen` opens the PDF.
+5. The Membership Desk's To Do is written by Member 360 (`deskSync`) whenever someone has Member 360 open; the set-up shows Open the Application (PDF) (`deskAppPdf`). The email to membership@ is the immediate notice.
+
+To take a test application out of Member 360 and the Desk, set `test: true` and `withdrawn: true` on it in `data/applications.json`; the record and its PDF stay.
+
+**Complimentary memberships:** `comp: {why, years, by, at}` on the record's overrides (Complimentary Membership in Stage, owner and outreach settings). `curStatus` returns FREE for those years, so `memKind` is Free everywhere; `nmRows` shows them as Complimentary, $0; the Desk says Complimentary: no invoice. Older free members carry FREE from the Smartsheet tracker.
