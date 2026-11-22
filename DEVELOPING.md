@@ -349,13 +349,14 @@ intake; nothing else hooks into Member 360. **Only the index comes in, never a P
 How the copies get here (the contract is in the Connections Map):
 
 1. Flow **Member 360 - IIF Invoice Copies** (one copy per mailbox, on Jonna's license; concurrency 1) saves each PDF
-   to the Q Drive folder "IIF FY27 Invoices" and adds one row per PDF to the table **Copies** in the workbook
-   **IIF FY27 Invoice Index.xlsx** (Jonna's OneDrive). Columns, read by name (add, never rename): Received, Mailbox,
+   to the Q Drive folder "IIF FY27 Invoices" and adds one row per PDF to the table **Copies** in its own mailbox's
+   workbook, `fy27-index-1.xlsx` to `fy27-index-5.xlsx` in the OneDrive folder "IIF FY27 Invoice Index" (one workbook per
+   mailbox, so the five flows never write to the same file). Columns, read by name (add, never rename): Received, Mailbox,
    To, Subject, Body, Invoice Number, Amount, PDF Name, PDF Link, Message ID. Received, To and PDF Link are required.
    Invoice Number and Amount may be left blank: Member 360 reads them from Subject and Body.
 2. Flow **Member 360 - IIF Invoice Index to GitHub** (every 30 minutes, on its own GitHub key, member-360-data only)
-   saves that workbook to `member-360-data/data/iif-invoices/fy27-index.xlsx` (one save, not one per email, so
-   GitHub's limits are never hit).
+   saves each workbook changed since its last run to `member-360-data/data/iif-invoices/<same name>` (a few
+   saves an hour, not one per email, so GitHub's limits are never hit).
 3. GitHub job **IIF Invoice Copies** (`iif-invoices.yml`, `scripts/m360_iif_invoices.py`) reads every workbook in
    `data/iif-invoices/` and writes `data/iifinv.json` (doc `iifinv/main`: parts, rows, updatedAt, files, mailboxes,
    problems) and `data/iifinv-p0.json`, `-p1` and so on (`{rows:[{id, r, mb, to, s, b, inv, amt, fn, url, mid}]}`,
