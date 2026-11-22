@@ -9,6 +9,8 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-22
 
+- IIF Invoice Copies: the invoice number is confirmed as the Aptify order ID of the lender's IIF quotation (from Erin's sample copies); the lender's email, then the company ID or name in the PDF's file name, are the fallbacks. Copies received before Jan 26, 2027 (IT's end-to-end test) count as test copies, kept out of the counts and payments.
+- Elections HQ is now Leadership HQ: the one mention here, a style comment, is renamed. Nothing on the page changes; the elections-hq address stays.
 - IIF Cycle: FY27 Invoice Copies. The invoice copies MERS sends to invfee@ (from Jan 27, 2027) are matched to each lender’s IIF quotation from the Aptify pull, by invoice number or by the lender’s email. The page shows what’s expected, received, missing, bounced and not matched, with a link to each Q Drive PDF, and Download This List. Upload Bounce Report takes IT’s export of failed messages. Matched invoices feed payment matching. Only the list comes in, never a PDF.
 - Membership application (apply/): the header now matches the www.mismo.org Home page (no dark shading, no small blue label above the title) and the Log In link is gone from the top bar.
 

@@ -380,7 +380,9 @@ In Member 360 (`IIV`, `iiv…` functions in the page):
   "<Lender> 2026 MISMO IIF Invoice" and "<Lender> - 2026 IIF Invoice - <company ID>"). Run against last cycle's 3,376
   IIF orders: invoice number 3,376 of 3,376; with the number removed, email 3,041 right and none wrong.
 - **Test copies:** a workbook with "test" in its name (for example `fy27-test-index.xlsx` for IT's end-to-end test)
-  marks its rows `t: 1`. They stay out of the counts and payment matching unless Show Test Copies is selected.
+  marks its rows `t: 1`, and so does every copy received before `IIV_LIVE` (2027-01-26), since IT's end-to-end test
+  (by Jan 8, 2027) runs through the real mailboxes. They stay out of the counts and payment matching unless Show Test
+  Copies is selected. Move `IIV_LIVE` only if MERS's send date moves.
 - **Payments:** matched invoice numbers feed payment matching (`iivOrgOf`, used by `mmMatcher` and
   `payerResolved`), so a payment against the invoice is credited to the lender and the IIF benefits apply.
 - **Bounce reports:** Upload Bounce Report on the IIF Cycle page reads IT's export (CSV or Excel; placeholder
