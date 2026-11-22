@@ -9,6 +9,13 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-22
 
+- Home: On Your Plate shows only the signed-in person's own follow-ups. A New Applications tile (this month, names, how many still to set up) replaces Outreach This Week, and Team Activity is off Home (it stays in Activity).
+- Applications: each applicant gets a "We've received your application" email from Jonna's mailbox (replies go to membership@). Jonna, alone, gets an alert when an application doesn't save or the membership@ email doesn't send. The thank-you page now says the membership team sends the invoice to the Billing Contact.
+- The Membership Desk gets its own copy of the applications and their PDFs, so a new application reaches its To Do without Member 360 open, and the team opens the PDF with Desk access only.
+- New members: a non-lender membership starting Oct 1 or later runs through Dec 31 of the next year (deal defaults and Desk set-up dates). IIF lenders unchanged.
+- Richey May and Vision VMC (old Smartsheet form, Nov 16 and 19) count on the New Applications tile; old-form entries get no prospect, Desk item or PDF.
+- "Comped" instead of "Complimentary" on New Members, the membership journey and the Desk.
+- IIF Cycle: the header line sits beside the intro, links to IIF Planning HQ and says invoices go out in late January; key dates fill their rows evenly; "Tomorrow" instead of "In 1 days".
 - Membership applications: since Nov 20 every application failed after saving (the dues-deal lookup in the application flow broke), so membership@ got no email and the applicant was told it hadn't gone through. Fixed; a problem with the logo or the dues-deal lookup can no longer stop the membership email or the applicant's confirmation. Doss Docs' application was sent to membership@ again. Jonna and Vanessa are now copied on each application email.
 - An application from a company Member 360 doesn't have yet is added as a prospect (source: Membership application) at 7 - Application Submitted. MISMO's and MBA's own domains never match an application to a company.
 - Open the Application (PDF) on the company record (Logo, Website and Payments) and on the Membership Desk set-up: every application gets a PDF copy with its logo.

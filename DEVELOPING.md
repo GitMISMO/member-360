@@ -407,3 +407,11 @@ The chain, end to end (an application is never lost: it is saved before anything
 To take a test application out of Member 360 and the Desk, set `test: true` and `withdrawn: true` on it in `data/applications.json`; the record and its PDF stay.
 
 **Complimentary memberships:** `comp: {why, years, by, at}` on the record's overrides (Complimentary Membership in Stage, owner and outreach settings). `curStatus` returns FREE for those years, so `memKind` is Free everywhere; `nmRows` shows them as Complimentary, $0; the Desk says Complimentary: no invoice. Older free members carry FREE from the Smartsheet tracker.
+
+Later on Nov 22, 2026:
+
+- Applicant email: the flow's Compose **Applicant email** builds it from the application. **Email the applicant** sends it after Response (Jonna's Outlook connection, Reply To membership@). It runs only when Response succeeded, so a resubmit never re-emails the applicant. **Is this an applicant email resend** (right after the Compose): a POST of a saved application with `action: "applicant-email"` sends only that email, answers and stops. That's how one applicant gets it again.
+- Failure alert: **Did the submission have a problem** runs after Email the applicant on any status. If Save the application or the membership@ email (Send an email (V2)) didn't succeed, **Alert Jonna** emails Jonna only, with a link to the run.
+- Desk copy: the last step of `application-pdfs.yml` copies `data/applications.json` (tests removed with jq) and their PDFs to `membership-desk-data` with the secret DESK_DATA_KEY (Jonna's fine-grained key, Contents read and write on that repo only, expires Nov 23, 2027). With no secret it skips with a warning.
+- Old Smartsheet form entries: docs with `oldForm: true` (ids `OLD-...`) are counted on Home's New Applications tile (M360_OLDAPPS) and nowhere else. m360Apps leaves them out of M360_APPS, the PDF script skips them, and the Desk skips them.
+- Late joiners: dealDefaults and deskSetupFor end a non-lender new membership that starts in October or later on Dec 31 of the next year. The Desk's own application set-ups do the same.
