@@ -12,7 +12,7 @@ One line per change people would notice. Newest first.
 - Home: On Your Plate shows only the signed-in person's own follow-ups. A New Applications tile (this month, names, how many still to set up) replaces Outreach This Week, and Team Activity is off Home (it stays in Activity).
 - Applications: each applicant gets a "We've received your application" email from Jonna's mailbox (replies go to membership@). Jonna, alone, gets an alert when an application doesn't save or the membership@ email doesn't send. The thank-you page now says the membership team sends the invoice to the Billing Contact.
 - The Membership Desk gets its own copy of the applications and their PDFs, so a new application reaches its To Do without Member 360 open, and the team opens the PDF with Desk access only.
-- New members: a non-lender membership starting Oct 1 or later runs through Dec 31 of the next year (deal defaults and Desk set-up dates). IIF lenders unchanged.
+- New members: a full-price membership starting Oct 1 or later runs through Dec 31 of the next year, lender or not (deal defaults and Desk set-up dates). A deal (below list price, a dues deal or a Square special) keeps its own dates.
 - Richey May and Vision VMC (old Smartsheet form, Nov 16 and 19) count on the New Applications tile; old-form entries get no prospect, Desk item or PDF.
 - "Comped" instead of "Complimentary" on New Members, the membership journey and the Desk.
 - IIF Cycle: the header line sits beside the intro, links to IIF Planning HQ and says invoices go out in late January; key dates fill their rows evenly; "Tomorrow" instead of "In 1 days".
