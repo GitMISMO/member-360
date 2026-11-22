@@ -3807,7 +3807,7 @@ function p360Dress(o,box){
     have.forEach(part=>{const d=secs[part];if(part!=="draft")d.open=true;p.appendChild(d);});});
   /* overview: status card, next up, three summary cards, key contacts, recent activity, company details */
   const ovp=panels.overview,card=h("section",{class:"p360-card p360-status"},h("div",{class:"p360-steps-wrap"}),h("div",{class:"p360-touch-wrap"}));
-  if(ctrls){const set=h("details",{class:"p360-set"},h("summary",null,o.life==="Prospect"?"Sales details and owner":"Stage, owner and outreach settings"));set.appendChild(ctrls);card.appendChild(set);}
+  if(ctrls){const set=h("details",{class:"p360-set"},h("summary",null,o.life==="Prospect"?"Sales details and owner":"Stage, owner and outreach settings"));set.appendChild(ctrls);try{if(o.life!=="Prospect")set.appendChild(compCtl(o));}catch(e){console.error("comp",e);}card.appendChild(set);}
   if(reasons)card.appendChild(reasons);
   ovp.appendChild(card);ovp.appendChild(h("div",{class:"p360-next-wrap"}));ovp.appendChild(h("div",{class:"p360-three"}));
   ovp.appendChild(h("section",{class:"p360-card p360-list p360-people"}));ovp.appendChild(h("section",{class:"p360-card p360-list p360-recent"}));
@@ -7813,7 +7813,22 @@ async function saveSet(patch){
 /* ---------- navigation ---------- */
 
 /* ---------- membership stats ---------- */
-function curStatus(o){const y=String(RY-1);const hs=o.hist.find(x=>String(x.y)===y&&!x.a);return hs?hs.status||"":"";}
+/* a membership marked Complimentary on the record (in kind, comped or a subsidiary; Jonna, Nov 22, 2026) counts as FREE for its years */
+/* Complimentary memberships (Jonna, Nov 22, 2026): in kind, comped or covered by a parent. They never show as paid in
+   MISMO Money, so the record says so: Member 360 counts the company as Free, never chases a payment for it, the Membership
+   Desk shows "Complimentary: no invoice", and the renewal says to set up the free membership. Saved on the record as
+   comp: {why, years, by, at}; the older free members carry FREE from the Smartsheet tracker instead. */
+function compCtl(o){const y=String(RY-1),ny=String(RY),c=(ov(o)||{}).comp||{},yrs=(c.years||[]).map(String);
+  const sel=h("select",null,...[["","No: a paid membership"],["In kind","In kind"],["Comped","Comped"],["Subsidiary","Subsidiary (covered by the parent)"]].map(x=>h("option",{value:x[0]},x[1])));
+  sel.value=yrs.includes(y)?(c.why||""):"";const nx=h("input",{type:"checkbox"});nx.checked=yrs.includes(ny);const msg=h("span",{class:"hint"});
+  const save=()=>{const why=sel.value;msg.textContent="Saving…";
+    saveOv(o.k,{comp:why?{why,years:[y].concat(nx.checked?[ny]:[]),by:ME||"",at:new Date().toISOString().slice(0,10)}:null}).then(()=>{msg.textContent=why?"Saved: counted as Free.":"Saved.";});};
+  sel.addEventListener("change",save);nx.addEventListener("change",save);
+  const old=!yrs.includes(y)&&/^free/i.test(curStatus(o)||"");
+  return h("div",{class:"p360-comp",style:"margin-top:12px"},h("label",{style:"display:block;font-weight:600;margin-bottom:4px"},"Complimentary Membership ("+y+")"),sel,
+    h("label",{style:"display:flex;gap:6px;align-items:center;margin-top:6px"},nx,"Also free for "+ny),
+    h("div",{class:"hint",style:"margin-top:4px"},old?"Already free in the membership tracker.":"Free memberships never show as paid: Member 360 counts them as Free and never chases a payment."),msg);}
+function curStatus(o){const y=String(RY-1);{const c=(ov(o)||{}).comp;if(c&&c.why&&(c.years||[]).map(String).includes(y))return "FREE";}const hs=o.hist.find(x=>String(x.y)===y&&!x.a);return hs?hs.status||"":"";}
 /* free first, then the member type; when the type is blank, the status says it: "(Lender)" or InvFee means a lender, anything else a non-lender */
 function memKind(o){const s=curStatus(o);if(/^free/i.test(s))return "Free";if(o.type==="Lender")return "Lender";if(o.type==="Non-Lender")return "Non-Lender";
   if(/\(lender\)|invfee/i.test(s))return "Lender";if(s||o.life==="Active")return "Non-Lender";return "Type Not Recorded";}
@@ -10979,7 +10994,7 @@ function deskSetupFor(x,kind){
   const parentContacts=(!contacts.length&&par)?(par.people||[]).filter(p=>(p.roles||[]).some(r=>/primary|billing/i.test(r))).map(p=>({role:(p.roles||[]).join(", ")+" at "+par.name,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||""})):[];
   /* how it was paid */
   let payment=null;
-  if(kind==="free")payment={how:"Complimentary: no invoice"+(par?" (a subsidiary of "+par.name+")":"")};
+  if(kind==="free"||(o&&/^free/i.test(curStatus(o)||"")))payment={how:"Complimentary: no invoice"+(o&&(ov(o)||{}).comp&&ov(o).comp.why?", "+String(ov(o).comp.why).toLowerCase():"")+(par?" (a subsidiary of "+par.name+")":"")};
   else if(kind==="iif"&&o){let n=0;try{n=Math.round(lendPaid(o,IY));}catch(e){}payment={how:"Innovation Investment Fund (IIF)",amount:n,date:x.paid||""};}
   else{const d=o?DEALS.filter(z=>z.org===o.k&&z.type==="New Member"&&!z.archived).sort((a,b)=>String(b.sold||"").localeCompare(String(a.sold||"")))[0]:null;let p=null;try{p=d?dealPaid(d):null;}catch(e){}
     /* Amount Paid only when money has come in (Jonna, Nov 22, 2026): an application alone is not a payment, so it no longer shows its price as paid */
