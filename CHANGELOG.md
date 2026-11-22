@@ -7,6 +7,10 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-22
+
+- Membership application (apply/): the header now matches the www.mismo.org Home page (no dark shading, no small blue label above the title) and the Log In link is gone from the top bar.
+
 ## 2026-11-21
 
 - New Members: the whole page is now about who joined in the month you pick (it opens on this month). The table lists every new member by join date, not only deals logged here, with what each is worth, whether they've paid and an AP status (No AP Needed for members already in Aptify or set up through Square). Dollars by Level and Paid in the Financial System count the same members. The month list reads New Members in (not Committed in), All Months is now Last 12 Months, and the separate Joined In list is gone because the table shows them.
