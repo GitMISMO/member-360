@@ -7631,6 +7631,8 @@ function nmRows(useFilters,month){dealFixAll();const m=month!==undefined?month:$
       r={j,d:null,o,date:j.d,name:(o&&o.name)||j.orgName||"",level:lv,terms:j.srcs.some(x=>x==="Dues Deal")?"Dues Deal":"Standard",start:useP?(pi.s||pay.d||""):(t?t.s:""),end:useP?(pi.e||""):(t?(t.e||""):""),
         amt:pay?Math.round(pay.n*100)/100:(j.kind==="iif"?iifMin():listPrice(lv)),paid:pay?{d:pay.d,n:pay.n,o:pay.o}:null,by:o?owner(o):"",ap:"No AP Needed",
         why:j.kind==="sq"?"set up through Square":"already in Aptify"};}
+    /* a complimentary membership (in kind, comped, subsidiary) owes nothing: $0 and never Not Paid Yet (Jonna, Nov 22, 2026) */
+    if(!r.paid&&o&&/^free/i.test(curStatus(o)||"")){r.amt=0;r.paid={d:"",n:0,o:"",free:((ov(o)||{}).comp&&ov(o).comp.why)||"Complimentary"};}
     if(f.ap&&r.ap!==f.ap)return;if(f.by&&r.by!==f.by)return;if(f.tm&&r.terms!==f.tm)return;if(f.pd&&(f.pd==="paid")!==!!r.paid)return;out.push(r);});
   return out.sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));}
 /* the deals AP needs: the ones on the report as it's filtered now */
@@ -7694,7 +7696,7 @@ function renderDeals(){dealFixAll();
     const diff=d&&p&&Math.abs(p.n-(d.price||0))>1,ids=[d&&d.cid?"ID "+d.cid:(o&&o.cid?"ID "+o.cid:""),d&&d.order?"Order "+d.order:(p&&p.o?"Order "+p.o:"")].filter(Boolean).join(" · ");
     const row=h("div",{class:"dlrow",role:"button",tabindex:"0",title:"Open the member record"},h("span",{class:"num"},fmt(r.date.slice(0,10))),h("span",{class:"nm"},r.name,h("small",null,ids)),
       h("span",null,MJ_KIND[r.j.kind].lab,h("small",null,r.level+" · "+r.terms)),h("span",null,r.start?nmMon(r.start)+" to "+(r.end?nmMon(r.end):"—"):"—",h("small",null,m?m+" months":(r.start?"":"no term yet"))),h("span",{class:"num"},money(r.amt||0),!d&&!p?h("small",null,"level price"):null),h("span",{class:"num"},m?money(Math.round((r.amt||0)/m*100)/100):"—"),
-      h("span",null,p?h("span",{class:"pill c-full"},"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
+      h("span",null,p?h("span",{class:"pill c-full"},p.free?"Complimentary":"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
       h("span",null,r.by||h("span",{class:"muted"},"—")));
     const go=()=>{if(o&&BY[o.k])openPane(o.k);};row.addEventListener("click",go);row.addEventListener("keydown",e=>{if(e.key==="Enter")go();});box.appendChild(row);});
   $("dl-count").textContent=n(L.length)+(L.length===1?" new member":" new members");

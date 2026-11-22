@@ -1,5 +1,5 @@
 {
- "live": "20261122-2031",
+ "live": "20261122-2040",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -343,6 +343,13 @@
    "savedAt": "2026-11-22T20:31:49Z",
    "by": "jycritchley",
    "how": "published from the test copy: Complimentary Membership setting on the record"
+  },
+  {
+   "version": "20261122-2040",
+   "sha256": "c596c998f7832850964cc0c1a834b204ce9cc74501bf8df3930dabe6ae60fcce",
+   "savedAt": "2026-11-22T20:40:33Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: New Members: complimentary memberships show as Complimentary"
   }
  ],
  "history": [
@@ -681,6 +688,13 @@
    "action": "publish",
    "version": "20261122-2031",
    "replaced": "20261122-2017"
+  },
+  {
+   "at": "2026-11-22T20:40:33Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2040",
+   "replaced": "20261122-2031"
   }
  ]
 }
