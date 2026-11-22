@@ -7478,7 +7478,7 @@ function iifStart(d){return String(d||TODAY).slice(0,7)+"-01";}
 function joinStart(o,d){return o&&o.type==="Lender"?iifStart(d):levelSetStart(d);}
 function dealDefaults(type,terms,sold,o){const extra=terms==="Dues Deal"?1:0;
   if(type==="Renewal"){const y=Number(RY);return {start:y+"-01-01",end:(y+extra)+"-12-31"};}
-  const st=type==="New Member"?joinStart(o,sold):levelSetStart(sold);/* a non-lender new membership starting Oct 1 or later runs through Dec 31 of the next year (Jonna, Nov 22, 2026) */const late=type==="New Member"&&!(o&&o.type==="Lender")&&Number(st.slice(5,7))>=10?1:0;return {start:st,end:(Number(st.slice(0,4))+extra+late)+"-12-31"};}
+  const st=type==="New Member"?joinStart(o,sold):levelSetStart(sold);/* a full-price new membership starting Oct 1 or later runs through Dec 31 of the next year, lender or not; a deal sets its own dates (Jonna, Nov 22, 2026) */const late=type==="New Member"&&terms!=="Dues Deal"&&Number(st.slice(5,7))>=10?1:0;return {start:st,end:(Number(st.slice(0,4))+extra+late)+"-12-31"};}
 function dealsOf(o){return DEALS.filter(d=>d.org===o.k).sort((a,b)=>(b.sold||"").localeCompare(a.sold||""));}
 function dealLine(d){const m=monthsIn(d.start,d.end);return [d.level,fmt(d.start)+" to "+fmt(d.end)+" ("+m+" months)",money(d.price||0)].join(" · ");}
 /* has the Financial System received the membership payment behind a commitment? */
@@ -11012,7 +11012,7 @@ function deskSetupFor(x,kind){
   let start=x.start||"",end=x.end||"";
   if(!start){const from=String(x.paid||x.sold||(o&&o.created)||String(v.updatedAt||"").slice(0,10)||TODAY).slice(0,10);
     start=(kind==="iif"||(o&&o.type==="Lender"&&kind!=="free"))?from.slice(0,7)+"-01":levelSetStart(from);}
-  if(!end){end=(kind==="free"&&par&&par.thru&&String(par.thru)>=start)?String(par.thru).slice(0,10):(Number(start.slice(0,4))+(kind==="members"&&!(o&&o.type==="Lender")&&Number(start.slice(5,7))>=10?1:0))+"-12-31";}/* a new non-lender membership starting Oct 1 or later runs through the next year (Jonna, Nov 22, 2026) */
+  if(!end){end=(kind==="free"&&par&&par.thru&&String(par.thru)>=start)?String(par.thru).slice(0,10):(Number(start.slice(0,4))+(kind==="members"&&Number(start.slice(5,7))>=10&&!/square/i.test(x.special||"")&&!(+x.price>0&&listPrice(x.level)>0&&+x.price<listPrice(x.level))?1:0))+"-12-31";}/* a full-price new membership starting Oct 1 or later runs through the next year, lender or not; a deal (below list price, or a Square special) keeps its own dates (Jonna, Nov 22, 2026) */
   const website=x.website||(o?siteOf(o):"")||(app&&app.website)||"";
   const phone=(app&&app.mainPhone)||"";
   let sector="";try{sector=o?sectorLab(sectorOf(o)):"";}catch(e){}if(!sector&&app)sector=app.sector==="Other"?(app.sectorOther||"Other"):(app.sector||"");

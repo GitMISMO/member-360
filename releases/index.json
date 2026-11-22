@@ -1,5 +1,5 @@
 {
- "live": "20261122-2252",
+ "live": "20261122-2325",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -385,6 +385,13 @@
    "savedAt": "2026-11-22T22:52:24Z",
    "by": "jycritchley",
    "how": "published from the test copy: IIF summary: invoices go out in late January"
+  },
+  {
+   "version": "20261122-2325",
+   "sha256": "b845a12078f48689bc720478219eef86c77997dd21c38c20d94dd9a1fd85ae7c",
+   "savedAt": "2026-11-22T23:25:33Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Full-price Oct-Dec joiners run through next year, lenders too; deals keep their dates"
   }
  ],
  "history": [
@@ -765,6 +772,13 @@
    "action": "publish",
    "version": "20261122-2252",
    "replaced": "20261122-2220"
+  },
+  {
+   "at": "2026-11-22T23:25:33Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2325",
+   "replaced": "20261122-2252"
   }
  ]
 }
