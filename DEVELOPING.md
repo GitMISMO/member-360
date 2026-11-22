@@ -63,7 +63,7 @@ arrives only after sign-in.
   and writes them through the relay with `db.doc("collection/id")` and `db.collection("…")`. Collections include
   orgs, touchpoints, plans, aptify, sends, templates, engage, prospects, deals, sync, settings, issues, outbox,
   outbox-sent, regs, speakers, leaders, bootcamp, meetings, activity, lists, listsends, health, healthcheck,
-  directory and aptifypull.
+  directory, aptifypull, iifinv (read only) and iifinvx.
 - Large collections are saved in numbered parts (`name-0.json`, `name-1.json`…) with an index, and the Aptify
   data is split into its own files (`aptify-main`, `aptify-terms`, `aptify-ordermap`), because **the relay saves at
   most about 1 MB a file**. System Health › Storage watches this.
@@ -136,6 +136,7 @@ GitHub's clock is UTC and doesn't change for daylight saving, so a job runs an h
 |---|---|---|
 | **Daily Health Check** (`daily-health.yml`, `scripts/m360_health.py`) | Checks the feeds, the email flow, storage and restore points even when nobody has Member 360 open. Saves `data/healthcheck.json`, emails Jonna when something is red (at most once a day, and the same problem not again for 3 days), and fails the run if emails are stuck. "Run workflow" by hand only sends a test email. | 7:23 AM, second try 9:53 AM (12:23 and 14:53 UTC) |
 | **Aptify Weekly Pull** (`aptify-pull.yml`, `scripts/m360_aptify_pull.py`) | Checks the newest emailed workbook in `data/aptify-pull/` (sheets, columns, row counts) and writes `data/aptifypull.json`. A bad workbook fails the run and isn't loaded. | Whenever the flow saves a workbook (Mondays) |
+| **IIF Invoice Copies** (`iif-invoices.yml`, `scripts/m360_iif_invoices.py`) | Reads the IIF invoice copies index workbook in `data/iif-invoices/` and writes `data/iifinv.json` and its parts for the IIF Cycle page. A workbook without the required columns fails the run. | Whenever the flow saves the workbook (every 30 minutes during the cycle) |
 | **New IIF Members Email** (`iif-new-members.yml`) | Queues the Wednesday New IIF Members email to Kelly (Jonna on Cc), sent even when nobody is new. | Wednesday afternoons, with retries into the evening (from 19:41 UTC) |
 | **Membership Applications Report** (`applications-report.yml`) | Queues the end-of-day applications report to Amy, Kelly and Brian. | Weekdays, once, between 4:30 PM and midnight (several tries from 20:37 UTC) |
 | **Deals Quoted to Prospects** (`quotes.yml`) | Builds `data/quotes.json` from the pipeline's forecast amounts, which the membership application flow puts in the membership team's set-up email. | Hourly on weekdays, 6:17 AM to 6:17 PM, and daily at about 5:17 AM; not on each save, to save Actions minutes |
@@ -170,6 +171,7 @@ mirrors it as of Nov 8, 2026; **if they disagree, the map wins.**
 | Membership Desk | Finished set-ups with term dates; company address, phone and website | `membership-desk/data/done` and `setupinfo` (Member 360 reads; matched by Aptify Company ID first) | When the team marks one done |
 | Website membership application (`apply/`) | Applications | `member-360/data/applications` | As people apply |
 | 360 mailbox (360@mismo.org / 360@mba.org) | Emails forwarded or copied in, logged as touchpoints. Never creates prospects: an email is logged only when exactly one company matches. It skips the "Member 360 Aptify Pull" email. | Flow **Member 360 - 360 Mailbox** → `member-360/data/mailin` | As emails arrive |
+| IIF invoice copies (MERS’s invoice emails copied to invfee@, spread over iifcopies1@ to iifcopies5@) | One row per copy: received, mailbox, to, subject, body, invoice number, amount, PDF name, PDF link (Q Drive), message ID. Never the PDF. | Flows **Member 360 - IIF Invoice Copies** (index workbook) and **Member 360 - IIF Invoice Index to GitHub** → `data/iif-invoices/` → GitHub job → `member-360/data/iifinv` (read only). Bounce reports: uploaded on the IIF Cycle page → `iifinvx` | As copies arrive (saved every 30 minutes) |
 | Kelly's Smartsheet tracker (Jonna uploads it) | Notes, contacts and new companies only, **never** statuses, levels or dates | `member-360/data/trkpatch` | Weekly, by hand |
 | IIF Planning HQ | Due dates and Done marks of the nine key IIF cycle tasks (keep those task IDs) | Member 360 reads `iif-hq/data/tasks` (read only) | Each time Member 360 opens |
 | MISMO email template | The one MISMO email look (`resources.mismo.org/assets/email-shell.html`) | Fetched at send time; nothing is sent without it | Each send |
@@ -337,3 +339,44 @@ The relay refuses a single save that takes too much out of a file at once (a saf
 ## New Members Report by Join Date (Nov 21, 2026)
 
 Jonna: the New Members page should be the new members for the month she picks, not the deals the team logged ("committed"). `nmRows(useFilters, month)` builds one row per new member from `memberJoins()` for the month in `dl-month` (or the twelve months through this one when none is picked, `nmBack()`). A join with a New Member deal within 120 days (`nmDeal`) uses the deal: price, terms, term dates, `dealPaid`, `by` and its AP status. A join with no deal gets its amount from the Financial System (`nmPay`: membership or Square payments near the join date; for IIF lenders every IIF payment that calendar year), or the level's price (`listPrice`, or `iifMin()` for IIF) when nothing has come in, and AP status "No AP Needed". `renderDeals`, the tiles, the headline, `m3dDress` (Dollars by Level, Paid in the Financial System) and `paidNotReported` all read `nmRows`, and `dealsShown()` is now the deals among those rows, so Download for AP and Mark Shown as Sent to AP still only touch deals. `m3jDress` keeps the month chart but no longer draws the separate Joined In list.
+
+## IIF Invoice Copies (Nov 22, 2026)
+
+From the FY27 cycle, MERS emails each lender its IIF invoice (about 3,500 on Jan 27, 2027) and copies invfee@. MBA IT
+spreads the copies over five shared mailboxes (iifcopies1@ to iifcopies5@) so none bounce. Member 360 owns the
+intake; nothing else hooks into Member 360. **Only the index comes in, never a PDF, and nothing is sent.**
+
+How the copies get here (the contract is in the Connections Map):
+
+1. Flow **Member 360 - IIF Invoice Copies** (one copy per mailbox, on Jonna's license; concurrency 1) saves each PDF
+   to the Q Drive folder "IIF FY27 Invoices" and adds one row per PDF to the table **Copies** in the workbook
+   **IIF FY27 Invoice Index.xlsx** (Jonna's OneDrive). Columns, read by name (add, never rename): Received, Mailbox,
+   To, Subject, Body, Invoice Number, Amount, PDF Name, PDF Link, Message ID. Received, To and PDF Link are required.
+   Invoice Number and Amount may be left blank: Member 360 reads them from Subject and Body.
+2. Flow **Member 360 - IIF Invoice Index to GitHub** (every 30 minutes, on its own GitHub key, member-360-data only)
+   saves that workbook to `member-360-data/data/iif-invoices/fy27-index.xlsx` (one save, not one per email, so
+   GitHub's limits are never hit).
+3. GitHub job **IIF Invoice Copies** (`iif-invoices.yml`, `scripts/m360_iif_invoices.py`) reads every workbook in
+   `data/iif-invoices/` and writes `data/iifinv.json` (doc `iifinv/main`: parts, rows, updatedAt, files, mailboxes,
+   problems) and `data/iifinv-p0.json`, `-p1` and so on (`{rows:[{id, r, mb, to, s, b, inv, amt, fn, url, mid}]}`,
+   under 600 KB each). A workbook without the required columns fails the run (GitHub emails Jonna).
+4. Member 360 reads `iifinv/main` and its parts (straight through the relay, read only).
+
+In Member 360 (`IIV`, `iiv…` functions in the page):
+
+- **Expected** comes from the Aptify pull: every Innovation Investment Fee order (Quotation or Regular, not
+  cancelled) in the Orders sheet, kept in `aptify/iifq` (`q: {orderId: [companyId, amount, orderDate, Q|R, name]}`)
+  and replaced with each pull. The cycle is the order date's year.
+- **Matching:** by invoice number first (any number in the copy that is one of the quotations, then a labeled
+  number); otherwise by the To address to a contact here to one company, then that company's quotation for the year.
+  `IIV_PARSE` is a **placeholder** until Erin's sample copies confirm the subject line; change only it.
+- **Payments:** matched invoice numbers feed payment matching (`iivOrgOf`, used by `mmMatcher` and
+  `payerResolved`), so a payment against the invoice is credited to the lender and the IIF benefits apply.
+- **Bounce reports:** Upload Bounce Report on the IIF Cycle page reads IT's export (CSV or Excel; placeholder
+  columns: Recipient/To/Email, Subject, Status, Date; only failed rows). Bounces are kept in `iifinvx/main`
+  (`b`, never deleted, and `ups`, the last 50 uploads) and matched by invoice number, then the copy sent to that
+  address, then the address's company.
+- **On the IIF Cycle page:** the FY27 Invoice Copies panel (tiles Expected, Received, Missing, Bounced, Not Matched;
+  each lender with its status, invoice, amount, received date, mailbox and a link to the PDF, or Copy Q Drive Path
+  when the link isn't a web address; Download This List). On This Year it shows the newest cycle from FY27 on once
+  its quotations or copies arrive (`IIV_FROM`).
