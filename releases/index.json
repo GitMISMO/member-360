@@ -1,5 +1,5 @@
 {
- "live": "20261122-1736",
+ "live": "20261122-1752",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -308,6 +308,13 @@
    "savedAt": "2026-11-22T17:36:47Z",
    "by": "jycritchley",
    "how": "published from the test copy: IIF Cycle: FY27 invoice copies (received, missing, bounced, not matched), bounce report upload, IIF quotations kept from the Aptify pull, matched invoices feed payment matching"
+  },
+  {
+   "version": "20261122-1752",
+   "sha256": "63956afba5478b821296fd366d58ac747494b95600e4b8db6cbe1ca085f079b2",
+   "savedAt": "2026-11-22T17:52:35Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Invoice copies: confirmed IIF invoice # wording (Aptify order ID), PDF-name fallbacks, IT test copies kept apart"
   }
  ],
  "history": [
@@ -611,6 +618,13 @@
    "action": "publish",
    "version": "20261122-1736",
    "replaced": "20261121-1801"
+  },
+  {
+   "at": "2026-11-22T17:52:35Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-1752",
+   "replaced": "20261122-1736"
   }
  ]
 }
