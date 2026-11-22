@@ -1,5 +1,5 @@
 {
- "live": "20261122-1855",
+ "live": "20261122-2003",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -322,6 +322,13 @@
    "savedAt": "2026-11-22T18:55:39Z",
    "by": "jycritchley",
    "how": "published from the test copy: IIF copies before Jan 26, 2027 count as test (IT's end-to-end test); Leadership HQ comment"
+  },
+  {
+   "version": "20261122-2003",
+   "sha256": "ce19e5ef60adecee9fbcb2e85e3694a4d4cc960f6ffe6f9e079429d12762c250",
+   "savedAt": "2026-11-22T20:03:35Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Applications from new companies become prospects; set-ups don't show an unpaid application as paid"
   }
  ],
  "history": [
@@ -639,6 +646,13 @@
    "action": "publish",
    "version": "20261122-1855",
    "replaced": "20261122-1752"
+  },
+  {
+   "at": "2026-11-22T20:03:35Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2003",
+   "replaced": "20261122-1855"
   }
  ]
 }
