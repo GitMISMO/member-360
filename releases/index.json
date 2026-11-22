@@ -1,5 +1,5 @@
 {
- "live": "20261122-1752",
+ "live": "20261122-1855",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -315,6 +315,13 @@
    "savedAt": "2026-11-22T17:52:35Z",
    "by": "jycritchley",
    "how": "published from the test copy: Invoice copies: confirmed IIF invoice # wording (Aptify order ID), PDF-name fallbacks, IT test copies kept apart"
+  },
+  {
+   "version": "20261122-1855",
+   "sha256": "ad42781dca5d3413b2c7b51cbc757aa8cfcc248278684443851f0a3ce27e2dbc",
+   "savedAt": "2026-11-22T18:55:39Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: IIF copies before Jan 26, 2027 count as test (IT's end-to-end test); Leadership HQ comment"
   }
  ],
  "history": [
@@ -625,6 +632,13 @@
    "action": "publish",
    "version": "20261122-1752",
    "replaced": "20261122-1736"
+  },
+  {
+   "at": "2026-11-22T18:55:39Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-1855",
+   "replaced": "20261122-1752"
   }
  ]
 }
