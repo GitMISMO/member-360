@@ -1,5 +1,5 @@
 {
- "live": "20261121-1801",
+ "live": "20261122-1736",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -301,6 +301,13 @@
    "savedAt": "2026-11-21T18:01:33Z",
    "by": "jycritchley",
    "how": "published from the test copy: New Members: an old order paid late is not a new member (CMBS.com)"
+  },
+  {
+   "version": "20261122-1736",
+   "sha256": "89dc0a3da1ee7ffa7217018e24a7d31d253f2064ddfcec76c0b0d3dab9cd5ccc",
+   "savedAt": "2026-11-22T17:36:47Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: IIF Cycle: FY27 invoice copies (received, missing, bounced, not matched), bounce report upload, IIF quotations kept from the Aptify pull, matched invoices feed payment matching"
   }
  ],
  "history": [
@@ -597,6 +604,13 @@
    "action": "publish",
    "version": "20261121-1801",
    "replaced": "20261121-1523"
+  },
+  {
+   "at": "2026-11-22T17:36:47Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-1736",
+   "replaced": "20261121-1801"
   }
  ]
 }
