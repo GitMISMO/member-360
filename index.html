@@ -8719,12 +8719,12 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
   const say=h("p",null,"The "+RY+" renewal season is ",em(pct+"% in","renewals"),": ",em(n(S.ren)+" renewed","renewals"),(S.pip?" and "+n(S.pip)+" paying now":""),", with ",
     em(n(S.todo)+" still to renew","renewals",S.todo?"late":""),", and "+n(dl)+" days until Dec"+NB+"31. ",
     em(plural(S.nmMo.length,"new member","new members")+" this month","deals")," and ",em(plural(S.npw,"new prospect","new prospects")+" this week","members"),".");
-  const plate=h("div",{class:"m3h-needs"});const soon=S.fus.filter(t=>t.next.due<=addDays(TODAY,7));const rows=(soon.length?soon:S.fus).slice(0,5);
+  const plate=h("div",{class:"m3h-needs"});/* On Your Plate is only the signed-in person's own follow-ups, never the team's (Jonna, Nov 22, 2026) */const me=String(myName()||"").toLowerCase().trim(),mine=S.fus.filter(t=>{const w=String(t.next.owner||"").toLowerCase().trim();return !!me&&!!w&&(w===me||(!/ /.test(w)&&w===me.split(" ")[0]));});const soon=mine.filter(t=>t.next.due<=addDays(TODAY,7));const rows=(soon.length?soon:mine).slice(0,5);
   plate.appendChild(h("div",{class:"m3h-nh"},"On Your Plate",h("span",null,soon.length?"next 7 days":"coming up")));
   rows.forEach(t=>{const o=BY[t.org],late=t.next.due<TODAY;const b=h("button",{type:"button",class:"m3h-need"+(late?" late":"")},
       h("span",{class:"d"},late?"Late":fmtS(t.next.due)),h("span",{class:"t"},h("b",null,o.name),h("span",null,String(t.next.text||"").replace(/[.]$/,""))),h("span",{class:"w"},String(t.next.owner||"").split(" ")[0]));
     b.addEventListener("click",()=>openOrg(o.k));plate.appendChild(b);});
-  if(!rows.length)plate.appendChild(h("div",{class:"m3h-clear"},"No follow-ups are waiting. Plan a touch from the Outreach Planner."));
+  if(!rows.length)plate.appendChild(h("div",{class:"m3h-clear"},"Nothing is on your plate. The team's follow-ups are in the Outreach Planner."));
   const all=h("a",{href:"#",class:"m3h-all"},"Open the Outreach Planner"+NB+"→");all.addEventListener("click",m3hGo("week"));plate.appendChild(all);
   root.appendChild(h("div",{class:"m3h-hero"},h("div",{class:"m3h-hi"},h("div",{class:"m3h-eyebrow"},new Date().toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})),h("h1",null,gr+(first?", "+first:"")),say),plate));
   root.appendChild(h("div",{class:"m3h-h2row"},h("h2",{class:"m3h-h2"},"Membership at a Glance"),h("span",{class:"m3h-asof"},"Live from Aptify, MISMO Money and your team's activity")));
@@ -8748,10 +8748,14 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
   /* 3. new members */
   tile({lab:"New Members",k:"#5fd39a",go:"deals",pill:n(S.nmYr.length)+" in "+TODAY.slice(0,4),body:[big(S.nmMo.length,null,"this month"),
     S.nmMo.length?h("div",{class:"m3h-names"},...S.nmMo.slice(0,3).map(d=>h("span",null,d.orgName))):sub("New Members fills in as new members pay.")]});
-  /* 4. outreach this week */
-  {const mx=Math.max(1,...S.days),bars=h("div",{class:"m3h-bars"});["M","T","W","T","F"].forEach((l,i)=>{const dd=addDays(S.ws,i),v=S.days[i];
-      const b=h("div",{class:"m3h-b"+(dd===TODAY?" today":"")},h("i",{style:"height:0%"}),h("span",null,l));bars.appendChild(b);const hh=Math.max(v?8:3,Math.round(100*v/mx))+"%";if(quiet||m3hCalm())b.firstChild.style.height=hh;else setTimeout(()=>{b.firstChild.style.height=hh;},100+i*60);});
-    tile({lab:"Outreach This Week",k:"#b79cff",go:"week",body:[big(S.tpw.length,null,"touches"),bars,sub(h("b",null,plural(S.coW,"company","companies"))," reached since "+fmtS(S.ws))]});}
+  /* 4. new applications from the website, in place of Outreach This Week (Jonna, Nov 22, 2026) */
+  {let A=null;try{A=M360_APPS;}catch(e){}
+    if(!A){try{m360Apps().then(L=>{if(L&&L.length&&$("m3h"))renderHome(true);}).catch(()=>{});}catch(e){}}
+    const L=(A||[]).slice().sort((x,y)=>String(y.submittedAt||"").localeCompare(String(x.submittedAt||""))),mo=TODAY.slice(0,7);
+    const inMo=L.filter(x=>String(x.submittedAt||"").slice(0,7)===mo),open=L.filter(x=>{try{return !appDone(x);}catch(e){return true;}});
+    tile({lab:"New Applications",k:"#f2b366",go:"members",pill:open.length?n(open.length)+" to set up":null,hot:open.length>0,body:[big(inMo.length,null,"this month"),
+      L.length?h("div",{class:"m3h-names"},...L.slice(0,3).map(x=>h("span",null,x.company))):sub(A?"Applications from the website show here as they come in.":"Loading applications…"),
+      L.length?sub("Latest ",h("b",null,fmtS(String(L[0].submittedAt||"").slice(0,10)))):null]});}
     /* 6. IIF cycle */
   {const pc=S.inv?Math.min(100,100*S.paid/S.inv):0,bar=h("div",{class:"m3h-prog"},h("i",{style:"width:0%"}));if(quiet||m3hCalm())bar.firstChild.style.width=pc+"%";else setTimeout(()=>{bar.firstChild.style.width=pc+"%";},120);
     tile({lab:IIFY()+" IIF Cycle",k:"#5fd39a",go:"iif",cls:"w2",pill:S.newIif?plural(S.newIif,"new IIF member","new IIF members"):null,body:[big(S.paid,m3hMoney,"collected"),bar,
@@ -8763,11 +8767,7 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
       if(quiet||m3hCalm())bar.style.width=w;else setTimeout(()=>{bar.style.width=w;},120+i*50);});
     if(!st.length)fun.appendChild(sub("No prospect has a sales stage yet."));
     tile({lab:"Sales Pipeline",k:"#f0b94a",go:"members",cls:"w2",pill:S.npw?"+"+n(S.npw)+" this week":null,body:[fun,sub(h("b",null,n(S.pros.length))," prospects · ",h("b",null,n(st.reduce((a,s)=>a+S.ps[s],0)))," in a sales stage")]});}
-  /* 8. team activity */
-  {const L=h("div",{class:"m3h-feed"});S.acts.slice(0,6).forEach(r=>{const who=String(r.byName||r.by||"").split(" ")[0]||"Someone";
-      L.appendChild(h("div",{class:"m3h-fi"},h("span",{class:"av"},who.slice(0,1)),h("span",{class:"tx"},h("b",null,who)," "+String(r.label||"").replace(/^[A-Z]/,c=>c.toLowerCase())+(r.orgName?" · ":""),r.orgName?h("b",null,r.orgName):null),h("span",{class:"tm"},m3hAgo(r.at))));});
-    if(!S.acts.length)L.appendChild(sub("Saves, logged emails and payments show here as the team works."));
-    tile({lab:"Team Activity",k:"#74bfeb",go:"activity",cls:"w3 full",body:[L]});}
+  /* 8. Team Activity is no longer on Home (Jonna, Nov 22, 2026): it is in Activity */
   /* 9. forwarded emails to 360@ that need a company picked, for anyone who can save (Jonna, Nov 9, 2026); view-only people still see the next summit */
   if(canWrite||/\/member-360\/test\//.test(location.pathname)){const el=tile({lab:"Forwarded Emails",k:"#f2b366",cls:"m3h-fwd"});el.id="m3h-fwd";try{m3hFwdFill(el);}catch(e){console.error("forwarded emails",e);}}
   else if(S.sum){const dd=Math.max(0,days_(TODAY,S.sum.date));tile({lab:"Next Summit",k:"#5fd39a",body:[big(dd,null,"days"),sub(h("b",null,S.sum.name)," · "+fmt(S.sum.date))]});}
