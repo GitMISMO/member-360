@@ -1,5 +1,5 @@
 {
- "live": "20261122-2143",
+ "live": "20261122-2220",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -371,6 +371,13 @@
    "savedAt": "2026-11-22T21:43:49Z",
    "by": "jycritchley",
    "how": "published from the test copy: Home: New Applications tile, On Your Plate only your own, no Team Activity"
+  },
+  {
+   "version": "20261122-2220",
+   "sha256": "2350d736cb17e4ddcc67586f67c3b12f87e63afb5ab93bb0717bbde82693cc91",
+   "savedAt": "2026-11-22T22:20:49Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Oct-Dec joiners through next year, old-form apps on Home, Comped, IIF Cycle header, key dates, Planning HQ link"
   }
  ],
  "history": [
@@ -737,6 +744,13 @@
    "action": "publish",
    "version": "20261122-2143",
    "replaced": "20261122-2058"
+  },
+  {
+   "at": "2026-11-22T22:20:49Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2220",
+   "replaced": "20261122-2143"
   }
  ]
 }

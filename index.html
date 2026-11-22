@@ -1271,6 +1271,8 @@ details.sect > summary:focus-visible{outline:2px solid var(--sky);outline-offset
 @media(max-width:760px){.rv{grid-template-columns:1fr}.rv .btnrow{margin-top:0!important}}
 .kd{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .kd .kdi{border:1px solid var(--border);border-radius:7px;padding:7px 10px;background:var(--surface-2);min-width:130px;flex:1 1 130px}
+/* key dates fill their rows evenly: no long, mostly empty last box (Jonna, Nov 22, 2026) */
+.kd.bal .kdi{flex:1 1 calc((100% - (var(--kdc) - 1) * 8px) / var(--kdc));min-width:0}
 .kd .kdi.soon{border-color:var(--c4);box-shadow:inset 3px 0 0 var(--c4)}
 .kd .kdi.past{opacity:.55}
 .kd .kdi b{display:block;font-family:var(--mono);font-size:11.5px;color:var(--ink-2);font-weight:600}
@@ -6430,9 +6432,10 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}try{iivRende
     x=>{if(selK===x.k)iifPick(null,"","");else iifPick(null,x.k.slice(3),"");},selK);
   const kd=$("iif-dates");kd.textContent="";
   KEYDATES.forEach(([d,l,dn])=>{const days=Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);
-    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":"In "+n(days)+" days")));});
+    kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":days===1?"Tomorrow":"In "+n(days)+" days")));});
+  iifKdBalance();
   const ir=$("iif-right");ir.textContent="";ir.hidden=false;
-  ir.appendChild(h("div",{class:"hint",style:"margin-bottom:8px"},"Planning starts in October; invoices go out in February"+(KEYSRC?". Key dates come from IIF Planning HQ.":"")));
+  /* sits on the same line as the intro, same size (Jonna, Nov 22, 2026) */ir.appendChild(h("div",{class:"hint",style:"margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)"},"Invoices go out in late January. Key dates come from ",h("a",{href:"/iif-hq/",target:"_blank",rel:"noopener",style:"font-weight:600;color:var(--accent,#14486e);white-space:nowrap"},"IIF Planning HQ"+String.fromCharCode(160)+"→")));
   
   const chip=$("iif-sel");chip.textContent="";chip.hidden=!IIFSEL;if(IIFSEL){chip.appendChild(h("span",null,"Showing: "+IIFSEL.label));const x=h("button",{type:"button","aria-label":"Show all lenders"},"\u00d7");x.addEventListener("click",()=>iifPick(null,"",""));chip.appendChild(x);}
   {let say;const nxk=KEYDATES.find(x=>!x[2]&&x[0]>=TODAY);
@@ -7475,7 +7478,7 @@ function iifStart(d){return String(d||TODAY).slice(0,7)+"-01";}
 function joinStart(o,d){return o&&o.type==="Lender"?iifStart(d):levelSetStart(d);}
 function dealDefaults(type,terms,sold,o){const extra=terms==="Dues Deal"?1:0;
   if(type==="Renewal"){const y=Number(RY);return {start:y+"-01-01",end:(y+extra)+"-12-31"};}
-  const st=type==="New Member"?joinStart(o,sold):levelSetStart(sold);return {start:st,end:(Number(st.slice(0,4))+extra)+"-12-31"};}
+  const st=type==="New Member"?joinStart(o,sold):levelSetStart(sold);/* a non-lender new membership starting Oct 1 or later runs through Dec 31 of the next year (Jonna, Nov 22, 2026) */const late=type==="New Member"&&!(o&&o.type==="Lender")&&Number(st.slice(5,7))>=10?1:0;return {start:st,end:(Number(st.slice(0,4))+extra+late)+"-12-31"};}
 function dealsOf(o){return DEALS.filter(d=>d.org===o.k).sort((a,b)=>(b.sold||"").localeCompare(a.sold||""));}
 function dealLine(d){const m=monthsIn(d.start,d.end);return [d.level,fmt(d.start)+" to "+fmt(d.end)+" ("+m+" months)",money(d.price||0)].join(" · ");}
 /* has the Financial System received the membership payment behind a commitment? */
@@ -7632,7 +7635,7 @@ function nmRows(useFilters,month){dealFixAll();const m=month!==undefined?month:$
         amt:pay?Math.round(pay.n*100)/100:(j.kind==="iif"?iifMin():listPrice(lv)),paid:pay?{d:pay.d,n:pay.n,o:pay.o}:null,by:o?owner(o):"",ap:"No AP Needed",
         why:j.kind==="sq"?"set up through Square":"already in Aptify"};}
     /* a complimentary membership (in kind, comped, subsidiary) owes nothing: $0 and never Not Paid Yet (Jonna, Nov 22, 2026) */
-    if(!r.paid&&o&&/^free/i.test(curStatus(o)||"")){r.amt=0;r.paid={d:"",n:0,o:"",free:((ov(o)||{}).comp&&ov(o).comp.why)||"Complimentary"};}
+    if(!r.paid&&o&&/^free/i.test(curStatus(o)||"")){r.amt=0;r.paid={d:"",n:0,o:"",free:((ov(o)||{}).comp&&ov(o).comp.why)||"Comped"};}
     if(f.ap&&r.ap!==f.ap)return;if(f.by&&r.by!==f.by)return;if(f.tm&&r.terms!==f.tm)return;if(f.pd&&(f.pd==="paid")!==!!r.paid)return;out.push(r);});
   return out.sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));}
 /* the deals AP needs: the ones on the report as it's filtered now */
@@ -7696,7 +7699,7 @@ function renderDeals(){dealFixAll();
     const diff=d&&p&&Math.abs(p.n-(d.price||0))>1,ids=[d&&d.cid?"ID "+d.cid:(o&&o.cid?"ID "+o.cid:""),d&&d.order?"Order "+d.order:(p&&p.o?"Order "+p.o:"")].filter(Boolean).join(" · ");
     const row=h("div",{class:"dlrow",role:"button",tabindex:"0",title:"Open the member record"},h("span",{class:"num"},fmt(r.date.slice(0,10))),h("span",{class:"nm"},r.name,h("small",null,ids)),
       h("span",null,MJ_KIND[r.j.kind].lab,h("small",null,r.level+" · "+r.terms)),h("span",null,r.start?nmMon(r.start)+" to "+(r.end?nmMon(r.end):"—"):"—",h("small",null,m?m+" months":(r.start?"":"no term yet"))),h("span",{class:"num"},money(r.amt||0),!d&&!p?h("small",null,"level price"):null),h("span",{class:"num"},m?money(Math.round((r.amt||0)/m*100)/100):"—"),
-      h("span",null,p?h("span",{class:"pill c-full"},p.free?"Complimentary":"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
+      h("span",null,p?h("span",{class:"pill c-full"},p.free?"Comped":"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
       h("span",null,r.by||h("span",{class:"muted"},"—")));
     const go=()=>{if(o&&BY[o.k])openPane(o.k);};row.addEventListener("click",go);row.addEventListener("keydown",e=>{if(e.key==="Enter")go();});box.appendChild(row);});
   $("dl-count").textContent=n(L.length)+(L.length===1?" new member":" new members");
@@ -7838,7 +7841,7 @@ function memKind(o){const s=curStatus(o);if(/^free/i.test(s))return "Free";if(o.
 /* ---------- Membership Stats year: This Year, Last Year, 2 Years Ago ---------- */
 let STYI=0;
 function STY(){return String(RY-1-STYI);}
-function statusIn(o,y){y=String(y);const m=memberYear(o,y);if(m)return m.src==="IIF"?"IIF paid "+money(m.paid):"Aptify term"+(m.lv?" · "+m.lv:"");if(y===String(RY-1)&&o.life==="Active")return memKind(o)==="Free"?"Complimentary":"Current member";return "";}
+function statusIn(o,y){y=String(y);const m=memberYear(o,y);if(m)return m.src==="IIF"?"IIF paid "+money(m.paid):"Aptify term"+(m.lv?" · "+m.lv:"");if(y===String(RY-1)&&o.life==="Active")return memKind(o)==="Free"?"Comped":"Current member";return "";}
 /* this year = a current member in the tracker; earlier years = a paid, free or Champion status for that year */
 function memberIn(o,y){y=String(y);if(y===String(RY-1))return o.life==="Active";return !!memberYear(o,y);}
 function kindIn(o,y){if(String(y)===String(RY-1))return memKind(o);return o.type==="Lender"?"Lender":o.type==="Non-Lender"?"Non-Lender":"Type Not Recorded";}
@@ -8712,6 +8715,8 @@ function m3hData(){
   const iss=Number(((document.getElementById("pip-issues")||{}).textContent||"0").replace(/[^0-9]/g,""))||0;
   let sum=null;try{sum=nextEvent("Summit");}catch(e){}
   return {ics,Y,A,K,champ,Dd,ren,pip,lost,todo,nmMo,nmYr,inv,paid,iifMem,L,newIif,pros,ps,npw,ws,tpw,days,coW,fus,acts,iss,sum};}
+function iifKdBalance(){const kd=$("iif-dates");if(!kd)return;const k=kd.children.length;if(!k)return;const w=kd.clientWidth||1100,per=Math.max(1,Math.floor((w+8)/146)),rows=Math.ceil(k/per),cols=Math.ceil(k/rows);kd.classList.add("bal");kd.style.setProperty("--kdc",String(cols));}
+window.addEventListener("resize",()=>{try{iifKdBalance();}catch(e){}});
 function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;const S=m3hData();root.textContent="";const NB=String.fromCharCode(160);
   const hr=new Date().getHours(),gr=hr<12?"Good morning":hr<17?"Good afternoon":"Good evening",first=String(myName()||"").split(" ")[0];
   const em=(t,tab,cls)=>{const a=h("a",{href:"#",class:"m3h-em"+(cls?" "+cls:"")},t);a.addEventListener("click",m3hGo(tab));return a;};
@@ -8749,7 +8754,7 @@ function renderHome(quiet){const root=$("m3h");if(!root||!ORGS.length)return;con
   tile({lab:"New Members",k:"#5fd39a",go:"deals",pill:n(S.nmYr.length)+" in "+TODAY.slice(0,4),body:[big(S.nmMo.length,null,"this month"),
     S.nmMo.length?h("div",{class:"m3h-names"},...S.nmMo.slice(0,3).map(d=>h("span",null,d.orgName))):sub("New Members fills in as new members pay.")]});
   /* 4. new applications from the website, in place of Outreach This Week (Jonna, Nov 22, 2026) */
-  {let A=null;try{A=M360_APPS;}catch(e){}
+  {let A=null;try{A=M360_APPS?M360_APPS.concat(M360_OLDAPPS||[]):null;}catch(e){}
     if(!A){try{m360Apps().then(L=>{if(L&&L.length&&$("m3h"))renderHome(true);}).catch(()=>{});}catch(e){}}
     const L=(A||[]).slice().sort((x,y)=>String(y.submittedAt||"").localeCompare(String(x.submittedAt||""))),mo=TODAY.slice(0,7);
     const inMo=L.filter(x=>String(x.submittedAt||"").slice(0,7)===mo),open=L.filter(x=>{try{return !appDone(x);}catch(e){return true;}});
@@ -9647,9 +9652,9 @@ function profileCard(o,box){const ovp=box&&box.querySelector('.p360-panel[data-t
    to a company: by company name, then by any applicant's email on a company's contacts, then by work email domain or website, then by
    a contact's name. The match brings over the website and logo, moves a prospect to 7 - Application Submitted, and puts the
    application on the Membership Desk as a new member to set up until it's confirmed or Aptify shows the membership. ---------- */
-let M360_APPS=null;
+let M360_APPS=null,M360_OLDAPPS=[];
 async function m360Apps(){if(M360_APPS)return M360_APPS;try{const r=await fetch(M360_R+"/data/applications",{headers:{Authorization:"Bearer "+m3tok()},cache:"no-store"});const j=await r.json();const d=(j&&j.data)||{};
-  M360_APPS=Object.values(d.docs||{}).filter(a=>a&&a.id&&a.company&&!a.test&&!a.withdrawn&&(a.action||"apply")==="apply");}catch(e){console.error("applications",e);M360_APPS=[];}return M360_APPS;}
+  const _all=Object.values(d.docs||{}).filter(a=>a&&a.id&&a.company&&!a.test&&!a.withdrawn&&(a.action||"apply")==="apply");/* applications from the old Smartsheet form are only counted on Home (Jonna, Nov 22, 2026): no prospect, Desk item or PDF from them */M360_OLDAPPS=_all.filter(a=>a.oldForm);M360_APPS=_all.filter(a=>!a.oldForm);}catch(e){console.error("applications",e);M360_APPS=[];}return M360_APPS;}
 function appPeople(a){const L=[];const add=p=>{if(p&&(p.email||p.name))L.push({email:String(p.email||"").toLowerCase().trim(),name:String(p.name||"").toLowerCase().replace(/\s+/g," ").trim()});};
   add({email:a.email});Object.values(a.contacts||{}).forEach(add);add(a.signer);return L;}
 function appDone(a){return !!(a.setupAt||a.setup||a.aptifyId||a.orderNo||a.setUpAt);}
@@ -10997,7 +11002,7 @@ function deskSetupFor(x,kind){
   const parentContacts=(!contacts.length&&par)?(par.people||[]).filter(p=>(p.roles||[]).some(r=>/primary|billing/i.test(r))).map(p=>({role:(p.roles||[]).join(", ")+" at "+par.name,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||""})):[];
   /* how it was paid */
   let payment=null;
-  if(kind==="free"||(o&&/^free/i.test(curStatus(o)||"")))payment={how:"Complimentary: no invoice"+(o&&(ov(o)||{}).comp&&ov(o).comp.why?", "+String(ov(o).comp.why).toLowerCase():"")+(par?" (a subsidiary of "+par.name+")":"")};
+  if(kind==="free"||(o&&/^free/i.test(curStatus(o)||"")))payment={how:"Comped: no invoice"+(o&&(ov(o)||{}).comp&&ov(o).comp.why?", "+String(ov(o).comp.why).toLowerCase():"")+(par?" (a subsidiary of "+par.name+")":"")};
   else if(kind==="iif"&&o){let n=0;try{n=Math.round(lendPaid(o,IY));}catch(e){}payment={how:"Innovation Investment Fund (IIF)",amount:n,date:x.paid||""};}
   else{const d=o?DEALS.filter(z=>z.org===o.k&&z.type==="New Member"&&!z.archived).sort((a,b)=>String(b.sold||"").localeCompare(String(a.sold||"")))[0]:null;let p=null;try{p=d?dealPaid(d):null;}catch(e){}
     /* Amount Paid only when money has come in (Jonna, Nov 22, 2026): an application alone is not a payment, so it no longer shows its price as paid */
@@ -11007,7 +11012,7 @@ function deskSetupFor(x,kind){
   let start=x.start||"",end=x.end||"";
   if(!start){const from=String(x.paid||x.sold||(o&&o.created)||String(v.updatedAt||"").slice(0,10)||TODAY).slice(0,10);
     start=(kind==="iif"||(o&&o.type==="Lender"&&kind!=="free"))?from.slice(0,7)+"-01":levelSetStart(from);}
-  if(!end){end=(kind==="free"&&par&&par.thru&&String(par.thru)>=start)?String(par.thru).slice(0,10):start.slice(0,4)+"-12-31";}
+  if(!end){end=(kind==="free"&&par&&par.thru&&String(par.thru)>=start)?String(par.thru).slice(0,10):(Number(start.slice(0,4))+(kind==="members"&&!(o&&o.type==="Lender")&&Number(start.slice(5,7))>=10?1:0))+"-12-31";}/* a new non-lender membership starting Oct 1 or later runs through the next year (Jonna, Nov 22, 2026) */
   const website=x.website||(o?siteOf(o):"")||(app&&app.website)||"";
   const phone=(app&&app.mainPhone)||"";
   let sector="";try{sector=o?sectorLab(sectorOf(o)):"";}catch(e){}if(!sector&&app)sector=app.sector==="Other"?(app.sectorOther||"Other"):(app.sector||"");
