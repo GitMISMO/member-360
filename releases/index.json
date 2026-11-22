@@ -1,5 +1,5 @@
 {
- "live": "20261122-2040",
+ "live": "20261122-2043",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -350,6 +350,13 @@
    "savedAt": "2026-11-22T20:40:33Z",
    "by": "jycritchley",
    "how": "published from the test copy: New Members: complimentary memberships show as Complimentary"
+  },
+  {
+   "version": "20261122-2043",
+   "sha256": "a82579efc9bc51c455901b52861d2bbe8ab978ba74bb1b0237ef890491faef82",
+   "savedAt": "2026-11-22T20:43:37Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Unpaid application wording without Aptify"
   }
  ],
  "history": [
@@ -695,6 +702,13 @@
    "action": "publish",
    "version": "20261122-2040",
    "replaced": "20261122-2031"
+  },
+  {
+   "at": "2026-11-22T20:43:37Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2043",
+   "replaced": "20261122-2040"
   }
  ]
 }

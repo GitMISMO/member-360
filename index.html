@@ -11000,7 +11000,7 @@ function deskSetupFor(x,kind){
   else if(kind==="iif"&&o){let n=0;try{n=Math.round(lendPaid(o,IY));}catch(e){}payment={how:"Innovation Investment Fund (IIF)",amount:n,date:x.paid||""};}
   else{const d=o?DEALS.filter(z=>z.org===o.k&&z.type==="New Member"&&!z.archived).sort((a,b)=>String(b.sold||"").localeCompare(String(a.sold||"")))[0]:null;let p=null;try{p=d?dealPaid(d):null;}catch(e){}
     /* Amount Paid only when money has come in (Jonna, Nov 22, 2026): an application alone is not a payment, so it no longer shows its price as paid */
-    payment={how:/square/i.test(x.special||"")?"Square":(d&&d.terms==="Dues Deal"?"Dues deal":(app?(p||x.paid?"Membership application":"Not paid yet: applied on the website; Aptify invoices the Billing Contact after set-up"):"Membership payment")),amount:p?p.n:(x.paid?(x.price||0):0),date:p?p.d:(x.paid||""),order:p?(p.o||""):(d?d.order||"":""),notes:d?d.notes||"":""};}
+    payment={how:/square/i.test(x.special||"")?"Square":(d&&d.terms==="Dues Deal"?"Dues deal":(app?(p||x.paid?"Membership application":"Not paid yet: applied on the website; the invoice goes to the Billing Contact once the membership is set up"):"Membership payment")),amount:p?p.n:(x.paid?(x.price||0):0),date:p?p.d:(x.paid||""),order:p?(p.o||""):(d?d.order||"":""),notes:d?d.notes||"":""};}
   if(payer)payment=Object.assign(payment||{},{paidBy:payer.name+(payer.cid?" (Aptify ID "+payer.cid+")":"")});
   /* the membership dates by MISMO Money's rule: IIF starts the month paid; others by the 15th rule; a subsidiary runs to its parent's end */
   let start=x.start||"",end=x.end||"";
