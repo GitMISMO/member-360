@@ -6435,7 +6435,7 @@ function renderIIF(){try{iifNewRender();}catch(e){console.error(e);}try{iivRende
     kd.appendChild(h("div",{class:"kdi"+(days<0?" past":days<=21?" soon":"")},h("b",null,fmt(d)),h("span",null,l),h("i",null,dn?"Done":days<0?"Past due":days===0?"Today":days===1?"Tomorrow":"In "+n(days)+" days")));});
   iifKdBalance();
   const ir=$("iif-right");ir.textContent="";ir.hidden=false;
-  /* sits on the same line as the intro, same size (Jonna, Nov 22, 2026) */ir.appendChild(h("div",{class:"hint",style:"margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)"},"Planning starts in October; invoices go out in late January"+(KEYSRC?". Key dates come from IIF Planning HQ. ":". "),h("a",{href:"/iif-hq/",target:"_blank",rel:"noopener",style:"font-weight:600;color:var(--accent,#14486e);white-space:nowrap"},"Open IIF Planning HQ"+String.fromCharCode(160)+"→")));
+  /* sits on the same line as the intro, same size (Jonna, Nov 22, 2026) */ir.appendChild(h("div",{class:"hint",style:"margin:0;font-size:13px;line-height:1.5;color:var(--ink-2)"},"Invoices go out in late January. Key dates come from ",h("a",{href:"/iif-hq/",target:"_blank",rel:"noopener",style:"font-weight:600;color:var(--accent,#14486e);white-space:nowrap"},"IIF Planning HQ"+String.fromCharCode(160)+"→")));
   
   const chip=$("iif-sel");chip.textContent="";chip.hidden=!IIFSEL;if(IIFSEL){chip.appendChild(h("span",null,"Showing: "+IIFSEL.label));const x=h("button",{type:"button","aria-label":"Show all lenders"},"\u00d7");x.addEventListener("click",()=>iifPick(null,"",""));chip.appendChild(x);}
   {let say;const nxk=KEYDATES.find(x=>!x[2]&&x[0]>=TODAY);
