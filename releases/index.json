@@ -1,5 +1,5 @@
 {
- "live": "20261122-2003",
+ "live": "20261122-2017",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -329,6 +329,13 @@
    "savedAt": "2026-11-22T20:03:35Z",
    "by": "jycritchley",
    "how": "published from the test copy: Applications from new companies become prospects; set-ups don't show an unpaid application as paid"
+  },
+  {
+   "version": "20261122-2017",
+   "sha256": "4b768678fdf07dad7b701e71ef959d68fa180bb8f635975015b7a004d4b5f883",
+   "savedAt": "2026-11-22T20:17:36Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Open the Application (PDF) on the company record"
   }
  ],
  "history": [
@@ -653,6 +660,13 @@
    "action": "publish",
    "version": "20261122-2003",
    "replaced": "20261122-1855"
+  },
+  {
+   "at": "2026-11-22T20:17:36Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261122-2017",
+   "replaced": "20261122-2003"
   }
  ]
 }
