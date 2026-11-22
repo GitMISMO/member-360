@@ -7632,7 +7632,7 @@ function nmRows(useFilters,month){dealFixAll();const m=month!==undefined?month:$
         amt:pay?Math.round(pay.n*100)/100:(j.kind==="iif"?iifMin():listPrice(lv)),paid:pay?{d:pay.d,n:pay.n,o:pay.o}:null,by:o?owner(o):"",ap:"No AP Needed",
         why:j.kind==="sq"?"set up through Square":"already in Aptify"};}
     /* a complimentary membership (in kind, comped, subsidiary) owes nothing: $0 and never Not Paid Yet (Jonna, Nov 22, 2026) */
-    if(!r.paid&&o&&/^free/i.test(curStatus(o)||"")){r.amt=0;r.paid={d:"",n:0,o:"",free:((ov(o)||{}).comp&&ov(o).comp.why)||"Complimentary"};}
+    if(!r.paid&&o&&/^free/i.test(curStatus(o)||"")){r.amt=0;r.paid={d:"",n:0,o:"",free:((ov(o)||{}).comp&&ov(o).comp.why)||"Comped"};}
     if(f.ap&&r.ap!==f.ap)return;if(f.by&&r.by!==f.by)return;if(f.tm&&r.terms!==f.tm)return;if(f.pd&&(f.pd==="paid")!==!!r.paid)return;out.push(r);});
   return out.sort((a,b)=>a.date.localeCompare(b.date)||a.name.localeCompare(b.name));}
 /* the deals AP needs: the ones on the report as it's filtered now */
@@ -7696,7 +7696,7 @@ function renderDeals(){dealFixAll();
     const diff=d&&p&&Math.abs(p.n-(d.price||0))>1,ids=[d&&d.cid?"ID "+d.cid:(o&&o.cid?"ID "+o.cid:""),d&&d.order?"Order "+d.order:(p&&p.o?"Order "+p.o:"")].filter(Boolean).join(" · ");
     const row=h("div",{class:"dlrow",role:"button",tabindex:"0",title:"Open the member record"},h("span",{class:"num"},fmt(r.date.slice(0,10))),h("span",{class:"nm"},r.name,h("small",null,ids)),
       h("span",null,MJ_KIND[r.j.kind].lab,h("small",null,r.level+" · "+r.terms)),h("span",null,r.start?nmMon(r.start)+" to "+(r.end?nmMon(r.end):"—"):"—",h("small",null,m?m+" months":(r.start?"":"no term yet"))),h("span",{class:"num"},money(r.amt||0),!d&&!p?h("small",null,"level price"):null),h("span",{class:"num"},m?money(Math.round((r.amt||0)/m*100)/100):"—"),
-      h("span",null,p?h("span",{class:"pill c-full"},p.free?"Complimentary":"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
+      h("span",null,p?h("span",{class:"pill c-full"},p.free?"Comped":"Paid "+fmtS(p.d)):h("span",{class:"pill c-open"},"Not Paid Yet"),diff?h("small",{class:"late"},"Paid "+money(p.n)):null),
       h("span",null,r.by||h("span",{class:"muted"},"—")));
     const go=()=>{if(o&&BY[o.k])openPane(o.k);};row.addEventListener("click",go);row.addEventListener("keydown",e=>{if(e.key==="Enter")go();});box.appendChild(row);});
   $("dl-count").textContent=n(L.length)+(L.length===1?" new member":" new members");
@@ -7838,7 +7838,7 @@ function memKind(o){const s=curStatus(o);if(/^free/i.test(s))return "Free";if(o.
 /* ---------- Membership Stats year: This Year, Last Year, 2 Years Ago ---------- */
 let STYI=0;
 function STY(){return String(RY-1-STYI);}
-function statusIn(o,y){y=String(y);const m=memberYear(o,y);if(m)return m.src==="IIF"?"IIF paid "+money(m.paid):"Aptify term"+(m.lv?" · "+m.lv:"");if(y===String(RY-1)&&o.life==="Active")return memKind(o)==="Free"?"Complimentary":"Current member";return "";}
+function statusIn(o,y){y=String(y);const m=memberYear(o,y);if(m)return m.src==="IIF"?"IIF paid "+money(m.paid):"Aptify term"+(m.lv?" · "+m.lv:"");if(y===String(RY-1)&&o.life==="Active")return memKind(o)==="Free"?"Comped":"Current member";return "";}
 /* this year = a current member in the tracker; earlier years = a paid, free or Champion status for that year */
 function memberIn(o,y){y=String(y);if(y===String(RY-1))return o.life==="Active";return !!memberYear(o,y);}
 function kindIn(o,y){if(String(y)===String(RY-1))return memKind(o);return o.type==="Lender"?"Lender":o.type==="Non-Lender"?"Non-Lender":"Type Not Recorded";}
@@ -10997,7 +10997,7 @@ function deskSetupFor(x,kind){
   const parentContacts=(!contacts.length&&par)?(par.people||[]).filter(p=>(p.roles||[]).some(r=>/primary|billing/i.test(r))).map(p=>({role:(p.roles||[]).join(", ")+" at "+par.name,name:p.name||"",title:p.title||"",email:p.email||"",phone:p.phone||""})):[];
   /* how it was paid */
   let payment=null;
-  if(kind==="free"||(o&&/^free/i.test(curStatus(o)||"")))payment={how:"Complimentary: no invoice"+(o&&(ov(o)||{}).comp&&ov(o).comp.why?", "+String(ov(o).comp.why).toLowerCase():"")+(par?" (a subsidiary of "+par.name+")":"")};
+  if(kind==="free"||(o&&/^free/i.test(curStatus(o)||"")))payment={how:"Comped: no invoice"+(o&&(ov(o)||{}).comp&&ov(o).comp.why?", "+String(ov(o).comp.why).toLowerCase():"")+(par?" (a subsidiary of "+par.name+")":"")};
   else if(kind==="iif"&&o){let n=0;try{n=Math.round(lendPaid(o,IY));}catch(e){}payment={how:"Innovation Investment Fund (IIF)",amount:n,date:x.paid||""};}
   else{const d=o?DEALS.filter(z=>z.org===o.k&&z.type==="New Member"&&!z.archived).sort((a,b)=>String(b.sold||"").localeCompare(String(a.sold||"")))[0]:null;let p=null;try{p=d?dealPaid(d):null;}catch(e){}
     /* Amount Paid only when money has come in (Jonna, Nov 22, 2026): an application alone is not a payment, so it no longer shows its price as paid */
