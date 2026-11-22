@@ -1063,7 +1063,7 @@ function finish(a){
   $("doneRef").textContent=REF;
   var bill=a.contacts.billing&&!a.contacts.billing.sameAsPrimary?a.contacts.billing:a.contacts.primary;
   var steps=["MISMO's membership team reviews your application and sets up your membership.",
-    "Your Billing Contact"+(bill&&bill.email?" ("+bill.email+")":"")+" receives the invoice for your dues.",
+    "MISMO's membership team sends the invoice for your dues to your Billing Contact"+(bill&&bill.email?" ("+bill.email+")":"")+".",
     "Your membership benefits begin once payment is received, and your Primary Contact hears from MISMO about getting started."];
   $("nextSteps").innerHTML=steps.map(function(s){return "<li>"+esc(s)+"</li>";}).join("");
   $("printcopy").innerHTML='<h1>MISMO Membership Application</h1><p>Reference '+esc(REF)+' · Submitted '+esc(today())+'</p>'+revHtml(a,false);
