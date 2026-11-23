@@ -1,5 +1,5 @@
 {
- "live": "20261123-1740",
+ "live": "20261123-2140",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -420,6 +420,13 @@
    "savedAt": "2026-11-23T17:40:19Z",
    "by": "jycritchley",
    "how": "published from the test copy: Contacts from Team HQ Industry Events (CN-003)"
+  },
+  {
+   "version": "20261123-2140",
+   "sha256": "9576e7aa1cf41b948a98d7e3549f81def5635d87d1baac8ef535abb871fe4437",
+   "savedAt": "2026-11-23T21:40:47Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Activity: jkearns shows as Jonathan Kearns"
   }
  ],
  "history": [
@@ -835,6 +842,13 @@
    "action": "publish",
    "version": "20261123-1740",
    "replaced": "20261123-1730"
+  },
+  {
+   "at": "2026-11-23T21:40:47Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261123-2140",
+   "replaced": "20261123-1740"
   }
  ]
 }
