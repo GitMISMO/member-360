@@ -4850,7 +4850,7 @@ const ACT_START=new Date(2026,9,29).toISOString();
 function actKeep(r){if(!r||!r.at)return false;const at=String(r.at);let iso=at;try{iso=new Date(at).toISOString();}catch(e){return false;}if(iso<ACT_START)return false;if(r.auto)return false;if(r.type==='log'&&r.e&&r.e.coll==='outbox'&&/^t/.test(String(r.e.doc||'')))return false;if(r.type==='mail')return !!r.byLocal;const w=actWhoOf(r);return w.id==='me'||!['Member 360','Someone','Claude'].includes(w.name);}
 function actLocalName(l){if(!l)return "";for(const k in NAMES){if(m360Local(k)===l&&NAMES[k])return NAMES[k];}
   /* a mailbox named for the person (jkearns, jonathan.kearns, jonathankearns) is that person, so one person never shows twice in Who Did What (Jonna, Nov 23, 2026) */
-  const L=String(l).toLowerCase(),all=new Set(Object.values(NAMES).filter(x=>typeof x==="string").concat(((typeof SET!=="undefined"&&SET&&SET.staff)||[]).filter(x=>typeof x==="string")));
+  const L=String(l).toLowerCase(),all=new Set(Object.values(NAMES).filter(x=>typeof x==="string").concat(((typeof SET!=="undefined"&&SET&&SET.staff)||[]).filter(x=>typeof x==="string")).concat(Object.values((typeof ACTV!=="undefined"&&ACTV&&ACTV.log)||{}).map(e=>e&&e.byName).filter(x=>typeof x==="string"&&x)));
   for(const nm of all){const p=nm.trim().toLowerCase().replace(/[^a-z ]/g,"").split(/\s+/).filter(Boolean);if(p.length>=2&&(p[0][0]+p[p.length-1]===L||p.join(".")===L||p.join("")===L))return nm;}
   return "";}
 function actWhoOf(r){
