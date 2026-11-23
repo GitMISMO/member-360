@@ -11767,9 +11767,17 @@ function dirT(lv){lv=String(lv||"");if(/^Chair/i.test(lv))return "chair";if(/^Ex
 function dirLoc(o){const c=((typeof APT!=="undefined"&&APT&&APT.companies)||{})[String(o.cid||"")];
   if(c&&(c.city||c.st))return {a:String(c.city||"").trim(),s:String(c.st||"").trim().toUpperCase().slice(0,2)};
   const m=String(o.addr||"").match(/([A-Za-z .'-]+),\s*([A-Za-z]{2})\b[^,]*$/);return m?{a:m[1].trim(),s:m[2].toUpperCase()}:{a:"",s:""};}
+/* Lender or Industry for the directory, the same way Membership Stats counts (Jonna, Nov 23, 2026): a paying member by its
+   Lender or Non-Lender kind. Free and Subsidiary members are listed as if they paid, from their own record: the member type,
+   then any "(Lender)", InvFee or IIF in their Aptify status or history, or an IIF invoice. Never "free". */
+function dirC(o,k){if(k==="Lender")return "lender";if(k==="Non-Lender")return "industry";
+  if(o.type==="Lender")return "lender";if(o.type==="Non-Lender")return "industry";
+  let s="";try{s=String(curStatus(o)||"");}catch(e){}
+  const L=/\(lender\)|invfee|\biif\b/i;
+  return o.iif||L.test(s)||(o.hist||[]).some(x=>x&&(L.test(String(x.status||""))||L.test(String(x.level||""))))?"lender":"industry";}
 function dirBuild(){const Y=String(RY-1),seen=new Set();
   return ORGS.filter(o=>o&&o.life==="Active"&&o.name).map(o=>{const lv=levelIn(o,Y)||o.level||"",k=kindIn(o,Y),loc=dirLoc(o);
-    return {n:String(o.name).trim(),t:dirT(lv),c:(k==="Lender"||o.type==="Lender")?"lender":"industry",s:loc.s,a:loc.a,u:siteOf(o)};})
+    return {n:String(o.name).trim(),t:dirT(lv),c:dirC(o,k),s:loc.s,a:loc.a,u:siteOf(o)};})
     .filter(x=>{const key=x.n.toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).sort((a,b)=>a.n.localeCompare(b.n));}
 async function dirSync(){if(DIR.busy||typeof db==="undefined"||!db||canWrite===false||!DIR.loaded)return;
   if(!ORGS.length||ORGS.length<1000||typeof APT==="undefined"||!APT)return;
