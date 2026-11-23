@@ -1,5 +1,5 @@
 {
- "live": "20261123-1730",
+ "live": "20261123-1740",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -413,6 +413,13 @@
    "savedAt": "2026-11-23T17:30:37Z",
    "by": "jycritchley",
    "how": "published from the test copy"
+  },
+  {
+   "version": "20261123-1740",
+   "sha256": "9bac4754994392dabd228bd141e1c90f06067c0238a605bebe5da3b65e1f1866",
+   "savedAt": "2026-11-23T17:40:19Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Contacts from Team HQ Industry Events (CN-003)"
   }
  ],
  "history": [
@@ -821,6 +828,13 @@
    "action": "publish",
    "version": "20261123-1730",
    "replaced": "20261123-0120"
+  },
+  {
+   "at": "2026-11-23T17:40:19Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261123-1740",
+   "replaced": "20261123-1730"
   }
  ]
 }
