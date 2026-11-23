@@ -7,6 +7,10 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-23
+
+- Member Directory: each member's Lender or Industry on the website now follows Membership Stats. Paying members go by their Lender or Non-Lender kind; Free and Subsidiary members are listed as if they paid, from their own record (member type, then a Lender or IIF status or history). categories.json is now built from the same member list, so it no longer overrides members.json with Aptify company types. Today: 790 members, 539 Lender (536 + 3 Free) and 251 Industry (230 + 21 Free and Subsidiary).
+
 ## 2026-11-22
 
 - Home: On Your Plate shows only the signed-in person's own follow-ups. A New Applications tile (this month, names, how many still to set up) replaces Outreach This Week, and Team Activity is off Home (it stays in Activity).
