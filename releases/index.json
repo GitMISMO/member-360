@@ -1,5 +1,5 @@
 {
- "live": "20261123-2140",
+ "live": "20261124-0222",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -427,6 +427,13 @@
    "savedAt": "2026-11-23T21:40:47Z",
    "by": "jycritchley",
    "how": "published from the test copy: Activity: jkearns shows as Jonathan Kearns"
+  },
+  {
+   "version": "20261124-0222",
+   "sha256": "e16b9d1ee7066e92d2238e6e54ca94df945e9d7fa71d7d84cd09b08eddafa662",
+   "savedAt": "2026-11-24T02:22:25Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: MISMO contact roles from Aptify (Billing, Voting Rep, Voting Alternate, IIF Rep)"
   }
  ],
  "history": [
@@ -849,6 +856,13 @@
    "action": "publish",
    "version": "20261123-2140",
    "replaced": "20261123-1740"
+  },
+  {
+   "at": "2026-11-24T02:22:25Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261124-0222",
+   "replaced": "20261123-2140"
   }
  ]
 }
