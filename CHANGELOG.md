@@ -9,6 +9,8 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-24
 
+- The Smartsheet Membership Tracker upload is gone from Settings: the tracker is no longer used (Jonna). Everything earlier uploads added stays. Contacts and MISMO roles come from Aptify every week and from the Membership Desk.
+- Contact updates from the desk can be for any company in Member 360 (members, prospects, IIF lenders, former members). A company the team types in that isn't here under any name is added as a new prospect with the person they added.
 - MISMO contact roles from Aptify: the weekly Aptify report has a new MISMO Contact Roles sheet listing every MISMO Billing Contact (MBC), Voting Representative (MVR), Voting Alternate (MVA) and InvFee Rep. Each week Member 360 adds Billing, Voting Rep, Voting Alternate or IIF Rep to the matching contact, and adds the person as a contact if they aren't on the record yet. Roles are only ever added, and a contact someone changed by hand keeps the roles they set. Voting Rep, Voting Alternate and IIF Rep are new roles, also in Targeted Lists. Member 360 is where MISMO contact roles are kept, not the Smartsheet Membership Tracker.
 - Contact updates from the Membership Desk: when the membership team sends a contact change from the desk's new Contact Updates page, Member 360 puts it on the company's record as soon as Member 360 is open, and every 5 minutes while it stays open. Someone who has left moves to Former Contacts. Member 360 sends the desk each member's and prospect's current contacts for the form, and tells it which updates are in.
 
