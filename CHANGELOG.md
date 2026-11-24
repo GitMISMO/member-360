@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-24
 
+- Website work product downloads now come from MISMO Media's read-only copy for Member 360 (Change Notice CN-021, approved by Jonna) instead of MISMO Media's whole download file. Nothing changes on the record, except that someone whose sign-in can't read it sees a quiet "no access" line. System Health has a new MISMO Media Website Downloads row.
 - The Smartsheet Membership Tracker upload is gone from Settings: the tracker is no longer used (Jonna). Everything earlier uploads added stays. Contacts and MISMO roles come from Aptify every week and from the Membership Desk.
 - Contact updates from the desk can be for any company in Member 360 (members, prospects, IIF lenders, former members). A company the team types in that isn't here under any name is added as a new prospect with the person they added.
 - MISMO contact roles from Aptify: the weekly Aptify report has a new MISMO Contact Roles sheet listing every MISMO Billing Contact (MBC), Voting Representative (MVR), Voting Alternate (MVA) and InvFee Rep. Each week Member 360 adds Billing, Voting Rep, Voting Alternate or IIF Rep to the matching contact, and adds the person as a contact if they aren't on the record yet. Roles are only ever added, and a contact someone changed by hand keeps the roles they set. Voting Rep, Voting Alternate and IIF Rep are new roles, also in Targeted Lists. Member 360 is where MISMO contact roles are kept, not the Smartsheet Membership Tracker.
