@@ -5807,13 +5807,14 @@ y+=Math.ceil(show.length/cols)*30+4;
 if(L.length>show.length){ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText("and "+(L.length-show.length)+" more",P,y+10);y+=26;}
 y+=12;}
 y+=18;}}
-{const LD=leadOf(o).slice().sort((a,b)=>String(a.g||"").localeCompare(String(b.g||""))||String(a.n||"").localeCompare(String(b.n||"")));if(LD.length){heading("Leadership in MISMO Workgroups");
-const gN=new Set(LD.map(x=>x.g).filter(Boolean)).size;
-ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,"Your people hold "+n(LD.length)+" leadership role"+(LD.length===1?"":"s")+(gN?" across "+n(gN)+" workgroup"+(gN===1?"":"s"):"")+", helping set the direction of MISMO standards.",W-2*P),P,y);y+=34;
+{const LD0=leadOf(o),LP={};LD0.forEach(x=>{const k=String(x.n||"").trim().toLowerCase();const g=LP[k]=LP[k]||{n:x.n||"",roles:[]};g.roles.push([x.r,x.g].filter(Boolean).join(", "));});
+const LD=Object.values(LP).sort((a,b)=>String(a.n).localeCompare(String(b.n)));if(LD.length){heading("Leadership in MISMO Workgroups");
+const gN=new Set(LD0.map(x=>x.g).filter(Boolean)).size;
+ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,"Your people hold "+n(LD0.length)+" leadership role"+(LD0.length===1?"":"s")+(gN?" across "+n(gN)+" workgroup"+(gN===1?"":"s"):"")+", helping set the direction of MISMO standards.",W-2*P),P,y);y+=34;
 const cols=2,cw=(W-2*P)/cols,show=LD.slice(0,16);
 show.forEach((x,i)=>{const cx=P+(i%cols)*cw,cy=y+Math.floor(i/cols)*52;ctx.beginPath();ctx.arc(cx+6,cy+9,6,0,Math.PI*2);ctx.fillStyle="#2477b8";ctx.fill();
 ctx.fillStyle=SNAP_INK;ctx.font="600 16px "+SANS;ctx.fillText(fitText(ctx,x.n||"",cw-40),cx+22,cy+15);
-ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,[x.r,x.g].filter(Boolean).join(", "),cw-40),cx+22,cy+37);});
+ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,x.roles.join(" · "),cw-40),cx+22,cy+37);});
 y+=Math.ceil(show.length/cols)*52+4;
 if(LD.length>show.length){ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText("and "+(LD.length-show.length)+" more",P,y+10);y+=26;}
 y+=24;}}
@@ -5835,7 +5836,8 @@ if(EG.people.length){heading("Your MISMO-Certified Professionals");
     {const dt=v=>/^\d{4}-\d{2}/.test(String(v||""))?String(v).slice(0,10):"";
 cmsCert.forEach(x=>row("#1baf7a","MISMO Certified: "+(x.program||"")+(x.product?" — "+x.product:""),[dt(x.certified)?"Certified since "+monthYr(dt(x.certified)):"",dt(x.anniversary)?"renews "+fmt(dt(x.anniversary)):""].filter(Boolean).join(" · ")||"Certified"));
 cmsProg.forEach(x=>row(SNAP_SKY,"MISMO Certification in Progress: "+(x.program||"")+(x.product?" — "+x.product:""),[(x.kind==="renewal"?"Renewal":"Application")+" in progress",dt(x.applied)?"started "+fmt(dt(x.applied)):""].filter(Boolean).join(" · ")));}
-spP.forEach(s=>row("#eda100",(s.event||"MISMO")+" Sponsor"+(s.package?" — "+s.package:""),[s.kind?s.kind+" sponsorship":"Sponsorship",opt.amounts&&s.amount?money(s.amount):""].filter(Boolean).join(" · ")));
+spP.forEach(s=>{const pk=String(s.package||"").replace(/\((\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})\)/,(m,a,b)=>fmt(a)+" to "+fmt(b)).replace(/\b(workgroup sponsorship|renewal|annual)\b/gi,"").replace(/(\s*,\s*)+/g,", ").replace(/^[\s,·–-]+|[\s,·–-]+$/g,"").trim(),wg=/workgroup/i.test(String(s.kind||""));
+row("#eda100",(s.event||"MISMO")+" Sponsor"+(!wg&&pk?" — "+pk:""),[s.kind?s.kind+" sponsorship":"Sponsorship",wg&&pk?pk:"",opt.amounts&&s.amount?money(s.amount):""].filter(Boolean).join(" · "));});
 spIn.forEach(s=>row("#eda100",s.event+" Sponsor"+(s.level?" — "+s.level:""),[s.opp,s.comps?s.comps+" complimentary registrations per Summit":""].filter(Boolean).join(" · ")));
     y+=24;}
   if(o.life==="Active"){
