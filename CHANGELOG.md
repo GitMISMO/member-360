@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-24
 
+- The Activity Snapshot (and its PDF) now shows more of each company's engagement: work product downloads with the most downloaded work products, MISMO Connect users, workgroup leaders and their roles, CMS certifications (certified and in progress) and Sponsorship Portal sponsorships. It never shows sales stages, owners, notes, fees or invoices.
 - Website work product downloads now come from MISMO Media's read-only copy for Member 360 (Change Notice CN-021, approved by Jonna) instead of MISMO Media's whole download file. Nothing changes on the record, except that someone whose sign-in can't read it sees a quiet "no access" line. System Health has a new MISMO Media Website Downloads row.
 - The Smartsheet Membership Tracker upload is gone from Settings: the tracker is no longer used (Jonna). Everything earlier uploads added stays. Contacts and MISMO roles come from Aptify every week and from the Membership Desk.
 - Contact updates from the desk can be for any company in Member 360 (members, prospects, IIF lenders, former members). A company the team types in that isn't here under any name is added as a new prospect with the person they added.
