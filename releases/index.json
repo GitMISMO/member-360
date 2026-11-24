@@ -1,5 +1,5 @@
 {
- "live": "20261124-1439",
+ "live": "20261124-2347",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -469,6 +469,13 @@
    "savedAt": "2026-11-24T14:39:05Z",
    "by": "jycritchley",
    "how": "published from the test copy: Activity Snapshot: downloads, MISMO Connect, leadership, CMS certifications, portal sponsorships"
+  },
+  {
+   "version": "20261124-2347",
+   "sha256": "047c0049147fa5287765a9851134afa384b5e95df6add3ffdae9904ddafca93d",
+   "savedAt": "2026-11-24T23:47:30Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: CN-023: people list for Team HQ panels"
   }
  ],
  "history": [
@@ -933,6 +940,13 @@
    "action": "publish",
    "version": "20261124-1439",
    "replaced": "20261124-0322"
+  },
+  {
+   "at": "2026-11-24T23:47:30Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261124-2347",
+   "replaced": "20261124-1439"
   }
  ]
 }
