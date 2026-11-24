@@ -1,5 +1,5 @@
 {
- "live": "20261124-0322",
+ "live": "20261124-1439",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -462,6 +462,13 @@
    "savedAt": "2026-11-24T03:22:09Z",
    "by": "jycritchley",
    "how": "published from the test copy: CN-021: website downloads from MISMO Media's read-only copy (media-member-360)"
+  },
+  {
+   "version": "20261124-1439",
+   "sha256": "9c26add87c23218a84cbbcc45cfac7ab1a6e70f5e4a3a1c860b60e541684bd8d",
+   "savedAt": "2026-11-24T14:39:05Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Activity Snapshot: downloads, MISMO Connect, leadership, CMS certifications, portal sponsorships"
   }
  ],
  "history": [
@@ -919,6 +926,13 @@
    "action": "publish",
    "version": "20261124-0322",
    "replaced": "20261124-0313"
+  },
+  {
+   "at": "2026-11-24T14:39:05Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261124-1439",
+   "replaced": "20261124-0322"
   }
  ]
 }
