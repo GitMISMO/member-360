@@ -7,6 +7,11 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-24
+
+- MISMO contact roles from Aptify: the weekly Aptify report has a new MISMO Contact Roles sheet listing every MISMO Billing Contact (MBC), Voting Representative (MVR), Voting Alternate (MVA) and InvFee Rep. Each week Member 360 adds Billing, Voting Rep, Voting Alternate or IIF Rep to the matching contact, and adds the person as a contact if they aren't on the record yet. Roles are only ever added, and a contact someone changed by hand keeps the roles they set. Voting Rep, Voting Alternate and IIF Rep are new roles, also in Targeted Lists. Member 360 is where MISMO contact roles are kept, not the Smartsheet Membership Tracker.
+- Contact updates from the Membership Desk: when the membership team sends a contact change from the desk's new Contact Updates page, Member 360 puts it on the company's record as soon as Member 360 is open, and every 5 minutes while it stays open. Someone who has left moves to Former Contacts. Member 360 sends the desk each member's and prospect's current contacts for the form, and tells it which updates are in.
+
 ## 2026-11-23
 
 - Sponsorship and Certifications on each record (Change Notices CN-017 and CN-018, approved by Jonna): a company's Engagement tab now shows its Sponsorship Portal activity (an open sponsorship prospect, and every sponsorship with its status, invoice and payment) and its CMS certification activity (each application or certification with its stage, fee, payment and next step), read straight from those systems every 30 minutes. Member 360 only reads them. Someone without access to the Sponsorship Portal's or the CMS's data sees a quiet line instead. System Health has a row for each list. See Help, Sponsorship and Certifications on a Record.
