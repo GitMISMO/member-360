@@ -1,5 +1,5 @@
 {
- "live": "20261124-0313",
+ "live": "20261124-0322",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -455,6 +455,13 @@
    "savedAt": "2026-11-24T03:13:17Z",
    "by": "jycritchley",
    "how": "published from the test copy: Desk contact updates for any company; Smartsheet tracker upload retired"
+  },
+  {
+   "version": "20261124-0322",
+   "sha256": "952cc37eb02fc651f475aa833c8c630169b9c917fd089c70d8eec6308dd181cb",
+   "savedAt": "2026-11-24T03:22:09Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: CN-021: website downloads from MISMO Media's read-only copy (media-member-360)"
   }
  ],
  "history": [
@@ -905,6 +912,13 @@
    "action": "publish",
    "version": "20261124-0313",
    "replaced": "20261124-0245"
+  },
+  {
+   "at": "2026-11-24T03:22:09Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261124-0322",
+   "replaced": "20261124-0313"
   }
  ]
 }
