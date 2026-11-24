@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-24
 
+- Team HQ's Industry Events can fill in who is on a panel from Member 360 (Change Notice CN-023, approved by Jonna): Member 360 keeps a people list (each contact's name, title and email, with their company and whether it is a member) that Team HQ reads with your own sign-in. Team HQ can't change anything in Member 360. Fix a person's details on their company's record here.
 - The Activity Snapshot (and its PDF) now shows more of each company's engagement: work product downloads with the most downloaded work products, MISMO Connect users, workgroup leaders and their roles, CMS certifications (certified and in progress) and Sponsorship Portal sponsorships. It never shows sales stages, owners, notes, fees or invoices.
 - Website work product downloads now come from MISMO Media's read-only copy for Member 360 (Change Notice CN-021, approved by Jonna) instead of MISMO Media's whole download file. Nothing changes on the record, except that someone whose sign-in can't read it sees a quiet "no access" line. System Health has a new MISMO Media Website Downloads row.
 - The Smartsheet Membership Tracker upload is gone from Settings: the tracker is no longer used (Jonna). Everything earlier uploads added stays. Contacts and MISMO roles come from Aptify every week and from the Membership Desk.
