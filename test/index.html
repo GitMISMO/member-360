@@ -5812,10 +5812,12 @@ const LD=Object.values(LP).sort((a,b)=>String(a.n).localeCompare(String(b.n)));i
 const gN=new Set(LD0.map(x=>x.g).filter(Boolean)).size;
 ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,"Your people hold "+n(LD0.length)+" leadership role"+(LD0.length===1?"":"s")+(gN?" across "+n(gN)+" workgroup"+(gN===1?"":"s"):"")+", helping set the direction of MISMO standards.",W-2*P),P,y);y+=34;
 const cols=2,cw=(W-2*P)/cols,show=LD.slice(0,16);
-show.forEach((x,i)=>{const cx=P+(i%cols)*cw,cy=y+Math.floor(i/cols)*52;ctx.beginPath();ctx.arc(cx+6,cy+9,6,0,Math.PI*2);ctx.fillStyle="#2477b8";ctx.fill();
+for(let i=0;i<show.length;i+=cols){let rh=0;
+show.slice(i,i+cols).forEach((x,j)=>{const cx=P+j*cw,cy=y;ctx.beginPath();ctx.arc(cx+6,cy+9,6,0,Math.PI*2);ctx.fillStyle="#2477b8";ctx.fill();
 ctx.fillStyle=SNAP_INK;ctx.font="600 16px "+SANS;ctx.fillText(fitText(ctx,x.n||"",cw-40),cx+22,cy+15);
-ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText(fitText(ctx,x.roles.join(" · "),cw-40),cx+22,cy+37);});
-y+=Math.ceil(show.length/cols)*52+4;
+ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;x.roles.forEach((rl,k)=>ctx.fillText(fitText(ctx,rl,cw-40),cx+22,cy+37+k*20));
+rh=Math.max(rh,30+x.roles.length*20);});y+=rh+12;}
+y+=2;
 if(LD.length>show.length){ctx.fillStyle=SNAP_INK2;ctx.font="400 14px "+SANS;ctx.fillText("and "+(LD.length-show.length)+" more",P,y+10);y+=26;}
 y+=24;}}
 if(EG.people.length){heading("Your MISMO-Certified Professionals");
