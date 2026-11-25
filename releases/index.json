@@ -1,5 +1,5 @@
 {
- "live": "20261125-1709",
+ "live": "20261125-1715",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -560,6 +560,13 @@
    "savedAt": "2026-11-25T17:09:15Z",
    "by": "jycritchley",
    "how": "published from the test copy: Outstanding filter buttons, Payment in Process from Home, refunds not flagged"
+  },
+  {
+   "version": "20261125-1715",
+   "sha256": "764c97283b78886d5d3566465d8be8b88a56379e324b1ba1fa6ccf18b32825db",
+   "savedAt": "2026-11-25T17:15:19Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Outstanding: New Members and Renewals only; Aptify quotes for prospects"
   }
  ],
  "history": [
@@ -1115,6 +1122,13 @@
    "action": "publish",
    "version": "20261125-1709",
    "replaced": "20261125-1642"
+  },
+  {
+   "at": "2026-11-25T17:15:19Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1715",
+   "replaced": "20261125-1709"
   }
  ]
 }
