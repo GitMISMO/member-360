@@ -12323,6 +12323,52 @@ if(typeof hlExtra==="function"){const _hw=hlExtra;hlExtra=async function(rows){a
     level:S.ok===false?"warn":S.ok?(late?"warn":"ok"):"info",
     note:S.ok===false?(S.no?S.err+". Check People & Access in the relay (relay key media-member-360)":"Couldn't read: "+S.err):
       S.ok?(late?"Late: the list was made "+xfWhen(S.updated):"Read "+(WPDL||[]).length+" download"+((WPDL||[]).length===1?"":"s")+" since "+fmt(WPDL_FROM)+(S.updated?"; list made "+xfWhen(S.updated):"")):"Not read yet on this screen"});};}
+/* ---------- Health checks wait for every source (CN-031, approved by Jonna, Nov 25, 2026) ----------
+   On Nov 25 a check ran while company records were still loading, so "Every merged record points to a record that
+   exists" failed for two merges whose companies do exist, Jonna got a false alert, and a run saved "Not loaded yet" for
+   Aptify Upload and MISMO Money Payments. Now Check Now and the automatic check first wait until the opening screen
+   ("Loading every source so the numbers you see are final", window.__m3oLoading) is done and every source the checks
+   read has loaded: the company record files (the member list, the orgs overrides with merges, sync with the companies
+   Aptify added), Aptify, MISMO Money and the manual prospects. No new delay: when all is in, it checks straight away.
+   After HL_WAIT_MS a source still missing shows as "Couldn't load", the data rules that read it are left unjudged (not
+   failed), and the run is neither saved to health/main nor alerted on, so it never overwrites a finished record.
+   Rules, thresholds and email wording are unchanged. */
+const HL_WAIT_MS=90000;
+const HL_SRC=[
+  {key:"orgs",name:"Company Records",feed:"",ok:()=>typeof ORGS!=="undefined"&&ORGS.length>0&&MERGESIG!==null&&SYNC!==null},
+  {key:"aptify",name:"Aptify",feed:"feed-aptify",ok:()=>typeof APT!=="undefined"&&!!APT},
+  {key:"money",name:"MISMO Money",feed:"feed-money",ok:()=>{const m=window.__m360Money,st=m&&m.status?m.status():null;if(!st||!st.at)return false;if(st.error)return "fail";return !st.has||!!EXTRA.mmAt;}},
+  {key:"manual",name:"Manual Prospects",feed:"",ok:()=>!!EXTRA.manualAt}];
+/* the data rules and the sources each one reads; the made-up examples read none */
+const HL_RULE_SRC={"No two records share an Aptify Company ID":["orgs","aptify","money","manual"],"Every merged record points to a record that exists":["orgs","aptify","money","manual"]};
+HL.miss=[];HL.waiting=false;
+function hlSrcNow(){return HL_SRC.map(s=>{let v;try{v=s.ok();}catch(e){v=false;}return {s,v};});}
+async function hlWaitSources(){const t0=Date.now();
+  const state=()=>{const st=hlSrcNow();return {wait:!!window.__m3oLoading||st.some(x=>x.v===false),miss:st.filter(x=>x.v!==true).map(x=>x.s)};};
+  let st=state();if(!st.wait)return st.miss;
+  HL.waiting=true;try{hlPaint();}catch(e){}
+  try{while(st.wait&&Date.now()-t0<HL_WAIT_MS){await new Promise(r=>setTimeout(r,250));st=state();}}finally{HL.waiting=false;}
+  return st.miss;}
+{const _hc=hlCheck;let run=null;hlCheck=function(){if(run)return run;
+  run=(async()=>{try{HL.miss=await hlWaitSources();return await _hc.apply(this,arguments);}finally{run=null;}})();return run;};}
+{const _hr=hlRuleChecks;hlRuleChecks=function(){const R=_hr.apply(this,arguments),miss=(HL.miss||[]).map(s=>s.key);
+  if(miss.length)R.forEach(x=>{const need=HL_RULE_SRC[x.name];const gone=need?HL_SRC.filter(s=>need.indexOf(s.key)>=0&&miss.indexOf(s.key)>=0):[];
+    if(gone.length){x.ok=true;x.skip="Not judged: "+gone.map(s=>s.name).join(", ")+" couldn't load";}});
+  return R;};}
+{const _hx=hlExtra;hlExtra=async function(rows){await _hx.apply(this,arguments);const miss=HL.miss||[];if(!miss.length)return;
+  miss.forEach(s=>{const r=s.feed&&rows.find(z=>z.key===s.feed);if(r){r.level="warn";r.note="Couldn't load";}
+    else rows.push({grp:"feeds",key:"load-"+s.key,name:s.name,what:"A source the health checks read",when:"",every:"Each open",level:"warn",note:"Couldn't load"});});
+  const rr=rows.find(z=>z.key==="rule-checks"),R=HL.checks||[],sk=R.filter(x=>x.skip).length;
+  if(rr&&sk){const bad=R.filter(x=>!x.ok);rr.level=bad.length?"bad":"warn";rr.note=(bad.length?bad.length+" failing: "+bad.map(x=>x.name).join("; "):"None failing")+"; "+sk+" not judged (a source couldn't load)";}};}
+{const _hrec=hlRecord;hlRecord=async function(rows){if((HL.miss||[]).length){console.warn("health: not saved and no alert, still loading: "+HL.miss.map(s=>s.name).join(", "));return;}return _hrec.apply(this,arguments);};}
+{const _hp3=hlPaint;hlPaint=function(){const r=_hp3.apply(this,arguments);try{const sec=$("v-health");if(!sec||sec.hidden)return r;
+    const R=HL.checks||[],cs=sec.querySelectorAll("#hl-rules .hl-c");
+    R.forEach((x,i)=>{const c=cs[i];if(!x.skip||!c)return;const d=c.querySelector(".hl-d");if(d)d.className="hl-d info";const t=c.children[1];if(t&&!t.querySelector(".hl-skip")){const n=document.createElement("div");n.className="x hl-skip";n.style.color="var(--ink-3)";n.textContent=x.skip;t.appendChild(n);}});
+    const sk=R.filter(x=>x.skip).length,hd=sec.querySelector("#hl-rules h2 .hint");if(hd&&sk){const nb=R.filter(x=>!x.ok).length;hd.textContent=(nb?nb+" of "+R.length+" failing":"None failing")+", "+sk+" not judged";}
+    const f=$("hl-feeds");if(f){let w=f.querySelector(".hl-wait");const miss=HL.miss||[];
+      const msg=HL.waiting?"Waiting for every source to finish loading (company records, Aptify, MISMO Money, manual prospects) before checking. Nothing is judged or saved until then.":
+        miss.length&&HL.rows?"Not saved and no alert: "+miss.map(s=>s.name).join(", ")+" couldn't load in time, so this check is only shown here.":"";
+      if(!msg){if(w)w.remove();}else{if(!w){w=document.createElement("div");w.className="hl-foot hl-wait";f.appendChild(w);}w.textContent=msg;}}}catch(e){console.error("health wait",e);}return r;};}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 })();
 </script>

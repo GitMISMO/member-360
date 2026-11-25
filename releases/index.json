@@ -1,5 +1,5 @@
 {
- "live": "20261125-1512",
+ "live": "20261125-1554",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -532,6 +532,13 @@
    "savedAt": "2026-11-25T15:12:30Z",
    "by": "jycritchley",
    "how": "published from the test copy: Outstanding page"
+  },
+  {
+   "version": "20261125-1554",
+   "sha256": "8fe0b365a915bbeab481bfd6f6fbd96275eb14a89e41f8823a5b22b6ef81de81",
+   "savedAt": "2026-11-25T15:54:39Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: CN-031: health checks wait for all data to load"
   }
  ],
  "history": [
@@ -1059,6 +1066,13 @@
    "action": "publish",
    "version": "20261125-1512",
    "replaced": "20261125-1405"
+  },
+  {
+   "at": "2026-11-25T15:54:39Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1554",
+   "replaced": "20261125-1512"
   }
  ]
 }
