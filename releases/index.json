@@ -1,5 +1,5 @@
 {
- "live": "20261125-1642",
+ "live": "20261125-1709",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -553,6 +553,13 @@
    "savedAt": "2026-11-25T16:42:46Z",
    "by": "jycritchley",
    "how": "published from the test copy: Weekly Aptify load reads big workbooks in pieces"
+  },
+  {
+   "version": "20261125-1709",
+   "sha256": "b106c0d6eccbc885b2d33e0f5e05b6225d66a77e6126e927bc607d385dde8601",
+   "savedAt": "2026-11-25T17:09:15Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Outstanding filter buttons, Payment in Process from Home, refunds not flagged"
   }
  ],
  "history": [
@@ -1101,6 +1108,13 @@
    "action": "publish",
    "version": "20261125-1642",
    "replaced": "20261125-1634"
+  },
+  {
+   "at": "2026-11-25T17:09:15Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1709",
+   "replaced": "20261125-1642"
   }
  ]
 }
