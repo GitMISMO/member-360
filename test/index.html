@@ -10305,7 +10305,10 @@ function outRows(){const out=[],nm=s=>String(s||"").toLowerCase().replace(/[^a-z
   try{const pd=deskInvPaid();(DESK_INV||[]).forEach(v=>{if(!v||v.archived||v.paidBy||pd[v.id])return;
     out.push({kind:"Desk invoice",name:v.name,k:"",cid:v.cid||"",order:v.number||"",exp:+v.amount||0,paid:0,owed:+v.amount||0,since:String(v.date||"").slice(0,10),sl:"Invoiced",owner:"",note:v.what||""});});}catch(e){}
   try{const os=(MMF&&MMF.orders)||{},byC={},byO={},al=(ALIAS&&ALIAS.map)||{},cut=addDays(TODAY,-365);ORGS.forEach(o=>{if(o.cid)byC[String(o.cid)]=o;((ACT[o.k]||{}).items||[]).forEach(i=>{if(i&&i.o&&!byO[String(i.o)])byO[String(i.o)]=o;});});
-    Object.values(os).forEach(r=>{if(!r)return;const mem=(r.lines||[]).filter(l=>MMLEVEL.test(String(l.product||""))&&(+l.amount||0)>0);if(!mem.length||!((+r.net||0)>0))return;
+    /* a payment refunded later on its own cancellation order (same membership, same start) nets to nothing, so it isn't flagged: CMBS.com's $550 on the old 2023 Sole order 5957962, paid Jul 7, 2026 and refunded Jul 13 on order 6261437 (Jonna, Nov 25, 2026) */
+    const refd={};Object.values(os).forEach(r=>{if(!r||!((+r.net||0)<0))return;(r.lines||[]).forEach(l=>{const k=String(l.product||"")+"|"+String(l.start||"").slice(0,10);(refd[k]=refd[k]||[]).push({on:String(r.firstPaidOn||r.lastPaidOn||"").slice(0,10),n:-(+r.net||0)});});});
+    const refunded=(r,l)=>(refd[String(l.product||"")+"|"+String(l.start||"").slice(0,10)]||[]).some(x=>x.n>=(+l.amount||0)-0.01&&Math.abs(Date.parse(x.on)-Date.parse(String(r.firstPaidOn||r.lastPaidOn||"").slice(0,10)))<=120*864e5);
+    Object.values(os).forEach(r=>{if(!r)return;const mem=(r.lines||[]).filter(l=>MMLEVEL.test(String(l.product||""))&&(+l.amount||0)>0&&!refunded(r,l));if(!mem.length||!((+r.net||0)>0))return;
       const on=String(r.firstPaidOn||r.lastPaidOn||"").slice(0,10);if(!on||on<cut)return;
       /* the order already sits on a company (Member 360 matched it, by alias or name), so it is matched */let o=byO[String(r.order||"")]||(r.companyId&&byC[String(r.companyId)])||(al[r.company]&&BY[al[r.company]])||ORGS.find(x=>nm(x.name)===nm(r.company))||null;
       for(let i=0;o&&ov(o).mergedInto&&BY[ov(o).mergedInto]&&i<5;i++)o=BY[ov(o).mergedInto];
