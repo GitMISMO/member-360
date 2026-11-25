@@ -10268,8 +10268,7 @@ function askInit(){const v=$("v-help");if(!v||$("ask-card"))return;const head=v.
   +'#ask-card .ask-t{border-collapse:collapse;width:100%;font-size:12.5px}#ask-card .ask-t th{position:sticky;top:0;background:var(--surface-3);text-align:left;padding:6px 9px;font-weight:700}'
   +'#ask-card .ask-t td{padding:5px 9px;border-top:1px solid var(--line)}#ask-card .ask-t td.n,#ask-card .ask-t th.n{text-align:right;font-variant-numeric:tabular-nums}';
   document.head.appendChild(st);}
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",askInit);else askInit();
-show=(function(orig){return function(tab){orig(tab);if(tab==="help"){askInit();askProbe();}};})(show);
+/* Ask Member 360 is turned off (Jonna, Nov 24, 2026): the card no longer shows on Help. Its code stays so it can come back. */
 
 function show(tab){
   document.querySelectorAll(".hq nav button[data-hq]").forEach(b=>{if(b.dataset.hq===tab)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
