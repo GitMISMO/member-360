@@ -269,6 +269,8 @@ something is saved)
   set-ups.
 - Membership engagement meeting requests go to scheduling@mismo.org.
 
+- **Browser tab icon (CN-030, approved by Jonna, Nov 25, 2026).** Every page this repo serves (the main page and its test copy, `apply/`, `applied/`, `meet.html`) has exactly one icon line in `<head>`, right after `<title>`: `<link rel="icon" type="image/png" sizes="48x48" href="https://resources.mismo.org/assets/favicon-48x48.png">`, the shared MISMO S mark that www.mismo.org uses. Never copy the image into this repo and never add another icon line; a change to the icon is made once in the shared file. The Outlook add-in's own icons (`outlook/icon-*.png`, `outlook/manifest.xml`) are not browser tab icons and stay as they are.
+
 **Safety**
 
 - **Archive, never delete.** Anything that removes records should set them aside where they can be brought back.

@@ -7,6 +7,10 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-25
+
+- Browser tab icon now matches mismo.org (Change Notice CN-030, approved by Jonna): every Member 360 page (the main page, the membership application, Member Setup and Schedule a Membership Engagement Meeting) shows the MISMO S mark from the shared copy at resources.mismo.org.
+
 ## 2026-11-24
 
 - Team HQ's Industry Events can fill in who is on a panel from Member 360 (Change Notice CN-023, approved by Jonna): Member 360 keeps a people list (each contact's name, title and email, with their company and whether it is a member) that Team HQ reads with your own sign-in. Team HQ can't change anything in Member 360. Fix a person's details on their company's record here.
