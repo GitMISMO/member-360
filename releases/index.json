@@ -1,5 +1,5 @@
 {
- "live": "20261125-1715",
+ "live": "20261125-1728",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -567,6 +567,13 @@
    "savedAt": "2026-11-25T17:15:19Z",
    "by": "jycritchley",
    "how": "published from the test copy: Outstanding: New Members and Renewals only; Aptify quotes for prospects"
+  },
+  {
+   "version": "20261125-1728",
+   "sha256": "4d93e2185b0406b54baf41a41232e975a329d5339e03f15afe01424e47cf9bac",
+   "savedAt": "2026-11-25T17:28:38Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Outstanding uses open membership quotes from the weekly Aptify pull"
   }
  ],
  "history": [
@@ -1129,6 +1136,13 @@
    "action": "publish",
    "version": "20261125-1715",
    "replaced": "20261125-1709"
+  },
+  {
+   "at": "2026-11-25T17:28:38Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1728",
+   "replaced": "20261125-1715"
   }
  ]
 }
