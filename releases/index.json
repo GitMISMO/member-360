@@ -1,5 +1,5 @@
 {
- "live": "20261125-1554",
+ "live": "20261125-1634",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -539,6 +539,13 @@
    "savedAt": "2026-11-25T15:54:39Z",
    "by": "jycritchley",
    "how": "published from the test copy: CN-031: health checks wait for all data to load"
+  },
+  {
+   "version": "20261125-1634",
+   "sha256": "7d6b40940059a74478cd2d42e3b1149c5d2a062b4509d747e3c6222a515211f3",
+   "savedAt": "2026-11-25T16:34:54Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Outstanding laid out like New Members, under Membership Desk"
   }
  ],
  "history": [
@@ -1073,6 +1080,13 @@
    "action": "publish",
    "version": "20261125-1554",
    "replaced": "20261125-1512"
+  },
+  {
+   "at": "2026-11-25T16:34:54Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1634",
+   "replaced": "20261125-1554"
   }
  ]
 }
