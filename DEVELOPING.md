@@ -291,7 +291,7 @@ problem not again for 3 days. Gray dots are feeds that only change when somethin
 | Aptify Upload | The weekly Aptify data; late after 8 days, red after 14 |
 | Aptify Weekly Email | The Monday workbook arrived, passed its check and was loaded |
 | MISMO Money Payments | Payments MISMO Money matches to companies |
-| Square Specials | Square payments and set-ups from MISMO Money |
+| Square Specials | Square payments and set-ups from MISMO Money (`membership-desk/square`). Gray: MISMO Money rewrites it only when a Square payment or set-up changes, so a quiet week is normal and it never shows late or alerts; red only if it can't be read (`mustRead` in `HL_FEEDS`). MISMO Money stopping is caught by MISMO Money Payments (CN-032, Nov 25, 2026) |
 | Membership Desk To-Dos | What the membership team sees on their desk |
 | Kelly's Tracker Upload | Notes, contacts and new companies from her sheet |
 | MISMO Matters New Members | New members handed to MISMO Media |

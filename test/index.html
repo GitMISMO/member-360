@@ -11913,14 +11913,14 @@ async function hlGet(path){const base=path.indexOf("membership-desk/")===0?DESK_
 const HL_FEEDS=[
   {key:"aptify",name:"Aptify Upload",what:"Your weekly Aptify pull: members, orders, levels, terms",every:"Weekly",late:8,bad:14,at:()=>typeof APT!=="undefined"&&APT?APT.uploadedAt:""},
   {key:"money",name:"MISMO Money Payments",what:"Payments MISMO Money matches to companies",every:"Daily",late:3,bad:6,at:()=>typeof MMF!=="undefined"&&MMF?MMF.writtenAt:""},
-  {key:"square",name:"Square Specials",what:"Square payments and set-ups from MISMO Money",every:"Daily",late:3,bad:6,doc:"membership-desk/square",f:"writtenAt"},
+  {key:"square",name:"Square Specials",what:"Square payments and set-ups from MISMO Money",every:"When a Square payment or set-up changes",info:true,mustRead:true,doc:"membership-desk/square",f:"writtenAt"},/* gray, never late: MISMO Money rewrites it only when something changes; still red if it can't be read (CN-032, Jonna, Nov 25, 2026) */
   {key:"desk",name:"Membership Desk To-Dos",what:"What the membership team sees on their desk",every:"Daily",late:3,bad:6,doc:"membership-desk/todos",f:"writtenAt"},
   {key:"tracker",name:"Kelly's Tracker Upload",what:"Notes, contacts and new companies from her sheet",every:"Weekly",late:10,bad:21,at:()=>{try{return ((TRK.P&&TRK.P.meta)||TRK.meta||{}).at||"";}catch(e){return "";}}},
   {key:"mmnew",name:"MISMO Matters New Members",what:"New members handed to MISMO Media",every:"When members join",info:true,doc:"member-360/mm-newmembers",f:"savedAt"},
   {key:"champ",name:"Website Champion Logos",what:"The public feed the website reads",every:"When champions change",info:true,doc:"member-360/champions",f:"savedAt"},
   {key:"apps",name:"Membership Applications",what:"Applications from the website form",every:"When one comes in",info:true,doc:"member-360/applications",f:"savedAt"},
   {key:"mailin",name:"360@ Mailbox",what:"Emails forwarded or copied to 360@mismo.org",every:"When one comes in",info:true,doc:"member-360/mailin",f:"savedAt"}];
-function hlLevel(f,iso){if(!iso)return f.info?"info":"bad";const a=hlAge(iso);if(f.info)return "info";return a>f.bad?"bad":a>f.late?"warn":"ok";}
+function hlLevel(f,iso){if(!iso)return f.info&&!f.mustRead?"info":"bad";const a=hlAge(iso);if(f.info)return "info";return a>f.bad?"bad":a>f.late?"warn":"ok";}
 async function hlCheck(){if(HL.busy)return HL.rows;HL.busy=true;try{
   const rows=[];
   for(const f of HL_FEEDS){let iso="";try{if(f.doc){const d=await hlGet(f.doc);iso=d[f.f]||d.savedAt||"";}else iso=f.at()||"";}catch(e){iso="";}
@@ -11950,6 +11950,7 @@ async function hlCheck(){if(HL.busy)return HL.rows;HL.busy=true;try{
 async function hlRecord(rows){if(typeof db==="undefined"||!db||canWrite===false)return;
   const bad=rows.filter(r=>r.level==="bad"),hm=HL.hm||{},keys=bad.map(r=>r.key).sort().join(",");
   const alerted=Object.assign({},hm.alerted||{});let alertAt=hm.alertAt||"";
+  if(!bad.some(r=>r.key==="feed-square"))delete alerted["feed-square"];/* CN-032: a cleared Square Specials problem leaves no trace */
   const fresh=bad.filter(r=>hlAge(alerted[r.key])>3);
   if(fresh.length&&hlAge(alertAt)>=0.8&&typeof canSend==="function"&&canSend()){
     try{await hlAlert(fresh,bad);const now=new Date().toISOString();fresh.forEach(r=>{alerted[r.key]=now;});alertAt=now;}catch(e){console.error("health alert",e);}}
