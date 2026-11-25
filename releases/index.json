@@ -1,5 +1,5 @@
 {
- "live": "20261125-0258",
+ "live": "20261125-1405",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -518,6 +518,13 @@
    "savedAt": "2026-11-25T02:58:41Z",
    "by": "jycritchley",
    "how": "published from the test copy: Set-up prospects show Aptify ID and order on the Desk"
+  },
+  {
+   "version": "20261125-1405",
+   "sha256": "5c8c5c588f6fa2c9fc889782396ff5c9e4180379212a2ed5c582eb1f17d18a2d",
+   "savedAt": "2026-11-25T14:05:17Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Free box keeps next-year and No choices"
   }
  ],
  "history": [
@@ -1031,6 +1038,13 @@
    "action": "publish",
    "version": "20261125-0258",
    "replaced": "20261125-0251"
+  },
+  {
+   "at": "2026-11-25T14:05:17Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1405",
+   "replaced": "20261125-0258"
   }
  ]
 }

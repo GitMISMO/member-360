@@ -7979,15 +7979,15 @@ async function saveSet(patch){
    comp: {why, years, by, at}; the older free members carry FREE from the Smartsheet tracker instead. */
 function compCtl(o){const y=String(RY-1),ny=String(RY),c=(ov(o)||{}).comp||{},yrs=(c.years||[]).map(String);
   const sel=h("select",null,...[["","No: a paid membership"],["In kind","In kind"],["Comped","Comped"],["Subsidiary","Subsidiary (covered by the parent)"]].map(x=>h("option",{value:x[0]},x[1])));
-  sel.value=yrs.includes(y)?(c.why||""):"";const nx=h("input",{type:"checkbox"});nx.checked=yrs.includes(ny);const msg=h("span",{class:"hint"});
+  /* a record the old tracker had as FREE shows Comped here, so ticking next year saves; choosing No saves "not free" so the tracker's FREE no longer counts (CalMBA, Fannie Mae Multifamily, Cotality lost their choices on Nov 24; Jonna, Nov 25, 2026) */const trk=((o.hist||[]).find(x=>String(x.y)===y&&!x.a)||{}).status||"",trkFree=!c.notFree&&/^free/i.test(trk);sel.value=yrs.includes(y)?(c.why||""):(trkFree?"Comped":"");const nx=h("input",{type:"checkbox"});nx.checked=yrs.includes(ny);const msg=h("span",{class:"hint"});
   const save=()=>{const why=sel.value;msg.textContent="Saving…";
-    saveOv(o.k,{comp:why?{why,years:[y].concat(nx.checked?[ny]:[]),by:ME||"",at:new Date().toISOString().slice(0,10)}:null}).then(()=>{msg.textContent=why?"Saved: counted as Free.":"Saved.";});};
+    saveOv(o.k,{comp:why?{why,years:[y].concat(nx.checked?[ny]:[]),by:ME||"",at:new Date().toISOString().slice(0,10)}:(/^free/i.test(trk)?{why:"",notFree:true,years:[],by:ME||"",at:new Date().toISOString().slice(0,10)}:null)}).then(()=>{msg.textContent=why?"Saved: counted as Free.":"Saved.";});};
   sel.addEventListener("change",save);nx.addEventListener("change",save);
   const old=!yrs.includes(y)&&/^free/i.test(curStatus(o)||"");
   return h("div",{class:"p360-comp",style:"margin-top:12px"},h("label",{style:"display:block;font-weight:600;margin-bottom:4px"},"Complimentary Membership ("+y+")"),sel,
     h("label",{style:"display:flex;gap:6px;align-items:center;margin-top:6px"},nx,"Also free for "+ny),
     h("div",{class:"hint",style:"margin-top:4px"},old?"Already free in the membership tracker.":"Free memberships never show as paid: Member 360 counts them as Free and never chases a payment."),msg);}
-function curStatus(o){const y=String(RY-1);{const c=(ov(o)||{}).comp;if(c&&c.why&&(c.years||[]).map(String).includes(y))return "FREE";}const hs=o.hist.find(x=>String(x.y)===y&&!x.a);return hs?hs.status||"":"";}
+function curStatus(o){const y=String(RY-1);{const c=(ov(o)||{}).comp;if(c&&c.why&&(c.years||[]).map(String).includes(y))return "FREE";}const hs=o.hist.find(x=>String(x.y)===y&&!x.a);const st=hs?hs.status||"":"";if(((ov(o)||{}).comp||{}).notFree&&/^free/i.test(st))return "";return st;}
 /* free first, then the member type; when the type is blank, the status says it: "(Lender)" or InvFee means a lender, anything else a non-lender */
 function memKind(o){const s=curStatus(o);if(/^free/i.test(s))return "Free";if(o.type==="Lender")return "Lender";if(o.type==="Non-Lender")return "Non-Lender";
   if(/\(lender\)|invfee/i.test(s))return "Lender";if(s||o.life==="Active")return "Non-Lender";return "Type Not Recorded";}
