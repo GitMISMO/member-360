@@ -10289,22 +10289,22 @@ function askInit(){const v=$("v-help");if(!v||$("ask-card"))return;const head=v.
    away from the date paid (a payment entered under the wrong year). Read-only: nothing is written or sent. ---------- */
 function outRows(){const out=[],nm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
   try{nmRows(false,"").forEach(r=>{if(r.paid||!(r.amt>0))return;const o=r.o||null;if(o&&ov(o).mergedInto)return;
-    out.push({kind:"New member not paid",name:r.name,k:o?o.k:"",cid:(o&&o.cid)||"",order:(r.d&&r.d.order)||"",exp:r.amt,paid:0,owed:r.amt,since:String(r.date||"").slice(0,10),owner:(o&&owner(o))||r.by||"",note:r.level||""});});}catch(e){console.error("outstanding new",e);}
+    out.push({kind:"New member not paid",name:r.name,k:o?o.k:"",cid:(o&&o.cid)||"",order:(r.d&&r.d.order)||"",exp:r.amt,paid:0,owed:r.amt,since:String(r.date||"").slice(0,10),sl:"Joined",owner:(o&&owner(o))||r.by||"",note:r.level||""});});}catch(e){console.error("outstanding new",e);}
   try{renewalGroup().forEach(o=>{if(ov(o).mergedInto)return;const st=stageOf(o),b=balDue(o);if(!b&&st!=="Invoiced"&&st!=="Payment in Process")return;
     const got=fsItems(o).filter(i=>(i.c==="Membership"||i.sq)&&(+i.n||0)>0&&String(i.s||"")>=RY+"-01-01").reduce((a,i)=>a+(+i.n||0),0);
     const exp=b?Math.round((got+(+b.amount||0))*100)/100:(listPrice(o.level||"")||0),owed=b?(+b.amount||0):Math.max(0,Math.round((exp-got)*100)/100);
-    out.push({kind:b?"Renewal partly paid":"Renewal "+String(st).toLowerCase(),name:o.name,k:o.k,cid:o.cid||"",order:(b&&b.order)||"",exp,paid:got,owed,since:String(((ov(o)||{}).balDue||{}).at||(ov(o)||{}).updatedAt||"").slice(0,10),owner:owner(o)||"",note:(o.level?o.level+" · ":"")+RY+" dues"});});}catch(e){console.error("outstanding renewals",e);}
+    out.push({kind:b?"Renewal partly paid":"Renewal "+String(st).toLowerCase(),name:o.name,k:o.k,cid:o.cid||"",order:(b&&b.order)||"",exp,paid:got,owed,since:String((b&&b.at)||"").slice(0,10),sl:"Balance noted",owner:owner(o)||"",note:(o.level?o.level+" · ":"")+RY+" dues"});});}catch(e){console.error("outstanding renewals",e);}
   try{const pd=deskInvPaid();(DESK_INV||[]).forEach(v=>{if(!v||v.archived||v.paidBy||pd[v.id])return;
-    out.push({kind:"Desk invoice",name:v.name,k:"",cid:v.cid||"",order:v.number||"",exp:+v.amount||0,paid:0,owed:+v.amount||0,since:String(v.date||"").slice(0,10),owner:"",note:v.what||""});});}catch(e){}
-  try{const os=(MMF&&MMF.orders)||{},byC={},al=(ALIAS&&ALIAS.map)||{},cut=addDays(TODAY,-365);ORGS.forEach(o=>{if(o.cid)byC[String(o.cid)]=o;});
+    out.push({kind:"Desk invoice",name:v.name,k:"",cid:v.cid||"",order:v.number||"",exp:+v.amount||0,paid:0,owed:+v.amount||0,since:String(v.date||"").slice(0,10),sl:"Invoiced",owner:"",note:v.what||""});});}catch(e){}
+  try{const os=(MMF&&MMF.orders)||{},byC={},byO={},al=(ALIAS&&ALIAS.map)||{},cut=addDays(TODAY,-365);ORGS.forEach(o=>{if(o.cid)byC[String(o.cid)]=o;((ACT[o.k]||{}).items||[]).forEach(i=>{if(i&&i.o&&!byO[String(i.o)])byO[String(i.o)]=o;});});
     Object.values(os).forEach(r=>{if(!r)return;const mem=(r.lines||[]).filter(l=>MMLEVEL.test(String(l.product||""))&&(+l.amount||0)>0);if(!mem.length||!((+r.net||0)>0))return;
       const on=String(r.firstPaidOn||r.lastPaidOn||"").slice(0,10);if(!on||on<cut)return;
-      let o=(r.companyId&&byC[String(r.companyId)])||(al[r.company]&&BY[al[r.company]])||ORGS.find(x=>nm(x.name)===nm(r.company))||null;
+      /* the order already sits on a company (Member 360 matched it, by alias or name), so it is matched */let o=byO[String(r.order||"")]||(r.companyId&&byC[String(r.companyId)])||(al[r.company]&&BY[al[r.company]])||ORGS.find(x=>nm(x.name)===nm(r.company))||null;
       for(let i=0;o&&ov(o).mergedInto&&BY[ov(o).mergedInto]&&i<5;i++)o=BY[ov(o).mergedInto];
       const amt=mem.reduce((a,l)=>a+(+l.amount||0),0);
-      if(!o){out.push({kind:"Payment not matched",name:r.company||"(no name)",k:"",cid:r.companyId||"",order:String(r.order||""),exp:0,paid:amt,owed:0,since:on,owner:"",note:"In MISMO Money, but no company record matches it"});return;}
+      if(!o){out.push({kind:"Payment not matched",name:r.company||"(no name)",k:"",cid:r.companyId||"",order:String(r.order||""),exp:0,paid:amt,owed:0,since:on,sl:"Paid",owner:"",note:"In MISMO Money, but no company record matches it"});return;}
       mem.forEach(l=>{const s=String(l.start||"").slice(0,10);if(!s)return;const gap=(Date.parse(s)-Date.parse(on))/864e5;
-        if(gap>400||gap<-400)out.push({kind:"Payment year looks off",name:o.name,k:o.k,cid:o.cid||"",order:String(r.order||""),exp:0,paid:+l.amount||0,owed:0,since:on,owner:owner(o)||"",note:"Paid "+fmt(on)+" for a membership starting "+fmt(s)});});});}catch(e){console.error("outstanding payments",e);}
+        if(gap>400||gap<-400)out.push({kind:"Payment year looks off",name:o.name,k:o.k,cid:o.cid||"",order:String(r.order||""),exp:0,paid:+l.amount||0,owed:0,since:on,sl:"Paid",owner:owner(o)||"",note:"Paid "+fmt(on)+" for a membership starting "+fmt(s)});});});}catch(e){console.error("outstanding payments",e);}
   return out.sort((a,b)=>(b.owed-a.owed)||String(a.name).localeCompare(String(b.name)));}
 function renderOut(){const v=$("v-outstanding");if(!v)return;const L=outRows(),sel=$("out-kind"),f=sel?sel.value:"";
   if(!$("out-css")){const st=document.createElement("style");st.id="out-css";st.textContent=".out-t{width:100%;border-collapse:collapse;font-size:13.5px}.out-t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3,#5b6b78);padding:8px 10px;border-bottom:1px solid var(--line,#dde5ec);white-space:nowrap}.out-t td{padding:9px 10px;border-bottom:1px solid var(--line,#dde5ec);vertical-align:top}.out-t td.num,.out-t th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.out-t tr.click{cursor:pointer}.out-t tr.click:hover{background:var(--accent-soft,rgba(116,191,235,.14))}.out-t .muted{color:var(--ink-3,#5b6b78);font-size:12px;margin-top:2px}.out-wrap{overflow-x:auto}";document.head.appendChild(st);}
@@ -10325,9 +10325,9 @@ function renderOut(){const v=$("v-outstanding");if(!v)return;const L=outRows(),s
     show.forEach(r=>{const age=r.since?Math.max(0,Math.round((Date.parse(TODAY)-Date.parse(r.since))/864e5)):null;
       const tr=h("tr",{class:r.k?"click":""},h("td",null,h("b",null,r.name),r.cid?h("div",{class:"muted"},"ID "+r.cid):""),h("td",null,r.kind,r.note?h("div",{class:"muted"},r.note):""),
         h("td",null,r.order||"\u2014"),h("td",{class:"num"},r.exp?money(r.exp):"\u2014"),h("td",{class:"num"},r.paid?money(r.paid):"\u2014"),h("td",{class:"num"},r.owed?h("b",null,money(r.owed)):"\u2014"),
-        h("td",null,r.since?fmt(r.since)+(age!==null?" \u00b7 "+age+" days":""):"\u2014"),h("td",null,r.owner||"\u2014"));
+        h("td",null,r.since?(r.sl?r.sl+" ":"")+fmt(r.since)+(age!==null?" \u00b7 "+age+(age===1?" day":" days"):""):"\u2014"),h("td",null,r.owner||"\u2014"));
       if(r.k)tr.addEventListener("click",()=>openOrg(r.k));tbd.appendChild(tr);});
-    box.appendChild(h("div",{class:"out-wrap"},h("table",{class:"out-t"},h("thead",null,h("tr",null,h("th",null,"Company"),h("th",null,"What"),h("th",null,"Aptify Order"),h("th",{class:"num"},"Expected"),h("th",{class:"num"},"Paid"),h("th",{class:"num"},"Still Owed"),h("th",null,"Open Since"),h("th",null,"Owner"))),tbd)));}
+    box.appendChild(h("div",{class:"out-wrap"},h("table",{class:"out-t"},h("thead",null,h("tr",null,h("th",null,"Company"),h("th",null,"What"),h("th",null,"Aptify Order"),h("th",{class:"num"},"Expected"),h("th",{class:"num"},"Paid"),h("th",{class:"num"},"Still Owed"),h("th",null,"Date"),h("th",null,"Owner"))),tbd)));}
   const pip=$("pip-out");if(pip){const k=L.filter(r=>r.owed>0||/^Payment/.test(r.kind)).length;pip.textContent=k?String(k):"";}}
 show=(function(orig){return function(tab){orig(tab);if(tab==="outstanding"){try{renderOut();}catch(e){console.error("outstanding",e);}}};})(show);
 setTimeout(()=>{try{renderOut();}catch(e){}},30000);
