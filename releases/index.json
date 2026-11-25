@@ -1,5 +1,5 @@
 {
- "live": "20261125-1728",
+ "live": "20261125-1737",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -574,6 +574,13 @@
    "savedAt": "2026-11-25T17:28:38Z",
    "by": "jycritchley",
    "how": "published from the test copy: Outstanding uses open membership quotes from the weekly Aptify pull"
+  },
+  {
+   "version": "20261125-1737",
+   "sha256": "087f1c1881e43cd903517d40ce0f583eb253a475b17d39e5830ccf2ab2f53cbd",
+   "savedAt": "2026-11-25T17:37:01Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Desk to-do: applications already marked set up stay off"
   }
  ],
  "history": [
@@ -1143,6 +1150,13 @@
    "action": "publish",
    "version": "20261125-1728",
    "replaced": "20261125-1715"
+  },
+  {
+   "at": "2026-11-25T17:37:01Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1737",
+   "replaced": "20261125-1728"
   }
  ]
 }

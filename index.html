@@ -9924,7 +9924,7 @@ async function m360AppRun(){if(!db||canWrite===false||!ORGS.length)return;const 
   const have=new Set((r.todo.members||[]).map(x=>x.cid||nz(x.name)));
   (M360_APPS||[]).filter(a=>!appDone(a)).forEach(a=>{const m=ORGS.find(o=>(ov(o)||{}).app&&ov(o).app.id===a.id);const cid=m?String(m.cid||""):"";
     const x={name:a.company,cid,level:String(a.levelLabel||a.level||"").replace(/\s*\(.*$/,""),price:+a.levelPrice||0,sold:String(a.submittedAt||"").slice(0,10),paid:"",start:"",end:"",special:"Applied on the website",website:a.website||"",app:a.id};
-    if(have.has(cid||nz(a.company))||deskInAptify(x))return;have.add(cid||nz(a.company));r.todo.members=(r.todo.members||[]).concat([x]);});
+    /* an application the desk has already marked set up stays off, even before the next Aptify pull shows the membership (Doss Docs, Jonna, Nov 25, 2026) */ if(have.has(cid||nz(a.company))||deskInAptify(x)||(DESK_DONE||[]).some(d=>d&&!d.undone&&d.kind==="members"&&(nz(d.name)===nz(a.company)||(cid&&String(d.cid||"")===cid))))return;have.add(cid||nz(a.company));r.todo.members=(r.todo.members||[]).concat([x]);});
   ["members","free","iif"].forEach(k=>(r.todo[k]||[]).forEach(x=>{if(!x.website){const o=orgOf(x);const s=o?siteOf(o):"";if(s)x.website=s;}}));
 }catch(e){console.error("desk websites",e);}return r;};}
 /* ---------- New members with logos, for MISMO Media (Jonna, Nov 5, 2026). Every member who joined in the last 150 days and has a
