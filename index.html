@@ -11101,7 +11101,7 @@ async function boot(){
   if(paneK&&BY[paneK])renderProfile(BY[paneK],$("m360-pane-body"));
   if(!db)return;
   const err=()=>{};
-  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;leadDirty();
+  db.collection("orgs").onSnapshot(s=>{const m={};s.docs.forEach(d=>m[d.id]=d.data());OV=m;/* Lender or Non-Lender set by staff on a record wins over the type on file, for records Aptify has no type for (American Federal Mortgage, Homestead Funding, Southern First Bank; Jonna, Nov 24, 2026) */try{ORGS.forEach(o=>{const ty=(m[o.k]||{}).type;if(ty==="Lender"||ty==="Non-Lender"){if(o.typeBase===undefined)o.typeBase=o.type||"";if(o.type!==ty){o.type=ty;try{MJ_CACHE=null;}catch(e){}}}});}catch(e){console.error("type",e);}leadDirty();
     /* a merge saved here or on someone else's screen changes which records
        exist, so the list has to be built again rather than only repainted */
     const sig=Object.keys(m).filter(k=>m[k]&&m[k].mergedInto).sort().map(k=>k+">"+m[k].mergedInto).join(",");

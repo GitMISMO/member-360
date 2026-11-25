@@ -1,5 +1,5 @@
 {
- "live": "20261125-0132",
+ "live": "20261125-0136",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -490,6 +490,13 @@
    "savedAt": "2026-11-25T01:32:00Z",
    "by": "jycritchley",
    "how": "published from the test copy: Upgraded lost reason"
+  },
+  {
+   "version": "20261125-0136",
+   "sha256": "df1000f545c07c89c4d8e96c12781749473ffb014a6f22cfc9a0cda19e71a255",
+   "savedAt": "2026-11-25T01:36:19Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Lender type set by staff applies"
   }
  ],
  "history": [
@@ -975,6 +982,13 @@
    "action": "publish",
    "version": "20261125-0132",
    "replaced": "20261125-0118"
+  },
+  {
+   "at": "2026-11-25T01:36:19Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-0136",
+   "replaced": "20261125-0132"
   }
  ]
 }
