@@ -12154,7 +12154,7 @@ function aptPullDue(){const d=APW.doc;if(!d||!d.ok||!d.path||!d.receivedAt)retur
 async function aptAuto(){if(APW.busy||!aptPullDue()||canWrite===false||typeof db==="undefined"||!db)return;
   if(typeof APT==="undefined"||!APT||(APT.termsIn&&!APT.terms))return;const d=APW.doc;if(APW.tried[d.path])return;
   APW.busy=true;APW.tried[d.path]=1;
-  try{const b=await m3file(d.path);if(!b)throw new Error("couldn't read "+d.path);const bin=atob(b),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  /* a big workbook comes in pieces the save relay can hand back one at a time; they are joined here (Jonna, Nov 25, 2026: the Nov 23 workbook was too big to read whole) */try{const rd=async p=>{const b=await m3file(p);if(!b)throw new Error("couldn't read "+p);const bin=atob(b),x=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)x[i]=bin.charCodeAt(i);return x;};let u;if(Array.isArray(d.parts)&&d.parts.length){const bufs=[];for(const p of d.parts)bufs.push(await rd(p));u=new Uint8Array(bufs.reduce((a,x)=>a+x.length,0));let o=0;bufs.forEach(x=>{u.set(x,o);o+=x.length;});}else u=await rd(d.path);
     await aptImport([new File([u],d.name||"aptify-pull.xlsx")],"weekly email "+(d.name||""));APW.err="";}
   catch(e){console.error("Aptify weekly email",e);APW.err=String(e&&e.message||e);}finally{APW.busy=false;}}
 {const go=()=>{if(typeof db!=="undefined"&&db){db.doc("aptifypull/main").onSnapshot(sn=>{APW.doc=sn.exists?sn.data():null;setTimeout(aptAuto,15000);},e=>console.error("aptifypull",e));
