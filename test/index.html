@@ -2717,7 +2717,7 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="tiles" id="st-pipe" style="margin:14px 0 0"></div>
     </div>
   </section>
-  <style>#out-tiles{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:1000px){#out-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){#out-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
+  <style>#out-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:1000px){#out-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){#out-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
   <section class="view" id="v-outstanding" hidden>
     <div class="vhead">
       <div><h1>Outstanding</h1>
@@ -10301,9 +10301,10 @@ function outRows(){const out=[],nm=s=>String(s||"").toLowerCase().replace(/[^a-z
     out.push({kind:b?"Renewal partly paid":"Renewal "+String(st).toLowerCase(),name:o.name,k:o.k,cid:o.cid||"",order:(b&&b.order)||"",exp,paid:got,owed,since:String((b&&b.at)||"").slice(0,10),sl:"Balance noted",owner:owner(o)||"",note:(o.level?o.level+" · ":"")+RY+" dues"});});}catch(e){console.error("outstanding renewals",e);}
   /* prospects committed with the invoice out (Sales Stage Payment in Process), the New Members side of what was the Payment in Process section on Home (Jonna, Nov 25, 2026) */
   try{pipAll().forEach(x=>{if(!x||x.kind!=="new"||!x.o)return;const o=x.o;if(out.some(r=>r.k===o.k))return;
-    out.push({kind:"New member payment in process",name:o.name,k:o.k,cid:o.cid||"",order:"",exp:+x.amount||0,paid:0,owed:+x.amount||0,since:"",sl:"",owner:owner(o)||"",note:(o.level?String(o.level).replace(/\s*\(.*$/,"")+" \u00b7 ":"")+"invoice out, waiting on payment"});});}catch(e){console.error("outstanding prospects",e);}
+    /* the Aptify quotation sent to the prospect, when recorded on the record (aptQuote: order, date, amount, Aptify ID) */const q=(ov(o)||{}).aptQuote||null;
+    out.push({kind:"New member payment in process",name:o.name,k:o.k,cid:o.cid||(q&&q.cid)||"",order:(q&&q.order)||"",exp:(q&&+q.amount)||+x.amount||0,paid:0,owed:(q&&+q.amount)||+x.amount||0,since:(q&&q.date)||"",sl:q?"Quoted":"",owner:owner(o)||"",note:(o.level?String(o.level).replace(/\s*\(.*$/,"")+" \u00b7 ":"")+"invoice out, waiting on payment"});});}catch(e){console.error("outstanding prospects",e);}
   try{const pd=deskInvPaid();(DESK_INV||[]).forEach(v=>{if(!v||v.archived||v.paidBy||pd[v.id])return;
-    out.push({kind:"Desk invoice",name:v.name,k:"",cid:v.cid||"",order:v.number||"",exp:+v.amount||0,paid:0,owed:+v.amount||0,since:String(v.date||"").slice(0,10),sl:"Invoiced",owner:"",note:v.what||""});});}catch(e){}
+    /* Membership Desk invoices are for new members, so they count with New Members (Jonna, Nov 25, 2026) */out.push({kind:"New member invoice on the Membership Desk",name:v.name,k:"",cid:v.cid||"",order:v.number||"",exp:+v.amount||0,paid:0,owed:+v.amount||0,since:String(v.date||"").slice(0,10),sl:"Invoiced",owner:"",note:v.what||""});});}catch(e){}
   try{const os=(MMF&&MMF.orders)||{},byC={},byO={},al=(ALIAS&&ALIAS.map)||{},cut=addDays(TODAY,-365);ORGS.forEach(o=>{if(o.cid)byC[String(o.cid)]=o;((ACT[o.k]||{}).items||[]).forEach(i=>{if(i&&i.o&&!byO[String(i.o)])byO[String(i.o)]=o;});});
     /* a payment refunded later on its own cancellation order (same membership, same start) nets to nothing, so it isn't flagged: CMBS.com's $550 on the old 2023 Sole order 5957962, paid Jul 7, 2026 and refunded Jul 13 on order 6261437 (Jonna, Nov 25, 2026) */
     const refd={};Object.values(os).forEach(r=>{if(!r||!((+r.net||0)<0))return;(r.lines||[]).forEach(l=>{const k=String(l.product||"")+"|"+String(l.start||"").slice(0,10);(refd[k]=refd[k]||[]).push({on:String(r.firstPaidOn||r.lastPaidOn||"").slice(0,10),n:-(+r.net||0)});});});
@@ -10332,13 +10333,12 @@ function renderOut(){const v=$("v-outstanding");if(!v)return;const L=outRows(),f
   [["Still Owed",whole(owed),n(cos)+(cos===1?" company":" companies"),"var(--warn)",""],
    ["New Members",n(nNew),"not paid yet or invoice out","var(--sky)","new"],
    ["Renewals",n(nRen),"invoiced, in process or partly paid","var(--c4)","renewal"],
-   ["Desk Invoices",n(nDesk),"open on the Membership Desk","var(--c3)","desk"],
-   ["To Check",n(nChk),"payments that didn't land as expected","var(--bad)","check"]].forEach(x=>{
+  ].forEach(x=>{
     const on=!!(f&&f===x[4]);const b=h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+x[3],"aria-pressed":String(on)},h("span",{class:"lab"},x[0]),h("span",{class:"val",style:"font-size:28px"},x[1]),h("span",{class:"sub"},x[2]));
     b.addEventListener("click",()=>{OUT_F=(OUT_F===x[4]?"":x[4]);renderOut();});tb.appendChild(b);});
   /* filter buttons instead of a drop-down (Jonna, Nov 25, 2026) */
-  const cs=$("out-chips");if(cs){cs.textContent="";[["","Everything",L.length],["new","New Members",nNew],["renewal","Renewals",nRen],["desk","Desk Invoices",nDesk],["check","To Check",nChk]].forEach(c=>{const on=f===c[0];const bt=h("button",{type:"button",class:on?"on":"","aria-pressed":String(on)},c[1]+" \u00b7 "+n(c[2]));bt.addEventListener("click",()=>{OUT_F=c[0];renderOut();});cs.appendChild(bt);});}
-  const show=L.filter(r=>!f||(f==="new"?/^New member/.test(r.kind):f==="renewal"?/^Renewal/.test(r.kind):f==="desk"?r.kind==="Desk invoice":/^Payment/.test(r.kind)));
+  const cs=$("out-chips");if(cs){cs.textContent="";/* just New Members and Renewals (Jonna, Nov 25, 2026); a payment that didn't land as expected gets its own button only when there is one */[["","Everything",L.length-nChk],["new","New Members",nNew],["renewal","Renewals",nRen]].concat(nChk?[["check","Payments to Check",nChk]]:[]).forEach(c=>{const on=f===c[0];const bt=h("button",{type:"button",class:on?"on":"","aria-pressed":String(on)},c[1]+" \u00b7 "+n(c[2]));bt.addEventListener("click",()=>{OUT_F=c[0];renderOut();});cs.appendChild(bt);});}
+  const show=L.filter(r=>!f?!/^Payment/.test(r.kind):(f==="new"?/^New member/.test(r.kind):f==="renewal"?/^Renewal/.test(r.kind):f==="desk"?r.kind==="Desk invoice":/^Payment/.test(r.kind)));
   const c=$("out-count");if(c)c.textContent=n(show.length)+(show.length===1?" line":" lines");
   const box=$("out-rows");box.textContent="";
   box.appendChild(h("div",{class:"dlhead","aria-hidden":"true"},h("span",null,"Date"),h("span",null,"Organization"),h("span",null,"What"),h("span",null,"Aptify Order"),h("span",null,"Expected"),h("span",null,"Paid"),h("span",null,"Still Owed"),h("span",null,"Owner")));
