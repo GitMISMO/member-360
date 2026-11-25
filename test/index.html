@@ -2717,11 +2717,15 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
       <div class="tiles" id="st-pipe" style="margin:14px 0 0"></div>
     </div>
   </section>
+  <style>#out-tiles{grid-template-columns:repeat(5,minmax(0,1fr))}@media(max-width:1000px){#out-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:600px){#out-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}</style>
   <section class="view" id="v-outstanding" hidden>
-    <div class="vhead"><div><h1>Outstanding</h1><div class="vsub">Money still owed, and payments that didn't land as expected, checked against MISMO Money every time it loads.</div></div></div>
-    <div class="tiles" id="out-tiles"></div>
-    <div class="filters"><select id="out-kind" aria-label="Show"><option value="">Everything</option><option value="new">New Members Not Paid</option><option value="renewal">Renewals</option><option value="desk">Desk Invoices</option><option value="check">Payments to Check</option></select><span class="count" id="out-count"></span></div>
-    <div id="out-rows"></div>
+    <div class="vhead">
+      <div><h1>Outstanding</h1>
+      <div class="vsub">Money still owed, and payments that didn't land as expected, checked against MISMO Money every time it loads.</div></div>
+    </div>
+    <div class="headline" id="out-hl"><div class="hl-date" id="out-eb"></div><div class="hl-say" id="out-say"></div><div class="tiles" id="out-tiles"></div></div>
+    <div class="filters"><select id="out-kind" aria-label="Show"><option value="">Everything Outstanding</option><option value="new">New Members Not Paid</option><option value="renewal">Renewals</option><option value="desk">Desk Invoices</option><option value="check">Payments to Check</option></select><span class="count" id="out-count"></span></div>
+    <div class="rows dlrows" id="out-rows"></div>
   </section>
   <section class="view" id="v-deals" hidden>
     <div class="vhead">
@@ -10307,29 +10311,45 @@ function outRows(){const out=[],nm=s=>String(s||"").toLowerCase().replace(/[^a-z
       mem.forEach(l=>{const s=String(l.start||"").slice(0,10);if(!s)return;const gap=(Date.parse(s)-Date.parse(on))/864e5;
         if(gap>400||gap<-400)out.push({kind:"Payment year looks off",name:o.name,k:o.k,cid:o.cid||"",order:String(r.order||""),exp:0,paid:+l.amount||0,owed:0,since:on,sl:"Paid",owner:owner(o)||"",note:"Paid "+fmt(on)+" for a membership starting "+fmt(s)});});});}catch(e){console.error("outstanding payments",e);}
   return out.sort((a,b)=>(b.owed-a.owed)||String(a.name).localeCompare(String(b.name)));}
-function renderOut(){const v=$("v-outstanding");if(!v)return;const L=outRows(),sel=$("out-kind"),f=sel?sel.value:"";
-  if(!$("out-css")){const st=document.createElement("style");st.id="out-css";st.textContent=".out-t{width:100%;border-collapse:collapse;font-size:13.5px}.out-t th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3,#5b6b78);padding:8px 10px;border-bottom:1px solid var(--line,#dde5ec);white-space:nowrap}.out-t td{padding:9px 10px;border-bottom:1px solid var(--line,#dde5ec);vertical-align:top}.out-t td.num,.out-t th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.out-t tr.click{cursor:pointer}.out-t tr.click:hover{background:var(--accent-soft,rgba(116,191,235,.14))}.out-t .muted{color:var(--ink-3,#5b6b78);font-size:12px;margin-top:2px}.out-wrap{overflow-x:auto}";document.head.appendChild(st);}
-  const owedL=L.filter(r=>r.owed>0),owed=owedL.reduce((a,r)=>a+(r.owed||0),0),cnt=fn=>L.filter(fn).length;
+/* laid out like New Members (Jonna, Nov 25, 2026): the same headline, tiles, filter bar and rows, and it sits under Membership Desk in the menu */
+function renderOut(){const v=$("v-outstanding");if(!v)return;const sel=$("out-kind");if(sel&&!sel.dataset.wired){sel.dataset.wired="1";sel.addEventListener("change",()=>renderOut());}const L=outRows(),f=sel?sel.value:"";
+  const owedL=L.filter(r=>r.owed>0),owed=owedL.reduce((a,r)=>a+(r.owed||0),0),cos=new Set(owedL.map(r=>r.name)).size,cnt=fn=>L.filter(fn).length;
+  const nNew=cnt(r=>r.kind==="New member not paid"),nRen=cnt(r=>/^Renewal/.test(r.kind)),nDesk=cnt(r=>r.kind==="Desk invoice"),nChk=cnt(r=>/^Payment/.test(r.kind));
+  const whole=x=>money(Math.round(x));
+  const eb=$("out-eb");if(eb)eb.textContent="Outstanding as of "+fmt(TODAY)+((typeof MMINFO!=="undefined"&&MMINFO&&MMINFO.through)?" \u00b7 MISMO Money payments through "+fmt(MMINFO.through):"");
+  const say=$("out-say");if(say){say.textContent="";
+    if(!owedL.length&&!nChk)say.appendChild(document.createTextNode("Nothing is owed and every payment landed as expected."));
+    else{say.appendChild(h("em",null,whole(owed)));say.appendChild(document.createTextNode(" is still owed by "+n(cos)+(cos===1?" company":" companies")+": "+n(nNew)+" new "+(nNew===1?"member":"members")+" not paid yet and "+n(nRen)+(nRen===1?" renewal":" renewals")+(nDesk?", plus "+n(nDesk)+" open desk "+(nDesk===1?"invoice":"invoices"):"")+". "));
+      if(nChk){say.appendChild(h("em",null,n(nChk)+(nChk===1?" payment":" payments")));say.appendChild(document.createTextNode(nChk===1?" needs a look.":" need a look."));}}}
   const tb=$("out-tiles");tb.textContent="";
-  [["Still Owed",money(Math.round(owed*100)/100),n(new Set(owedL.map(r=>r.name)).size)+" companies","var(--warn)",""],
-   ["New Members",n(cnt(r=>r.kind==="New member not paid")),"not paid yet","var(--sky)","new"],
-   ["Renewals",n(cnt(r=>/^Renewal/.test(r.kind))),"invoiced, in process or partly paid","var(--c4)","renewal"],
-   ["Desk Invoices",n(cnt(r=>r.kind==="Desk invoice")),"open on the Membership Desk","var(--c3)","desk"],
-   ["To Check",n(cnt(r=>/^Payment/.test(r.kind))),"payments that didn't land as expected","var(--bad)","check"]].forEach(t=>{
-    const b=h("button",{type:"button",class:"tile"+(f&&f===t[4]?" on":""),style:"--tc:"+t[3]},h("span",{class:"lab"},t[0]),h("span",{class:"val"},t[1]),h("span",{class:"sub"},t[2]));
-    b.addEventListener("click",()=>{if(sel){sel.value=(sel.value===t[4]?"":t[4]);}renderOut();});tb.appendChild(b);});
+  [["Still Owed",whole(owed),n(cos)+(cos===1?" company":" companies"),"var(--warn)",""],
+   ["New Members",n(nNew),"not paid yet","var(--sky)","new"],
+   ["Renewals",n(nRen),"invoiced, in process or partly paid","var(--c4)","renewal"],
+   ["Desk Invoices",n(nDesk),"open on the Membership Desk","var(--c3)","desk"],
+   ["To Check",n(nChk),"payments that didn't land as expected","var(--bad)","check"]].forEach(x=>{
+    const on=!!(f&&f===x[4]);const b=h("button",{type:"button",class:"tile"+(on?" on":""),style:"--tc:"+x[3],"aria-pressed":String(on)},h("span",{class:"lab"},x[0]),h("span",{class:"val",style:"font-size:28px"},x[1]),h("span",{class:"sub"},x[2]));
+    b.addEventListener("click",()=>{if(sel)sel.value=(sel.value===x[4]?"":x[4]);renderOut();});tb.appendChild(b);});
   const show=L.filter(r=>!f||(f==="new"?r.kind==="New member not paid":f==="renewal"?/^Renewal/.test(r.kind):f==="desk"?r.kind==="Desk invoice":/^Payment/.test(r.kind)));
-  const c=$("out-count");if(c)c.textContent=n(show.length)+" shown";
+  const c=$("out-count");if(c)c.textContent=n(show.length)+(show.length===1?" line":" lines");
   const box=$("out-rows");box.textContent="";
-  if(!show.length){box.appendChild(h("div",{class:"hint",style:"padding:14px 0"},"Nothing outstanding here."));}
-  else{const tbd=h("tbody");
-    show.forEach(r=>{const age=r.since?Math.max(0,Math.round((Date.parse(TODAY)-Date.parse(r.since))/864e5)):null;
-      const tr=h("tr",{class:r.k?"click":""},h("td",null,h("b",null,r.name),r.cid?h("div",{class:"muted"},"ID "+r.cid):""),h("td",null,r.kind,r.note?h("div",{class:"muted"},r.note):""),
-        h("td",null,r.order||"\u2014"),h("td",{class:"num"},r.exp?money(r.exp):"\u2014"),h("td",{class:"num"},r.paid?money(r.paid):"\u2014"),h("td",{class:"num"},r.owed?h("b",null,money(r.owed)):"\u2014"),
-        h("td",null,r.since?(r.sl?r.sl+" ":"")+fmt(r.since)+(age!==null?" \u00b7 "+age+(age===1?" day":" days"):""):"\u2014"),h("td",null,r.owner||"\u2014"));
-      if(r.k)tr.addEventListener("click",()=>openOrg(r.k));tbd.appendChild(tr);});
-    box.appendChild(h("div",{class:"out-wrap"},h("table",{class:"out-t"},h("thead",null,h("tr",null,h("th",null,"Company"),h("th",null,"What"),h("th",null,"Aptify Order"),h("th",{class:"num"},"Expected"),h("th",{class:"num"},"Paid"),h("th",{class:"num"},"Still Owed"),h("th",null,"Date"),h("th",null,"Owner"))),tbd)));}
+  box.appendChild(h("div",{class:"dlhead","aria-hidden":"true"},h("span",null,"Date"),h("span",null,"Organization"),h("span",null,"What"),h("span",null,"Aptify Order"),h("span",null,"Expected"),h("span",null,"Paid"),h("span",null,"Still Owed"),h("span",null,"Owner")));
+  if(!show.length)box.appendChild(h("div",{class:"hint",style:"padding:14px 2px"},"Nothing here."));
+  show.forEach(r=>{const age=r.since?Math.max(0,Math.round((Date.parse(TODAY)-Date.parse(r.since))/864e5)):null;
+    const row=h("div",{class:"dlrow",role:r.k?"button":null,tabindex:r.k?"0":null,title:r.k?"Open the record":null},
+      h("span",{class:"num"},r.since?fmt(r.since):"\u2014",r.since?h("small",null,(r.sl||"")+(age!==null?" \u00b7 "+age+(age===1?" day":" days"):"")):""),
+      h("span",{class:"nm"},r.name,r.cid?h("small",null,"ID "+r.cid):""),
+      h("span",null,r.kind,r.note?h("small",null,r.note):""),
+      h("span",{class:"num"},r.order||h("span",{class:"muted"},"\u2014")),
+      h("span",{class:"num"},r.exp?money(r.exp):h("span",{class:"muted"},"\u2014")),
+      h("span",{class:"num"},r.paid?money(r.paid):h("span",{class:"muted"},"\u2014")),
+      h("span",{class:"num"},r.owed?h("b",null,money(r.owed)):h("span",{class:"muted"},"\u2014")),
+      h("span",null,r.owner||h("span",{class:"muted"},"\u2014")));
+    if(r.k){row.addEventListener("click",()=>openOrg(r.k));row.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();openOrg(r.k);}});}
+    box.appendChild(row);});
   const pip=$("pip-out");if(pip){const k=L.filter(r=>r.owed>0||/^Payment/.test(r.kind)).length;pip.textContent=k?String(k):"";}}
+/* the menu item sits right under Membership Desk, which is added once the page loads */
+function outNav(){const b=document.querySelector('.hq nav button[data-hq="outstanding"]'),d=$("nav-desk");if(b&&d&&d.nextSibling!==b)d.after(b);}
+setTimeout(outNav,60);setTimeout(outNav,1500);
 show=(function(orig){return function(tab){orig(tab);if(tab==="outstanding"){try{renderOut();}catch(e){console.error("outstanding",e);}}};})(show);
 setTimeout(()=>{try{renderOut();}catch(e){}},30000);
 function show(tab){
