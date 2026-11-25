@@ -1,5 +1,5 @@
 {
- "live": "20261125-1750",
+ "live": "20261125-1852",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -595,6 +595,13 @@
    "savedAt": "2026-11-25T17:50:14Z",
    "by": "jycritchley",
    "how": "published from the test copy: CN-032: Square Specials is a gray feed on System Health"
+  },
+  {
+   "version": "20261125-1852",
+   "sha256": "ca97e84af858c6cdb0414e043a457581bef4edeac1bdcfa6e1e3740dde6a79a9",
+   "savedAt": "2026-11-25T18:52:59Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Back button (CN-033)"
   }
  ],
  "history": [
@@ -1185,6 +1192,13 @@
    "action": "publish",
    "version": "20261125-1750",
    "replaced": "20261125-1740"
+  },
+  {
+   "at": "2026-11-25T18:52:59Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261125-1852",
+   "replaced": "20261125-1750"
   }
  ]
 }
