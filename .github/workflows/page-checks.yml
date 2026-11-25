@@ -6,12 +6,14 @@
 #   - the page safety list (Content-Security-Policy) is missing
 #   - index.html was uploaded by hand instead of made live with Publish a Version
 #   - the test copy is more than the live page plus its three test-only parts (tools/test_copy.py), so it couldn't publish
+#   - a browser check fails on the test copy (checks/browser.js: the Back button, CN-033, Nov 25, 2026)
 name: Page Checks
 on:
   push:
     paths:
       - "**.html"
       - "tools/**"
+      - "checks/**"
       - "releases/index.json"
       - ".github/workflows/page-checks.yml"
   workflow_dispatch:
@@ -27,3 +29,18 @@ jobs:
         run: node tools/page_checks.js
       - name: The test copy can be published
         run: python3 tools/test_copy.py check
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Browser checks on the test copy (pretend sign-in and relay, made-up data)
+        run: npm test

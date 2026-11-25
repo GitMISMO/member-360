@@ -1,0 +1,11 @@
+{
+  "name": "member-360-browser-checks",
+  "private": true,
+  "description": "Member 360 checks that need a browser (run: npm test, from this folder)",
+  "scripts": {
+    "test": "node browser.js"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

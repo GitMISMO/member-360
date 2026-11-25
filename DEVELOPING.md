@@ -47,6 +47,7 @@ Membership Stats, Monthly Report, Membership Desk (link), IIF Cycle, Logo Review
 | Test copy | https://resources.mismo.org/member-360/test/ (file `test/index.html`). Reads the real data, saves nothing, sends no email. Every change goes here first. |
 | Published versions | `releases/` (every version ever made live, never deleted) and `releases/index.json` (the list, plus the publish and rollback history) |
 | Publishing tools | `tools/test_copy.py`, `tools/publish.py`, `tools/page_checks.js`, `tools/test-copy-head.txt`, `tools/test-copy-tail.txt` |
+| Browser checks | `checks/browser.js` (run `npm install && npx playwright install chromium && npm test` in `checks/`): opens the test copy in a headless browser with a pretend sign-in, a pretend relay and two made-up companies. Page Checks and Publish a Version both run it. |
 | Other pages in this repo | `apply/` (the membership application form), `applied/` (Member Setup, after applying), `meet.html` (Schedule a Membership Engagement Meeting), `outlook/` (the Outlook add-in for logging emails from classic Outlook), `badges/` (member and champion badges), `mismo-logo-email.png` |
 | Change log | `CHANGELOG.md`: one line per change people would notice, newest first |
 | Member data | The **private** repo `GitMISMO/member-360-data`, folder `data/`. Never in this repo. |
@@ -90,12 +91,14 @@ arrives only after sign-in.
    - the page safety list (Content-Security-Policy) is there
    - `index.html` is a published version
    - the test copy can be published
+   - the browser checks pass on the test copy (`checks/browser.js`, its own job: the Back button)
 
    If it fails, GitHub emails whoever saved. Fix it before going on.
 4. **Try it** at https://resources.mismo.org/member-360/test/ (GitHub Pages takes about a minute). Check the browser
    console for errors and click through the part you changed.
 5. **Make it live:** Jonna runs **Actions › Publish a Version › Run workflow** and leaves "test copy" as it is. The
    workflow:
+   - runs the browser checks on the test copy (`checks/browser.js`), and stops if one fails
    - takes the three test-only parts back out
    - runs the same Page Checks on the result, and stops with the live page unchanged if anything fails
    - saves the result as `releases/<version>.html` (for example `20261108-1530`) and makes it `index.html`
@@ -354,6 +357,24 @@ rule that reads a source, list it in `HL_RULE_SRC`; when the checks start readin
 - The page and this repo are public: test only with made-up records, and never commit member data.
 - Plain language with Jonna. Do the work rather than handing her steps.
 
+
+## The Browser's Back Button (Nov 25, 2026, Change Notice CN-033)
+
+The shared helper `/assets/back.js` (owned by Forms and shared pages; **never copy it here, and never add our own
+`history.pushState` or change the address for this**) is loaded in `<head>` right after `/assets/session.js`. It
+makes each change of page in the left menu (`nav button[data-hq]`, Help included, as it is a `data-hq` button in the
+menu foot) a step in the browser's history, following whichever button carries `aria-current` (set by `show(tab)`).
+Only what a person does makes a step; the address bar never changes. Targeted Lists' Webinar Registrants tab keeps
+Targeted Lists current, so it is not a step of its own.
+
+The script right after it registers what Back closes first, bottom layer first: the right-hand panel
+(`body.paneon`; closes by clicking `#m360-pane-x`, as its X does), an open pop-up (`dialog[open]`, the top one;
+closes with `requestClose()`, as Escape does) and the full-size snapshot (`.snapbig`; closes by clicking it).
+`showModal` is wrapped to call `MismoBack.check()`, so a pop-up that opens after something loads still counts.
+A new panel or pop-up that doesn't use one of these needs its own `MismoBack.layer({isOpen, close})` there.
+`checks/browser.js` checks it: two menu pages and Back, Forward, Back closing a company's panel and staying on the
+page, the X leaving no step behind, a pop-up, and no page errors. It serves `/assets/back.js` from the live copy
+(`MISMO_BACK=<file>` tries a local copy).
 
 ## Contacts Who Leave a Company (Nov 20, 2026)
 

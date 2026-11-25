@@ -9,6 +9,7 @@ One line per change people would notice. Newest first.
 
 ## 2026-11-25
 
+- The browser's Back button now works (Change Notice CN-033, approved by Jonna): Back goes to the last page you were on and closes an open panel or pop-up first, one at a time; Forward goes the other way. It never undoes a change, and the address bar doesn't change. A new browser check (`checks/browser.js`) tests it before every publish.
 - Square Specials on System Health only changes when a Square payment or set-up does, so it no longer shows late (Change Notice CN-032, approved by Jonna): it is a gray feed with its last-updated time and never sends an alert; it still shows red if the Square list can't be read. MISMO Money Payments is still checked daily.
 - Health checks now wait for all data to load (Change Notice CN-031, approved by Jonna): System Health's Check Now and the automatic check wait until company records, Aptify, MISMO Money and manual prospects have all loaded before judging the rules or the feeds, saving the result or sending an alert. A source that still hasn't loaded after 90 seconds shows as "Couldn't load", the rules that read it are left unjudged instead of failing, and that check is not saved and sends no alert. No rules, thresholds or email wording changed.
 - Browser tab icon now matches mismo.org (Change Notice CN-030, approved by Jonna): every Member 360 page (the main page, the membership application, Member Setup and Schedule a Membership Engagement Meeting) shows the MISMO S mark from the shared copy at resources.mismo.org.

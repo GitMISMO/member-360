@@ -41,6 +41,14 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Browser checks on the test copy (checks/browser.js), before it goes live
+        if: ${{ inputs.version == '' || inputs.version == 'test copy' }}
+        working-directory: checks
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npm test
+
       - name: Check, then publish or roll back
         env:
           V: ${{ inputs.version }}
