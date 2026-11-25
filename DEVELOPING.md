@@ -313,6 +313,17 @@ problem not again for 3 days. Gray dots are feeds that only change when somethin
 
 When you add an incoming connection, add a row here so a failed hand-off shows up on its own.
 
+**Checks wait for every source (CN-031, approved by Jonna, Nov 25, 2026).** Check Now and the automatic check
+(`hlCheck`, wrapped by `hlWaitSources`) first wait until the opening screen's "Loading every source so the numbers you
+see are final" (`window.__m3oLoading`) is done and every source the checks read has loaded (`HL_SRC`): the company
+record files (the member list, the `orgs` overrides with merges, `sync` with the companies Aptify added), Aptify, MISMO
+Money and the manual prospects. There's no added delay: when everything is in, it checks at once. The time limit is
+`HL_WAIT_MS` (90 seconds). A source still missing then shows as "Couldn't load", the data rules that read it
+(`HL_RULE_SRC`) show as not judged instead of failing, and the run is neither saved to `health/main` nor alerted on, so
+a half-loaded run never overwrites a finished health record or sends a false alert (on Nov 25 one did, for two merges
+whose companies existed). The Daily Check on GitHub reads the files directly and is unaffected. When you add a data
+rule that reads a source, list it in `HL_RULE_SRC`; when the checks start reading a new source, add it to `HL_SRC`.
+
 ---
 
 ## Safety Net (what's in place)
