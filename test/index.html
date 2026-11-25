@@ -9596,7 +9596,7 @@ function deskTodos(){
   return {todo:{members,free:[],iif},done:{members:dm,iif:di,freeActive:free}};}
 async function deskSync(){if(!window.ResourcesSession||!ResourcesSession.token||!ResourcesSession.token())return;
   const H={Authorization:"Bearer "+ResourcesSession.token()},get=async n=>{const r=await fetch(DESK_R+n,{headers:H,cache:"no-store"});if(!r.ok)throw new Error(n+" "+r.status);return r.json();};
-  let T;try{T=await get("todos");}catch(e){return;}try{const I=await get("invoices");DESK_INV=((I&&I.data)||{}).items||[];}catch(e){}/* no access to the desk: nothing to send or count */
+  let T;try{T=await get("todos");}catch(e){return;}try{const I=await get("invoices");DESK_INV=((I&&I.data)||{}).items||[];}catch(e){}try{const Dd=await get("done");DESK_DONE=((Dd&&Dd.data)||{}).items||[];}catch(e){}/* no access to the desk: nothing to send or count */
   /* only once everything has loaded and the list holds still for 20 seconds, so a half-loaded page never sends the desk a wrong list (Jonna, Nov 1, 2026) */
   if(typeof APT==="undefined"||!APT||!APT.uploadedAt||!ORGS.length)return;const body=deskTodos();await new Promise(r=>setTimeout(r,20000));const now=deskTodos();if(JSON.stringify(now)!==JSON.stringify(body)){setTimeout(()=>deskSync().catch(e=>console.error("desk",e)),60000);return;}
   if(db&&canWrite&&JSON.stringify({todo:(T.data||{}).todo,done:(T.data||{}).done,pip:(T.data||{}).pip,invPaid:(T.data||{}).invPaid})!==JSON.stringify({todo:now.todo,done:now.done,pip:now.pip,invPaid:now.invPaid})){
@@ -9662,14 +9662,19 @@ function subCard(o,box){const ovp=box&&box.querySelector('.p360-panel[data-tab="
    paid for (data/invoices.json). Member 360 adds the Non-Lender renewals that are Invoiced or Payment in Process, and checks each desk
    invoice against the company's payments: once Aptify shows payments on or after the invoice date that add up to it, the desk shows it
    paid. ---------- */
-let DESK_INV=[];
+let DESK_INV=[],DESK_DONE=[];
 function deskSubTodo(){return ORGS.filter(o=>isSub(o)&&o.life!=="Active"&&!(ov(o)||{}).mergedInto).map(o=>({name:o.name,cid:String(o.cid||""),level:"Corporate",price:0,sold:"",paid:"",start:"",end:"",special:"Subsidiary of "+subParent(o).name})).sort((a,b)=>a.name.localeCompare(b.name));}
 /* the Membership Desk's Payment in Process follows new Lender and Non-Lender members who have not paid yet, never renewals: renewal payments are worked in Renewals here (Jonna, Nov 24, 2026). Two kinds: a new member on the New Members report (last 12 months) still Not Paid Yet, and a prospect whose application is in or who is at Payment in Process (Doss Docs). deskPip, the old renewal list, is kept but no longer sent. */
 function deskNew(){const out=[],seen=new Set(),nm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");
   try{nmRows(false,"").forEach(r=>{if(r.paid||!(r.amt>0))return;const o=r.o||null;if(o&&(ov(o).mergedInto||isSub(o)))return;const k=o?o.k:"n:"+nm(r.name);if(seen.has(k))return;seen.add(k);
     out.push({name:r.name,cid:String((o&&o.cid)||""),level:r.level||"",stage:"Not Paid Yet, joined "+fmt(r.date),amount:Math.round(r.amt||0),owner:(o&&owner(o))||r.by||"",lender:!!(o&&o.type==="Lender")||!!(r.j&&r.j.kind!=="nl"),kind:"new"});});}catch(e){console.error("desk new",e);}
-  ORGS.forEach(o=>{if(o.life!=="Prospect"||ov(o).mergedInto||seen.has(o.k))return;const st=ov(o).pstage||"";if(st!=="7 - Application Submitted"&&st!=="Payment in Process")return;seen.add(o.k);
-    out.push({name:o.name,cid:String(o.cid||""),level:o.level||"",stage:st==="Payment in Process"?"Payment in Process":"Application Submitted",amount:listPrice(o.level||"")||0,owner:owner(o)||"",lender:o.type==="Lender",kind:"new"});});
+  /* a prospect the membership team has already set up in Aptify (the desk's Recently Completed has its Aptify ID and order) shows as invoiced with that ID and order, not as an application without an ID, until MISMO Money shows the order paid (Doss Docs, Aptify ID 9749621, order 6296112; Jonna, Nov 24, 2026) */
+  const done=(DESK_DONE||[]).filter(x=>x&&!x.undone&&x.kind==="members"),os=(typeof MMF!=="undefined"&&MMF&&MMF.orders)||{};
+  ORGS.forEach(o=>{if(o.life!=="Prospect"||ov(o).mergedInto||seen.has(o.k))return;const st=ov(o).pstage||"";if(st==="8 - Paid"||st==="Closed Won"||st==="Closed Lost")return;
+    const su=done.find(x=>(x.cid&&String(x.cid)===String(o.cid||""))||nm(x.name)===nm(o.name))||null;
+    if(!su&&st!=="7 - Application Submitted"&&st!=="Payment in Process")return;
+    if(su&&su.order&&os[String(su.order)]&&(+os[String(su.order)].net||0)>0)return;seen.add(o.k);
+    out.push({name:o.name,cid:String((su&&su.cid)||o.cid||""),order:String((su&&su.order)||""),level:(su&&su.level)||o.level||"",stage:su?"Set up in Aptify "+fmt(String(su.at||"").slice(0,10))+(su.order?", order "+su.order:"")+", not paid yet":(st==="Payment in Process"?"Payment in Process":"Application Submitted"),amount:(su&&+su.price)||listPrice(o.level||"")||0,owner:owner(o)||"",lender:o.type==="Lender",kind:"new"});});
   return out.sort((a,b)=>a.name.localeCompare(b.name));}
 function deskPip(){return renewalGroup().filter(o=>["Invoiced","Payment in Process"].includes(stageOf(o))&&!isSub(o)).map(o=>({name:o.name,cid:String(o.cid||""),level:o.level||"",stage:stageOf(o),amount:listPrice(o.level||"")||0,owner:owner(o)||""})).sort((a,b)=>a.name.localeCompare(b.name));}
 function deskInvPaid(){const out={},byCid={},nm=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"");ORGS.forEach(o=>{if(o.cid)byCid[String(o.cid)]=o;});
