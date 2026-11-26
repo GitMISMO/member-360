@@ -1,5 +1,5 @@
 {
- "live": "20261125-1852",
+ "live": "20261126-2250",
  "versions": [
   {
    "version": "20261108-2359-before",
@@ -602,6 +602,13 @@
    "savedAt": "2026-11-25T18:52:59Z",
    "by": "jycritchley",
    "how": "published from the test copy: Back button (CN-033)"
+  },
+  {
+   "version": "20261126-2250",
+   "sha256": "2c736540ea5305baadb3ca96af3e2ddb65a1eab6136d68b195d6c80308fdc3ef",
+   "savedAt": "2026-11-26T22:50:54Z",
+   "by": "jycritchley",
+   "how": "published from the test copy: Masthead matches the other MISMO tools (CN-053)"
   }
  ],
  "history": [
@@ -1199,6 +1206,13 @@
    "action": "publish",
    "version": "20261125-1852",
    "replaced": "20261125-1750"
+  },
+  {
+   "at": "2026-11-26T22:50:54Z",
+   "by": "jycritchley",
+   "action": "publish",
+   "version": "20261126-2250",
+   "replaced": "20261125-1852"
   }
  ]
 }
