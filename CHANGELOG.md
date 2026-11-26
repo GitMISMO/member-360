@@ -7,6 +7,10 @@ One line per change people would notice. Newest first.
 - Every change goes to the test copy first: https://resources.mismo.org/member-360/test/ (`test/index.html`). The test copy reads the real data but saves nothing and sends no email.
 - Page Checks runs on every save. Jonna makes the test copy live with Actions > Publish a Version, which runs the same checks first, keeps every version in `releases/` and can roll back to any of them. Nobody uploads `index.html` by hand. Full guide: DEVELOPING.md.
 
+## 2026-11-26
+
+- Masthead matches the other MISMO tools (Change Notice CN-053, approved by Jonna): the navy bar, the logo box, the divider and the name are now exactly Certification Management's, so the MISMO logo sits in the same spot in every tool. The left menu, the record panel and sticky filters line up to the new 68px bar (55px on a phone). The older December hat is gone; the shared December hat replaces it.
+
 ## 2026-11-25
 
 - The browser's Back button now works (Change Notice CN-033, approved by Jonna): Back goes to the last page you were on and closes an open panel or pop-up first, one at a time; Forward goes the other way. It never undoes a change, and the address bar doesn't change. A new browser check (`checks/browser.js`) tests it before every publish.

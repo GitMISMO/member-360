@@ -964,7 +964,7 @@
   --display:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --ui:var(--display);
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --hq-h:64px; --rail-w:240px; --rail-mini:62px;
+  --hq-h:68px; --rail-w:240px; --rail-mini:62px;
   color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
@@ -997,19 +997,18 @@ h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.012em;text-wrap:balance}
 button,input,select,textarea{font:inherit;color:inherit}
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
-/* ---- masthead + rail (Summit HQ pattern) ---- */
-.hqtop{position:sticky;top:env(safe-area-inset-top,0px);z-index:97;height:var(--hq-h);background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 22px;box-shadow:0 1px 0 rgba(80,164,219,.28);margin-left:calc(0px - var(--rail-w));width:calc(100% + var(--rail-w));transition:margin-left .2s cubic-bezier(.4,0,.2,1),width .2s cubic-bezier(.4,0,.2,1)}
+/* ---- masthead + rail (Summit HQ pattern; the masthead is Certification Management's to the pixel, CN-053, Nov 26, 2026) ---- */
+.hqtop{position:sticky;top:env(safe-area-inset-top,0px);z-index:97;height:var(--hq-h);background:var(--navy);color:#fff;display:flex;align-items:center;gap:14px;padding:13px 22px;box-shadow:0 1px 0 rgba(80,164,219,.28);margin-left:calc(0px - var(--rail-w));width:calc(100% + var(--rail-w));transition:margin-left .2s cubic-bezier(.4,0,.2,1),width .2s cubic-bezier(.4,0,.2,1)}
 body.railmini .hqtop{margin-left:calc(0px - var(--rail-mini));width:calc(100% + var(--rail-mini))}
-.hqtop .mastrule{display:block;width:2px;height:34px;flex:0 0 auto;margin-inline:20px;border-radius:1px;background:var(--sky)}
-.hqtop .hqname{font-family:var(--display);font-size:15.5px;font-weight:700;letter-spacing:-.005em;color:var(--sky);white-space:nowrap}
+.hqtop .mastrule{display:block;width:1px;align-self:stretch;flex:0 0 auto;background:rgba(80,164,219,.4)}
+.hqtop .hqname{font-family:var(--display);font-size:16px;font-weight:500;letter-spacing:0;color:#94c8e9;white-space:nowrap}
 .hqtop-r{margin-left:auto;display:flex;align-items:center;gap:13px}
 .hqtop .eyebrow-m{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:600;white-space:nowrap}
-@media(max-width:700px){.hqtop .eyebrow-m{display:none}.hqtop .mastrule{margin-inline:12px}}
-.logoplate{background:#fff;border-radius:7px;padding:8px 14px;display:flex;align-items:center;line-height:0;flex:0 0 auto;position:relative}
+@media(max-width:700px){.hqtop .eyebrow-m{display:none}}
+.logoplate{background:#fff;border-radius:5px;padding:9px 13px;display:flex;align-items:center;line-height:0;flex:0 0 auto;position:relative;box-shadow:0 1px 0 rgba(80,164,219,.35)}
 .logoplate .wordmark{height:24px;width:auto;display:block}
-@media(max-width:480px){.logoplate{padding:6px 9px}.logoplate .wordmark{height:17px}.hqtop{padding:0 14px}}
-.logoplate .santa{position:absolute;display:none;pointer-events:none;left:-9px;top:-12px;width:31px;height:31px}
-html[data-season="december"] .logoplate .santa{display:block}
+/* phone width, as Certification Management does it: everything shrinks a little and the bar is 55px (11 + 7 + 19 + 7 + 11) */
+@media(max-width:560px){:root{--hq-h:55px}.hqtop{padding:11px 16px;gap:11px}.logoplate{padding:7px 10px}.logoplate .wordmark{height:19px}.hqtop .hqname{font-size:13px;overflow:hidden;text-overflow:ellipsis;min-width:0}.hqtop-r{gap:10px}}
 .hq.rail{position:fixed;left:0;top:calc(var(--hq-h) + env(safe-area-inset-top,0px));bottom:0;width:var(--rail-w);z-index:95;background:var(--navy);color:#fff;display:flex;flex-direction:column;padding:0;overflow:hidden auto;overscroll-behavior:contain;box-shadow:1px 0 0 rgba(80,164,219,.22),4px 0 18px rgba(6,32,47,.14);transition:width .2s cubic-bezier(.4,0,.2,1)}
 body{padding-left:var(--rail-w);transition:padding-left .2s cubic-bezier(.4,0,.2,1)}
 @media (prefers-reduced-motion:reduce){.hq.rail,body,.hqtop{transition:none}}
@@ -2003,7 +2002,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0;flex:0 0 auto;vertical-alig
 button.wk-stat{display:block;width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
 button.wk-stat:hover{border-color:var(--sky)}
 button.wk-stat:focus-visible{outline:2px solid var(--sky);outline-offset:1px}
-#ren-filters,#dl-filters,#is-filters,#iif-filters,#st-listpanel,#wk-fu,#wk-plan{scroll-margin-top:calc(var(--hq-h,56px) + 14px)}
+#ren-filters,#dl-filters,#is-filters,#iif-filters,#st-listpanel,#wk-fu,#wk-plan{scroll-margin-top:calc(var(--hq-h,68px) + 14px)}
 .isrow .num small{font-family:var(--display);letter-spacing:0}
 .isgrp{display:flex;flex-direction:column;gap:3px}
 .isg-t{font-size:11px;color:var(--ink-3);margin-left:8px}
@@ -2530,18 +2529,10 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
 46 29 c79 50 122 121 139 231 21 140 -19 248 -111 299 -79 44 -134 50 -555 62
 -220 5 -410 14 -422 19 -29 12 -30 43 -3 70 19 19 33 20 288 20 277 0 331 -6
 355 -41 13 -18 24 -19 218 -17 l204 3 3 44 c4 60 -31 168 -70 215 -17 21 -52
-52 -77 67 l-45 29 -550 0 c-440 -1 -557 -3 -581 -14z"/></g></symbol><symbol id="mismo-hat" viewBox="0 0 100 100">
-  <path d="M17,73 C9,44 20,17 42,9 C59,3 72,10 80,22 C85,30 86,38 81,41
-           C76,44 70,40 65,32 C60,46 57,60 57,73 Z" fill="#c0392f"/>
-  <path d="M17,73 C9,44 20,17 42,9 C48,7 53,6 58,7 C41,19 30,45 30,73 Z"
-        fill="#0f314c" opacity=".17"/>
-  <rect x="10" y="65" width="56" height="20" rx="10" fill="#ffffff"/>
-  <rect x="10" y="75" width="56" height="10" rx="5" fill="#0f314c" opacity=".07"/>
-  <circle cx="86" cy="45" r="11.5" fill="#ffffff"/>
-</symbol></defs></svg>
+52 -77 67 l-45 29 -550 0 c-440 -1 -557 -3 -581 -14z"/></g></symbol></defs></svg>
 
 <header class="hqtop">
-  <span class="logoplate"><svg class="wordmark" role="img" aria-label="MISMO" viewBox="0 0 708 108"><use href="#mismo-logo"/></svg><svg class="santa" viewBox="0 0 100 100" aria-hidden="true"><use href="#mismo-hat"/></svg></span>
+  <span class="logoplate"><svg class="wordmark" data-mismo-logo role="img" aria-label="MISMO" viewBox="0 0 708 108"><use href="#mismo-logo"/></svg></span>
   <span class="mastrule"></span>
   <span class="hqname">Member 360</span>
   <span class="hqtop-r"><span class="eyebrow-m">Programs &amp; Operations</span>
@@ -2931,7 +2922,6 @@ c57 -33 76 -84 76 -200 0 -116 -19 -167 -76 -200 -32 -19 -52 -20 -294 -20
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 
-(function season(){ if(new Date().getMonth()===11) document.documentElement.setAttribute("data-season","december"); })();
 (function(){
   "use strict";
   const KEY='hq.rail.off';
@@ -11624,7 +11614,7 @@ function tlInit(){if($("v-lists"))return;const main=document.querySelector("main
   +'#v-lists .tl-chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}#v-lists .tl-chip.mine{border-style:solid;border-color:var(--c1,#2477b8)}'
   +'#v-lists .tl-name{flex:1 1 220px;min-width:180px;font:inherit;font-size:13px;border:1px solid var(--border-strong);border-radius:5px;padding:6px 9px;background:var(--surface);color:var(--ink)}'
   +'#v-lists .tl-wrap{display:grid;grid-template-columns:minmax(300px,380px) minmax(0,1fr);gap:16px;align-items:start}@media(max-width:980px){#v-lists .tl-wrap{grid-template-columns:1fr}}'
-  +'#v-lists .tl-f{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 14px 12px;position:sticky;top:calc(var(--hq-h,64px) + 12px);max-height:calc(100vh - var(--hq-h,64px) - 24px);overflow:auto}'
+  +'#v-lists .tl-f{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 14px 12px;position:sticky;top:calc(var(--hq-h,68px) + 12px);max-height:calc(100vh - var(--hq-h,68px) - 24px);overflow:auto}'
   +'#v-lists .tl-g{padding:10px 0;border-bottom:1px solid var(--line)}#v-lists .tl-g:last-child{border-bottom:0}'
   +'#v-lists .tl-gh{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;color:var(--ink-2);margin:0 0 7px}'
   +'#v-lists .tl-gh button{border:0;background:none;color:var(--c1,#2477b8);font:inherit;font-size:11px;text-transform:none;letter-spacing:0;cursor:pointer;padding:0}'
@@ -12119,7 +12109,7 @@ async function verRead(){const r=await fetch(location.pathname+"?ver="+Date.now(
 function verText(){if(!VER.fp)return "";const d=Date.parse(VER.at);return "Version "+VER.fp+(isNaN(d)?"":", published "+new Date(d).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})+" at "+new Date(d).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}))+(typeof window.M360_TEST!=="undefined"&&window.M360_TEST?" (test copy)":"");}
 function verPaint(){const s=$("v-settings");if(s){let x=$("ver-line");if(!x){x=h("div",{class:"hint",id:"ver-line",style:"margin:18px 0 4px"});s.appendChild(x);}x.textContent=verText();}
   const a=$("hl-alerts");if(a&&VER.fp&&!a.querySelector(".ver-r")){const r=h("div",{class:"hl-r ver-r"});r.innerHTML='<div class="hl-d '+(VER.newer?"warn":"ok")+'"></div><div><div class="hl-n">This Page</div><div class="hl-w">'+tlEsc(verText())+'</div></div><div class="hl-s '+(VER.newer?"warn":"ok")+'">'+(VER.newer?"Newer version out":"Up to date")+'</div>';const f=a.querySelector(".hl-foot");a.insertBefore(r,f||null);}
-  let bar=$("ver-bar");if(VER.newer&&!bar){bar=h("div",{id:"ver-bar",role:"status",style:"position:fixed;left:50%;top:calc(var(--hq-h,64px) + 10px);transform:translateX(-50%);z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);border-left:4px solid var(--sky,#74bfeb);border-radius:6px;box-shadow:0 8px 24px rgba(6,32,47,.18);padding:9px 12px;display:flex;gap:12px;align-items:center;font-size:13px;max-width:calc(100vw - 32px)"},
+  let bar=$("ver-bar");if(VER.newer&&!bar){bar=h("div",{id:"ver-bar",role:"status",style:"position:fixed;left:50%;top:calc(var(--hq-h,68px) + 10px);transform:translateX(-50%);z-index:9999;background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);border-left:4px solid var(--sky,#74bfeb);border-radius:6px;box-shadow:0 8px 24px rgba(6,32,47,.18);padding:9px 12px;display:flex;gap:12px;align-items:center;font-size:13px;max-width:calc(100vw - 32px)"},
     h("span",null,"Member 360 has been updated. Reload to get the latest version."));const b=h("button",{type:"button",class:"btn"},"Reload");b.addEventListener("click",()=>location.reload());bar.appendChild(b);document.body.appendChild(bar);}}
 {const _rs2=renderSettings;renderSettings=function(){const r=_rs2.apply(this,arguments);try{verPaint();}catch(e){}return r;};}
 {const _hp2=hlPaint;hlPaint=function(){const r=_hp2.apply(this,arguments);try{verPaint();}catch(e){}return r;};}
